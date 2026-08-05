@@ -687,7 +687,7 @@
 
     function openAdminApproveModal(id, ref, requester, isIou = false, status = '') {
         currentApproveIsIou = isIou;
-        document.getElementById('adminApproveForm').action = `/petty-cash/${id}/admin-approve`;
+        document.getElementById('adminApproveForm').action = "{{ url('/petty-cash') }}/" + id + "/admin-approve";
         const actionTitle = status === 'pending_settlement' ? 'Approve Settlement' : 'Approve Request';
         document.getElementById('adminApproveModalRef').innerHTML = `<i class="fas fa-check-double text-brand-pink mr-2"></i> ${actionTitle}: ${ref}`;
         document.getElementById('approveRequesterName').textContent = requester;
@@ -735,12 +735,12 @@
     }
 
     function openSettleIouModal(id) {
-        fetch(`/petty-cash/${id}`)
+        fetch("{{ url('/petty-cash') }}/" + id)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     const pc = data.pettyCash;
-                    document.getElementById('settleIouForm').action = `/petty-cash/${id}/settle`;
+                    document.getElementById('settleIouForm').action = "{{ url('/petty-cash') }}/" + id + "/settle";
                     document.getElementById('settleIouModalRef').innerHTML = `<i class="fas fa-file-signature text-brand-purple mr-2"></i> Settle IOU Request: ${pc.reference_number}`;
                     
                     const container = document.getElementById('settleItemsContainer');
@@ -769,17 +769,17 @@
     }
 
     function openHodRejectModal(id) {
-        document.getElementById('hodRejectForm').action = `/petty-cash/${id}/hod-reject`;
+        document.getElementById('hodRejectForm').action = "{{ url('/petty-cash') }}/" + id + "/hod-reject";
         document.getElementById('hodRejectModal').classList.remove('hidden');
     }
 
     function openAdminRejectModal(id) {
-        document.getElementById('adminRejectForm').action = `/petty-cash/${id}/admin-reject`;
+        document.getElementById('adminRejectForm').action = "{{ url('/petty-cash') }}/" + id + "/admin-reject";
         document.getElementById('adminRejectModal').classList.remove('hidden');
     }
 
     function viewPettyCashDetails(id) {
-        fetch(`/petty-cash/${id}`)
+        fetch("{{ url('/petty-cash') }}/" + id)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -795,7 +795,7 @@
                     `).join('');
 
                     let proofsHtml = pc.proofs && pc.proofs.length > 0 ? pc.proofs.map(p => `
-                        <a href="/${p.file_path}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-brand-blue rounded-lg text-xs font-semibold mr-2 mb-2">
+                        <a href="{{ url('/') }}/${p.file_path}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-brand-blue rounded-lg text-xs font-semibold mr-2 mb-2">
                             <i class="fas fa-paperclip mr-1.5"></i> ${p.file_name}
                         </a>
                     `).join('') : '<p class="text-xs text-gray-400">No proof attachments uploaded.</p>';
@@ -806,7 +806,7 @@
                                 <i class="fas fa-signature text-brand-purple mr-1.5"></i> Initial Approved Signature (Money Handed Over)
                             </h4>
                             <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 inline-block">
-                                <img src="/${pc.signature_path}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded">
+                                <img src="{{ url('/') }}/${pc.signature_path}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded">
                             </div>
                         </div>
                     ` : '';
@@ -817,7 +817,7 @@
                                 <i class="fas fa-signature text-emerald-600 mr-1.5"></i> Settlement Approved Signature (IOU Settled)
                             </h4>
                             <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 inline-block">
-                                <img src="/${pc.settlement_signature_path}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded">
+                                <img src="{{ url('/') }}/${pc.settlement_signature_path}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded">
                             </div>
                         </div>
                     ` : '';
@@ -877,12 +877,12 @@
     }
 
     function openReappealModal(id) {
-        fetch(`/petty-cash/${id}`)
+        fetch("{{ url('/petty-cash') }}/" + id)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     const pc = data.pettyCash;
-                    document.getElementById('reappealForm').action = `/petty-cash/${id}/reappeal`;
+                    document.getElementById('reappealForm').action = "{{ url('/petty-cash') }}/" + id + "/reappeal";
                     if (pc.hod_id) document.getElementById('reappeal_hod_id').value = pc.hod_id;
                     if (pc.job_number) document.getElementById('reappeal_job_number').value = pc.job_number;
 
