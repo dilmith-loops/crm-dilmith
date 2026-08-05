@@ -942,6 +942,39 @@
         `;
         container.appendChild(div);
     }
+
+    @if(request('approve_id'))
+        @php $autoPc = \App\Models\PettyCashRequest::with('user')->find(request('approve_id')); @endphp
+        @if($autoPc)
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                openAdminApproveModal(
+                    {{ $autoPc->id }},
+                    '{{ $autoPc->reference_number }}',
+                    '{{ addslashes($autoPc->user->name ?? "Staff") }}',
+                    {{ $autoPc->isIOU() ? 'true' : 'false' }},
+                    '{{ $autoPc->status }}'
+                );
+            }, 200);
+        });
+        @endif
+    @elseif(request('reject_id'))
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() { openAdminRejectModal({{ request('reject_id') }}); }, 200);
+        });
+    @elseif(request('hod_reject_id'))
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() { openHodRejectModal({{ request('hod_reject_id') }}); }, 200);
+        });
+    @elseif(request('settle_id'))
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() { openSettleIouModal({{ request('settle_id') }}); }, 200);
+        });
+    @elseif(request('reappeal_id'))
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() { openReappealModal({{ request('reappeal_id') }}); }, 200);
+        });
+    @endif
 </script>
 @endpush
 @endsection
