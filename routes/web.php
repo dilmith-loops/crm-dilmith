@@ -42,7 +42,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/petty-cash/{pettyCash}/hod-approve', [PettyCashController::class, 'hodApprove'])->name('petty-cash.hodApprove');
     Route::post('/petty-cash/{pettyCash}/hod-reject', [PettyCashController::class, 'hodReject'])->name('petty-cash.hodReject');
     Route::post('/petty-cash/{pettyCash}/admin-approve', [PettyCashController::class, 'adminApprove'])->name('petty-cash.adminApprove');
+    Route::get('/petty-cash/{pettyCash}/admin-approve', function () { return redirect()->route('petty-cash.index'); });
     Route::post('/petty-cash/{pettyCash}/admin-reject', [PettyCashController::class, 'adminReject'])->name('petty-cash.adminReject');
+    Route::get('/petty-cash/{pettyCash}/admin-reject', function () { return redirect()->route('petty-cash.index'); });
     Route::post('/petty-cash/{pettyCash}/settle', [PettyCashController::class, 'settleIOU'])->name('petty-cash.settle');
     Route::post('/petty-cash/{pettyCash}/reappeal', [PettyCashController::class, 'reappeal'])->name('petty-cash.reappeal');
 
