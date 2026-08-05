@@ -795,7 +795,7 @@
                     `).join('');
 
                     let proofsHtml = pc.proofs && pc.proofs.length > 0 ? pc.proofs.map(p => `
-                        <a href="{{ url('/') }}/${p.file_path}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-brand-blue rounded-lg text-xs font-semibold mr-2 mb-2">
+                        <a href="{{ asset('/') }}${p.file_path.replace(/^\//, '')}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-brand-blue rounded-lg text-xs font-semibold mr-2 mb-2">
                             <i class="fas fa-paperclip mr-1.5"></i> ${p.file_name}
                         </a>
                     `).join('') : '<p class="text-xs text-gray-400">No proof attachments uploaded.</p>';
@@ -806,7 +806,7 @@
                                 <i class="fas fa-signature text-brand-purple mr-1.5"></i> Initial Approved Signature (Money Handed Over)
                             </h4>
                             <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 inline-block">
-                                <img src="{{ url('/') }}/${pc.signature_path}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded">
+                                <img src="{{ asset('/') }}${pc.signature_path.replace(/^\//, '')}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded">
                             </div>
                         </div>
                     ` : '';
@@ -817,7 +817,7 @@
                                 <i class="fas fa-signature text-emerald-600 mr-1.5"></i> Settlement Approved Signature (IOU Settled)
                             </h4>
                             <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 inline-block">
-                                <img src="{{ url('/') }}/${pc.settlement_signature_path}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded">
+                                <img src="{{ asset('/') }}${pc.settlement_signature_path.replace(/^\//, '')}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded">
                             </div>
                         </div>
                     ` : '';
