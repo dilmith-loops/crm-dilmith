@@ -271,7 +271,7 @@
         @endif
 
         <!-- Signatures Block -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
+        <div class="grid grid-cols-1 {{ $pettyCash->isIOU() ? 'sm:grid-cols-2' : '' }} gap-6 pt-4 border-t border-gray-200">
             <!-- Initial Approval Signature -->
             <div class="bg-gray-50/70 border border-gray-200 rounded-xl p-4 flex flex-col justify-between">
                 <div>
@@ -294,7 +294,8 @@
                 </div>
             </div>
 
-            <!-- Settlement Signature -->
+            @if($pettyCash->isIOU())
+            <!-- Settlement Signature (Only for IOU) -->
             <div class="bg-emerald-50/50 border border-emerald-200/80 rounded-xl p-4 flex flex-col justify-between">
                 <div>
                     <h4 class="text-xs font-bold text-emerald-900 uppercase tracking-wide flex items-center mb-2">
@@ -306,7 +307,7 @@
                         </div>
                     @else
                         <div class="border border-dashed border-emerald-200 rounded-lg h-24 flex items-center justify-center text-emerald-400 text-xs mb-2 bg-white">
-                            {{ $pettyCash->isIOU() ? 'Pending Final Settlement Signature' : 'N/A (Standard Petty Cash)' }}
+                            Pending Final Settlement Signature
                         </div>
                     @endif
                 </div>
@@ -315,6 +316,7 @@
                     <p><strong>Settled Date:</strong> {{ $pettyCash->settled_at ? $pettyCash->settled_at->format('d M Y') : 'Not Settled' }}</p>
                 </div>
             </div>
+            @endif
         </div>
 
         <!-- Attached Proofs Section -->

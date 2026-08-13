@@ -1086,7 +1086,7 @@
                         </div>
                     ` : '';
 
-                    let settlementSignatureHtml = pc.settlement_signature_path ? `
+                    let settlementSignatureHtml = (pc.is_iou && pc.settlement_signature_path) ? `
                         <div class="mt-4 pt-3 border-t border-gray-200">
                             <h4 class="text-xs sm:text-sm font-bold text-emerald-800 mb-2 flex items-center">
                                 <i class="fas fa-signature text-emerald-600 mr-1.5"></i> Settlement Approved Signature (IOU Settled)
