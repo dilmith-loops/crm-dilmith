@@ -26,12 +26,31 @@
             page-break-before: always;
         }
         .proof-img {
-            max-height: 350px !important;
+            max-height: 400px !important;
             object-fit: contain !important;
         }
     }
 </style>
 @endpush
+
+@php
+    $getProofUrl = function($path) {
+        if (!$path) return '';
+        $clean = ltrim($path, '/');
+        if (str_starts_with($clean, 'public/')) {
+            return url($clean);
+        }
+        return url('/public/' . $clean);
+    };
+
+    $checkFileExists = function($path) {
+        if (!$path) return false;
+        $clean = ltrim($path, '/');
+        return file_exists(public_path($clean)) 
+            || file_exists(base_path('public/' . $clean)) 
+            || file_exists(base_path($clean));
+    };
+@endphp
 
 @section('header')
 <div class="flex justify-between items-center no-print w-full max-w-5xl mx-auto px-4 py-2">
@@ -259,9 +278,9 @@
                     <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center mb-2">
                         <i class="fas fa-signature text-brand-purple mr-1.5"></i> Initial Cash Approval / Handover Signature
                     </h4>
-                    @if($pettyCash->signature_path && file_exists(public_path($pettyCash->signature_path)))
+                    @if($pettyCash->signature_path)
                         <div class="bg-white border border-gray-200 rounded-lg p-2 flex items-center justify-center h-24 mb-2">
-                            <img src="{{ asset($pettyCash->signature_path) }}" alt="Handover Signature" class="max-h-20 max-w-full object-contain">
+                            <img src="{{ $getProofUrl($pettyCash->signature_path) }}" alt="Handover Signature" class="max-h-20 max-w-full object-contain">
                         </div>
                     @else
                         <div class="border border-dashed border-gray-300 rounded-lg h-24 flex items-center justify-center text-gray-400 text-xs mb-2 bg-white">
@@ -281,9 +300,9 @@
                     <h4 class="text-xs font-bold text-emerald-900 uppercase tracking-wide flex items-center mb-2">
                         <i class="fas fa-signature text-emerald-600 mr-1.5"></i> IOU Settlement Approval Signature
                     </h4>
-                    @if($pettyCash->settlement_signature_path && file_exists(public_path($pettyCash->settlement_signature_path)))
+                    @if($pettyCash->settlement_signature_path)
                         <div class="bg-white border border-emerald-200 rounded-lg p-2 flex items-center justify-center h-24 mb-2">
-                            <img src="{{ asset($pettyCash->settlement_signature_path) }}" alt="Settlement Signature" class="max-h-20 max-w-full object-contain">
+                            <img src="{{ $getProofUrl($pettyCash->settlement_signature_path) }}" alt="Settlement Signature" class="max-h-20 max-w-full object-contain">
                         </div>
                     @else
                         <div class="border border-dashed border-emerald-200 rounded-lg h-24 flex items-center justify-center text-emerald-400 text-xs mb-2 bg-white">
@@ -306,38 +325,46 @@
             
             @if($pettyCash->proofs && $pettyCash->proofs->count() > 0)
                 <div class="space-y-4">
+                    @php
+                        $nonImages = $pettyCash->proofs->filter(function($p) {
+                            $ext = strtolower(pathinfo($p->file_name, PATHINFO_EXTENSION));
+                            return !in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg']);
+                        });
+                        $images = $pettyCash->proofs->filter(function($p) {
+                            $ext = strtolower(pathinfo($p->file_name, PATHINFO_EXTENSION));
+                            return in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg']);
+                        });
+                    @endphp
+
                     <!-- Non-image file list -->
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($pettyCash->proofs as $proof)
-                            @php
-                                $ext = strtolower(pathinfo($proof->file_name, PATHINFO_EXTENSION));
-                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
-                            @endphp
-                            @if(!$isImage)
-                                <a href="{{ asset($proof->file_path) }}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-brand-blue border border-gray-200 rounded-lg text-xs font-medium transition-colors">
+                    @if($nonImages->count() > 0)
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($nonImages as $proof)
+                                <a href="{{ $getProofUrl($proof->file_path) }}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-brand-blue border border-gray-200 rounded-lg text-xs font-medium transition-colors">
                                     <i class="fas fa-file-pdf text-red-500 mr-2"></i> {{ $proof->file_name }}
                                 </a>
-                            @endif
-                        @endforeach
-                    </div>
+                            @endforeach
+                        </div>
+                    @endif
 
                     <!-- Image Receipts Embedded Grid for Print & View -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        @foreach($pettyCash->proofs as $proof)
-                            @php
-                                $ext = strtolower(pathinfo($proof->file_name, PATHINFO_EXTENSION));
-                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
-                            @endphp
-                            @if($isImage && file_exists(public_path($proof->file_path)))
+                    @if($images->count() > 0)
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            @foreach($images as $proof)
                                 <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center space-y-2">
-                                    <span class="text-[11px] font-semibold text-gray-600 block truncate">{{ $proof->file_name }}</span>
-                                    <a href="{{ asset($proof->file_path) }}" target="_blank" class="block">
-                                        <img src="{{ asset($proof->file_path) }}" alt="{{ $proof->file_name }}" class="w-full max-h-64 object-contain rounded-lg border border-gray-200 bg-white proof-img mx-auto">
+                                    <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600 px-1">
+                                        <span class="truncate max-w-[200px]" title="{{ $proof->file_name }}">{{ $proof->file_name }}</span>
+                                        <a href="{{ $getProofUrl($proof->file_path) }}" target="_blank" class="text-brand-blue hover:underline text-[10px]">
+                                            <i class="fas fa-external-link-alt mr-0.5"></i> Open Full
+                                        </a>
+                                    </div>
+                                    <a href="{{ $getProofUrl($proof->file_path) }}" target="_blank" class="block bg-white rounded-lg p-1 border border-gray-200">
+                                        <img src="{{ $getProofUrl($proof->file_path) }}" alt="{{ $proof->file_name }}" class="w-full max-h-72 object-contain rounded-md proof-img mx-auto">
                                     </a>
                                 </div>
-                            @endif
-                        @endforeach
-                    </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             @else
                 <p class="text-xs text-gray-400 italic">No expenditure proof documents attached to this request.</p>
