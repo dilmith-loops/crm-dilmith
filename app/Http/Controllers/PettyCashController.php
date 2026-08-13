@@ -164,6 +164,7 @@ class PettyCashController extends Controller
     public function show(PettyCashRequest $pettyCash)
     {
         $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
+        $pettyCash->append(['issued_notes_total', 'settlement_notes_total']);
         return response()->json([
             'success' => true,
             'pettyCash' => $pettyCash
@@ -247,11 +248,20 @@ class PettyCashController extends Controller
 
         if ($pettyCash->status === 'pending_settlement') {
             // Approval of IOU settlement
-            $pettyCash->update([
+            $settledAt = $request->filled('settled_at') ? $request->input('settled_at') : now();
+            $updateData = [
                 'status' => 'settled',
                 'settlement_signature_path' => $savedSignaturePath ?: $pettyCash->settlement_signature_path,
-                'settled_at' => now(),
-            ]);
+                'settled_at' => $settledAt,
+            ];
+            if ($request->has('settlement_note')) {
+                $updateData['settlement_note'] = $request->input('settlement_note');
+            }
+            if ($request->has('settlement_money_notes')) {
+                $updateData['settlement_money_notes'] = $request->input('settlement_money_notes');
+            }
+
+            $pettyCash->update($updateData);
 
             if ($pettyCash->user) {
                 $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
@@ -261,11 +271,18 @@ class PettyCashController extends Controller
 
         // Initial Super Admin approval (or money handed over for IOU)
         $newStatus = $isIOU ? 'iou_issued' : 'approved';
+        $issuedAt = $request->filled('issued_at') ? $request->input('issued_at') : now();
 
-        $pettyCash->update([
+        $updateData = [
             'status' => $newStatus,
             'signature_path' => $savedSignaturePath ?: $pettyCash->signature_path,
-        ]);
+            'issued_at' => $issuedAt,
+        ];
+        if ($request->has('issued_money_notes')) {
+            $updateData['issued_money_notes'] = $request->input('issued_money_notes');
+        }
+
+        $pettyCash->update($updateData);
 
         // Notify Staff & HOD
         if ($pettyCash->user) {
@@ -321,6 +338,9 @@ class PettyCashController extends Controller
             'items' => 'nullable|array',
             'items.*.id' => 'required|exists:petty_cash_items,id',
             'items.*.amount' => 'required|numeric|min:0.01',
+            'settled_at' => 'nullable|date',
+            'settlement_note' => 'nullable|string',
+            'settlement_money_notes' => 'nullable|array',
         ]);
 
         // Update items/amounts if submitted
@@ -361,8 +381,13 @@ class PettyCashController extends Controller
             }
         }
 
+        $settledAt = $request->filled('settled_at') ? $request->input('settled_at') : now();
+
         $pettyCash->update([
             'status' => 'pending_settlement',
+            'settled_at' => $settledAt,
+            'settlement_note' => $request->input('settlement_note'),
+            'settlement_money_notes' => $request->input('settlement_money_notes'),
         ]);
 
         // Notify Super Admins
@@ -462,5 +487,11 @@ class PettyCashController extends Controller
         }
 
         return redirect()->back()->with('success', 'Petty Cash request re-appealed and resubmitted successfully.');
+    }
+
+    public function downloadVoucher(PettyCashRequest $pettyCash)
+    {
+        $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
+        return view('petty-cash.voucher', compact('pettyCash'));
     }
 }

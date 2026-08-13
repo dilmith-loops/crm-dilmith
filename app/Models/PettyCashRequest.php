@@ -17,19 +17,58 @@ class PettyCashRequest extends Model
         'job_number',
         'total_amount',
         'is_iou',
+        'issued_at',
+        'issued_money_notes',
         'status',
         'hod_rejection_note',
         'admin_rejection_note',
         'signature_path',
         'settlement_signature_path',
         'settled_at',
+        'settlement_note',
+        'settlement_money_notes',
         'reappeal_count',
     ];
 
     protected $casts = [
         'is_iou' => 'boolean',
+        'issued_at' => 'datetime',
         'settled_at' => 'datetime',
+        'issued_money_notes' => 'array',
+        'settlement_money_notes' => 'array',
     ];
+
+    public function getIssuedNotesTotalAttribute()
+    {
+        if (!$this->issued_money_notes || !is_array($this->issued_money_notes)) {
+            return 0;
+        }
+        $n = $this->issued_money_notes;
+        return ((int)($n['5000'] ?? 0)) * 5000 +
+               ((int)($n['2000'] ?? 0)) * 2000 +
+               ((int)($n['1000'] ?? 0)) * 1000 +
+               ((int)($n['500'] ?? 0)) * 500 +
+               ((int)($n['100'] ?? 0)) * 100 +
+               ((int)($n['50'] ?? 0)) * 50 +
+               ((int)($n['20'] ?? 0)) * 20 +
+               (float)($n['coins'] ?? 0);
+    }
+
+    public function getSettlementNotesTotalAttribute()
+    {
+        if (!$this->settlement_money_notes || !is_array($this->settlement_money_notes)) {
+            return 0;
+        }
+        $n = $this->settlement_money_notes;
+        return ((int)($n['5000'] ?? 0)) * 5000 +
+               ((int)($n['2000'] ?? 0)) * 2000 +
+               ((int)($n['1000'] ?? 0)) * 1000 +
+               ((int)($n['500'] ?? 0)) * 500 +
+               ((int)($n['100'] ?? 0)) * 100 +
+               ((int)($n['50'] ?? 0)) * 50 +
+               ((int)($n['20'] ?? 0)) * 20 +
+               (float)($n['coins'] ?? 0);
+    }
 
     public function isIOU()
     {

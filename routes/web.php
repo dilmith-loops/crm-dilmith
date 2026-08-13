@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/petty-cash/{id}/settle', function ($id) { return redirect()->route('petty-cash.index', ['settle_id' => $id, 'scope' => 'approvals']); });
     Route::post('/petty-cash/{pettyCash}/reappeal', [PettyCashController::class, 'reappeal'])->name('petty-cash.reappeal');
     Route::get('/petty-cash/{id}/reappeal', function ($id) { return redirect()->route('petty-cash.index', ['reappeal_id' => $id]); });
+    Route::get('/petty-cash/{pettyCash}/download', [PettyCashController::class, 'downloadVoucher'])->name('petty-cash.download');
 
     Route::middleware(['prevent.staff'])->group(function () {
         Route::get('/dashboard/export', [DashboardController::class, 'exportCsv'])->name('dashboard.export');

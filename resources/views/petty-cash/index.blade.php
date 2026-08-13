@@ -148,6 +148,10 @@
                                         class="px-2.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center whitespace-nowrap">
                                         <i class="fas fa-eye mr-1"></i> Details
                                     </button>
+                                    <a href="{{ route('petty-cash.download', $pc) }}" target="_blank"
+                                        class="px-2.5 py-1.5 bg-brand-blue text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center whitespace-nowrap shadow-sm" title="Download / Print Voucher">
+                                        <i class="fas fa-file-pdf mr-1"></i> Voucher
+                                    </a>
 
                                     <!-- Settle IOU Button for Requester or Admin -->
                                     @if($pc->status === 'iou_issued' && (auth()->id() === $pc->user_id || auth()->user()->hasRole('super_admin')))
@@ -325,9 +329,13 @@
         <div class="mt-4 space-y-6" id="modalBody">
             <!-- Dynamic Data inserted by JS -->
         </div>
-        <div class="flex justify-end pt-4 border-t border-gray-100 mt-6">
+        <div class="flex justify-between items-center pt-4 border-t border-gray-100 mt-6" id="modalFooter">
+            <a id="modalVoucherLink" href="#" target="_blank"
+                class="px-4 py-2 bg-gradient-to-r from-brand-pink to-brand-purple text-white text-xs font-bold rounded-lg hover:opacity-90 transition-colors inline-flex items-center shadow-md">
+                <i class="fas fa-file-pdf mr-1.5"></i> Download Voucher (PDF)
+            </a>
             <button onclick="document.getElementById('detailsModal').classList.add('hidden')"
-                class="px-5 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                class="px-5 py-2 bg-gray-200 text-gray-800 text-xs font-semibold rounded-lg hover:bg-gray-300 transition-colors">
                 Close
             </button>
         </div>
@@ -367,7 +375,7 @@
 
 <!-- Admin Approve & Signature Modal -->
 <div id="adminApproveModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 p-2 sm:p-4 md:p-6 flex items-center justify-center">
-    <div class="relative my-auto p-5 sm:p-6 border w-full max-w-lg shadow-2xl rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
+    <div class="relative my-auto p-5 sm:p-6 border w-full max-w-xl shadow-2xl rounded-2xl bg-white max-h-[92vh] overflow-y-auto">
         <div class="flex justify-between items-center pb-3 border-b border-gray-200">
             <h3 class="text-lg font-bold text-gray-800 flex items-center" id="adminApproveModalRef">
                 <i class="fas fa-check-double text-brand-pink mr-2"></i> Approve Petty Cash Request
@@ -388,6 +396,64 @@
             <div class="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5 text-xs text-blue-900 space-y-1">
                 <p><strong>Requester:</strong> <span id="approveRequesterName">-</span></p>
                 <p class="text-blue-700" id="approveConfirmationText">Are you sure you want to approve this petty cash request?</p>
+            </div>
+
+            <!-- Approval / Handed Over Date Input -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1" id="approveDateLabel">
+                    <i class="fas fa-calendar-alt text-brand-blue mr-1"></i> Approval Date *
+                </label>
+                <input type="date" name="issued_at" id="approveDateInput" value="{{ date('Y-m-d') }}" required class="w-full rounded-lg border-gray-300 text-xs focus:border-brand-purple focus:ring-brand-purple">
+                <p class="text-[11px] text-gray-400 mt-1">By default, set to current sign date. You can modify if needed.</p>
+            </div>
+
+            <!-- Money Notes Breakdown (Optional) -->
+            <div class="bg-gradient-to-r from-gray-50 to-blue-50/30 border border-gray-200 rounded-xl p-3.5 space-y-2.5">
+                <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('approveMoneyBreakdownBody').classList.toggle('hidden')">
+                    <label class="text-xs font-bold text-gray-800 flex items-center cursor-pointer">
+                        <i class="fas fa-money-bill-wave text-emerald-600 mr-1.5"></i> 
+                        <span id="approveMoneyNotesSectionTitle">Money Notes Breakdown (Handed Over)</span>
+                        <span class="text-gray-400 font-normal ml-1 text-[11px]">(Optional)</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200" id="approveMoneyNotesTotalDisplay">Total: LKR 0.00</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                    </div>
+                </div>
+                <div id="approveMoneyBreakdownBody" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-gray-200/60">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 5000</label>
+                        <input type="number" min="0" name="issued_money_notes[5000]" id="an_5000" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple approve-note-input" data-value="5000" oninput="calculateApproveNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 2000</label>
+                        <input type="number" min="0" name="issued_money_notes[2000]" id="an_2000" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple approve-note-input" data-value="2000" oninput="calculateApproveNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 1000</label>
+                        <input type="number" min="0" name="issued_money_notes[1000]" id="an_1000" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple approve-note-input" data-value="1000" oninput="calculateApproveNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 500</label>
+                        <input type="number" min="0" name="issued_money_notes[500]" id="an_500" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple approve-note-input" data-value="500" oninput="calculateApproveNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 100</label>
+                        <input type="number" min="0" name="issued_money_notes[100]" id="an_100" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple approve-note-input" data-value="100" oninput="calculateApproveNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 50</label>
+                        <input type="number" min="0" name="issued_money_notes[50]" id="an_50" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple approve-note-input" data-value="50" oninput="calculateApproveNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 20</label>
+                        <input type="number" min="0" name="issued_money_notes[20]" id="an_20" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple approve-note-input" data-value="20" oninput="calculateApproveNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Coins (LKR)</label>
+                        <input type="number" step="0.01" min="0" name="issued_money_notes[coins]" id="an_coins" placeholder="0.00" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple approve-coin-input" oninput="calculateApproveNotesTotal()">
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -437,7 +503,23 @@
             <div class="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2">
                 <i class="fas fa-info-circle text-brand-purple text-base mt-0.5 flex-shrink-0"></i>
                 <div>
-                    <strong>IOU Settlement Process:</strong> Upload your expenditure proofs (receipts, bills, or invoices) and confirm the final spent line item amounts. Once submitted, Super Admin will review and approve the settlement.
+                    <strong>IOU Settlement Process:</strong> Set the settlement date, upload expenditure proofs (receipts/bills), add optional notes, and confirm money breakdown. Once submitted, Super Admin will review and approve the settlement.
+                </div>
+            </div>
+
+            <!-- IOU Settled Date & Settlement Remarks -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
+                        <i class="fas fa-calendar-check text-brand-purple mr-1"></i> IOU Settled Date *
+                    </label>
+                    <input type="date" name="settled_at" id="settleDateInput" value="{{ date('Y-m-d') }}" required class="w-full rounded-lg border-gray-300 text-xs focus:border-brand-purple focus:ring-brand-purple">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
+                        <i class="fas fa-sticky-note text-brand-purple mr-1"></i> Settlement Description / Remarks
+                    </label>
+                    <input type="text" name="settlement_note" id="settleNoteInput" placeholder="Notes/details about settlement..." class="w-full rounded-lg border-gray-300 text-xs focus:border-brand-purple focus:ring-brand-purple">
                 </div>
             </div>
 
@@ -445,6 +527,53 @@
                 <label class="block text-xs font-bold text-gray-800 mb-2">Final Expenditure Line Items & Amounts</label>
                 <div id="settleItemsContainer" class="space-y-3">
                     <!-- Dynamic JS content -->
+                </div>
+            </div>
+
+            <!-- Money Notes Breakdown for Settlement (Optional) -->
+            <div class="bg-gradient-to-r from-purple-50/50 to-pink-50/30 border border-purple-100 rounded-xl p-3.5 space-y-2.5">
+                <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('settleMoneyBreakdownBody').classList.toggle('hidden')">
+                    <label class="text-xs font-bold text-purple-900 flex items-center cursor-pointer">
+                        <i class="fas fa-coins text-brand-purple mr-1.5"></i> Settlement Money Notes <span class="text-gray-400 font-normal ml-1 text-[11px]">(Optional)</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded border border-purple-200" id="settleMoneyNotesTotalDisplay">Total: LKR 0.00</span>
+                        <i class="fas fa-chevron-down text-xs text-purple-400"></i>
+                    </div>
+                </div>
+                <div id="settleMoneyBreakdownBody" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-purple-100">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 5000</label>
+                        <input type="number" min="0" name="settlement_money_notes[5000]" id="sn_5000" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple settle-note-input" data-value="5000" oninput="calculateSettleNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 2000</label>
+                        <input type="number" min="0" name="settlement_money_notes[2000]" id="sn_2000" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple settle-note-input" data-value="2000" oninput="calculateSettleNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 1000</label>
+                        <input type="number" min="0" name="settlement_money_notes[1000]" id="sn_1000" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple settle-note-input" data-value="1000" oninput="calculateSettleNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 500</label>
+                        <input type="number" min="0" name="settlement_money_notes[500]" id="sn_500" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple settle-note-input" data-value="500" oninput="calculateSettleNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 100</label>
+                        <input type="number" min="0" name="settlement_money_notes[100]" id="sn_100" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple settle-note-input" data-value="100" oninput="calculateSettleNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 50</label>
+                        <input type="number" min="0" name="settlement_money_notes[50]" id="sn_50" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple settle-note-input" data-value="50" oninput="calculateSettleNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Rs. 20</label>
+                        <input type="number" min="0" name="settlement_money_notes[20]" id="sn_20" placeholder="0" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple settle-note-input" data-value="20" oninput="calculateSettleNotesTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600">Coins (LKR)</label>
+                        <input type="number" step="0.01" min="0" name="settlement_money_notes[coins]" id="sn_coins" placeholder="0.00" class="w-full rounded-md border-gray-300 text-xs text-right py-1 px-2 focus:ring-brand-purple settle-coin-input" oninput="calculateSettleNotesTotal()">
+                    </div>
                 </div>
             </div>
 
@@ -685,6 +814,42 @@
 
     let currentApproveIsIou = false;
 
+    function calculateApproveNotesTotal() {
+        let total = 0;
+        const inputs = document.querySelectorAll('.approve-note-input');
+        inputs.forEach(input => {
+            const val = parseFloat(input.dataset.value || 0);
+            const qty = parseInt(input.value || 0);
+            if (qty > 0) total += val * qty;
+        });
+        const coinInput = document.querySelector('.approve-coin-input');
+        if (coinInput && coinInput.value) {
+            total += parseFloat(coinInput.value) || 0;
+        }
+        const display = document.getElementById('approveMoneyNotesTotalDisplay');
+        if (display) {
+            display.textContent = 'Total: LKR ' + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+    }
+
+    function calculateSettleNotesTotal() {
+        let total = 0;
+        const inputs = document.querySelectorAll('.settle-note-input');
+        inputs.forEach(input => {
+            const val = parseFloat(input.dataset.value || 0);
+            const qty = parseInt(input.value || 0);
+            if (qty > 0) total += val * qty;
+        });
+        const coinInput = document.querySelector('.settle-coin-input');
+        if (coinInput && coinInput.value) {
+            total += parseFloat(coinInput.value) || 0;
+        }
+        const display = document.getElementById('settleMoneyNotesTotalDisplay');
+        if (display) {
+            display.textContent = 'Total: LKR ' + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+    }
+
     function openAdminApproveModal(id, ref, requester, isIou = false, status = '') {
         currentApproveIsIou = isIou;
         document.getElementById('adminApproveForm').action = "{{ url('/petty-cash') }}/" + id + "/admin-approve";
@@ -707,6 +872,52 @@
             if (reqText) reqText.classList.add('hidden');
             if (optText) optText.classList.remove('hidden');
         }
+
+        const approveDateLabel = document.getElementById('approveDateLabel');
+        const approveDateInput = document.getElementById('approveDateInput');
+        const sectionTitle = document.getElementById('approveMoneyNotesSectionTitle');
+
+        const today = new Date().toISOString().split('T')[0];
+        if (approveDateInput) {
+            approveDateInput.value = today;
+        }
+
+        if (status === 'pending_settlement') {
+            if (approveDateLabel) approveDateLabel.innerHTML = '<i class="fas fa-calendar-check text-brand-purple mr-1"></i> IOU Settled Date *';
+            if (approveDateInput) approveDateInput.name = 'settled_at';
+            if (sectionTitle) sectionTitle.textContent = 'Settlement Money Notes Breakdown';
+
+            ['5000','2000','1000','500','100','50','20'].forEach(k => {
+                const el = document.getElementById('an_' + k);
+                if (el) el.name = `settlement_money_notes[${k}]`;
+            });
+            const coinEl = document.getElementById('an_coins');
+            if (coinEl) coinEl.name = 'settlement_money_notes[coins]';
+        } else {
+            if (approveDateLabel) {
+                approveDateLabel.innerHTML = isIou 
+                    ? '<i class="fas fa-calendar-plus text-brand-pink mr-1"></i> IOU Created Date *' 
+                    : '<i class="fas fa-calendar-alt text-brand-blue mr-1"></i> Approval / Handover Date *';
+            }
+            if (approveDateInput) approveDateInput.name = 'issued_at';
+            if (sectionTitle) sectionTitle.textContent = 'Money Notes Breakdown (Handed Over)';
+
+            ['5000','2000','1000','500','100','50','20'].forEach(k => {
+                const el = document.getElementById('an_' + k);
+                if (el) el.name = `issued_money_notes[${k}]`;
+            });
+            const coinEl = document.getElementById('an_coins');
+            if (coinEl) coinEl.name = 'issued_money_notes[coins]';
+        }
+
+        // Reset money breakdown input fields
+        ['5000','2000','1000','500','100','50','20'].forEach(k => {
+            const el = document.getElementById('an_' + k);
+            if (el) el.value = '';
+        });
+        const coinEl = document.getElementById('an_coins');
+        if (coinEl) coinEl.value = '';
+        calculateApproveNotesTotal();
 
         document.getElementById('adminApproveModal').classList.remove('hidden');
 
@@ -743,6 +954,26 @@
                     document.getElementById('settleIouForm').action = "{{ url('/petty-cash') }}/" + id + "/settle";
                     document.getElementById('settleIouModalRef').innerHTML = `<i class="fas fa-file-signature text-brand-purple mr-2"></i> Settle IOU Request: ${pc.reference_number}`;
                     
+                    const today = new Date().toISOString().split('T')[0];
+                    const dateInput = document.getElementById('settleDateInput');
+                    if (dateInput) {
+                        dateInput.value = pc.settled_at ? new Date(pc.settled_at).toISOString().split('T')[0] : today;
+                    }
+
+                    const noteInput = document.getElementById('settleNoteInput');
+                    if (noteInput) {
+                        noteInput.value = pc.settlement_note || '';
+                    }
+
+                    const notesObj = pc.settlement_money_notes || {};
+                    ['5000','2000','1000','500','100','50','20'].forEach(k => {
+                        const el = document.getElementById('sn_' + k);
+                        if (el) el.value = notesObj[k] || '';
+                    });
+                    const coinEl = document.getElementById('sn_coins');
+                    if (coinEl) coinEl.value = notesObj.coins || '';
+                    calculateSettleNotesTotal();
+
                     const container = document.getElementById('settleItemsContainer');
                     container.innerHTML = '';
 
@@ -778,7 +1009,51 @@
         document.getElementById('adminRejectModal').classList.remove('hidden');
     }
 
+    function renderMoneyNotesBreakdownHtml(notesObj, title) {
+        if (!notesObj || typeof notesObj !== 'object') return '';
+        const keys = ['5000', '2000', '1000', '500', '100', '50', '20'];
+        let badges = [];
+        let total = 0;
+        keys.forEach(k => {
+            const qty = parseInt(notesObj[k] || 0);
+            if (qty > 0) {
+                const val = parseInt(k) * qty;
+                total += val;
+                badges.push(`<span class="px-2.5 py-1 bg-white border border-gray-200 text-gray-800 font-semibold rounded-md text-[11px] shadow-2xs">Rs. ${k} &times; ${qty}</span>`);
+            }
+        });
+        const coins = parseFloat(notesObj.coins || 0);
+        if (coins > 0) {
+            total += coins;
+            badges.push(`<span class="px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 font-semibold rounded-md text-[11px] shadow-2xs">Coins: LKR ${coins.toFixed(2)}</span>`);
+        }
+        if (badges.length === 0) return '';
+
+        return `
+            <div class="mt-3 pt-3 border-t border-gray-200/80">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-xs font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-coins text-amber-500 mr-1.5"></i> ${title}
+                    </h4>
+                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Total: LKR ${total.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="flex flex-wrap gap-1.5">${badges.join('')}</div>
+            </div>
+        `;
+    }
+
+    function formatDateStr(dateStr) {
+        if (!dateStr) return '-';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
     function viewPettyCashDetails(id) {
+        const voucherBtn = document.getElementById('modalVoucherLink');
+        if (voucherBtn) {
+            voucherBtn.href = "{{ url('/petty-cash') }}/" + id + "/download";
+        }
         fetch("{{ url('/petty-cash') }}/" + id)
             .then(res => res.json())
             .then(data => {
@@ -829,6 +1104,15 @@
                     if (pc.admin_rejection_note) {
                         notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mt-2"><strong>Super Admin Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
                     }
+                    if (pc.settlement_note) {
+                        notesHtml += `<div class="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-900 mt-2"><strong><i class="fas fa-sticky-note text-brand-purple mr-1"></i> IOU Settlement Note:</strong> ${pc.settlement_note}</div>`;
+                    }
+
+                    let issuedNotesHtml = renderMoneyNotesBreakdownHtml(pc.issued_money_notes, pc.is_iou ? 'IOU Money Handed Over Breakdown' : 'Approval Money Notes Breakdown');
+                    let settlementNotesHtml = renderMoneyNotesBreakdownHtml(pc.settlement_money_notes, 'IOU Settlement Money Notes Breakdown');
+
+                    const createdOrIssuedDate = formatDateStr(pc.issued_at || pc.created_at);
+                    const settledDateDisplay = pc.settled_at ? formatDateStr(pc.settled_at) : (pc.status === 'pending_settlement' ? 'Pending Approval' : 'Not Settled Yet');
 
                     document.getElementById('modalBody').innerHTML = `
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl text-xs">
@@ -836,6 +1120,9 @@
                             <div><span class="text-gray-500 block">Department:</span><strong class="text-gray-800 text-sm">${pc.department || '-'}</strong></div>
                             <div><span class="text-gray-500 block">HOD:</span><strong class="text-gray-800 text-sm">${pc.hod ? pc.hod.name : 'Not Assigned'}</strong></div>
                             <div><span class="text-gray-500 block">Job Number:</span><strong class="text-gray-800 text-sm font-mono">${pc.job_number || '-'}</strong></div>
+                            
+                            <div><span class="text-gray-500 block">${pc.is_iou ? 'IOU Created Date:' : 'Approval Date:'}</span><strong class="text-gray-800 text-sm font-semibold text-brand-purple">${createdOrIssuedDate}</strong></div>
+                            ${pc.is_iou ? `<div><span class="text-gray-500 block">IOU Settled Date:</span><strong class="text-gray-800 text-sm font-semibold text-emerald-700">${settledDateDisplay}</strong></div>` : ''}
                         </div>
 
                         ${notesHtml}
@@ -862,8 +1149,11 @@
                             </table>
                         </div>
 
+                        ${issuedNotesHtml}
+                        ${settlementNotesHtml}
+
                         <div>
-                            <h4 class="text-sm font-bold text-gray-800 mb-2">Proof Attachments</h4>
+                            <h4 class="text-sm font-bold text-gray-800 mb-2 mt-4">Proof Attachments</h4>
                             <div class="flex flex-wrap">${proofsHtml}</div>
                         </div>
 
