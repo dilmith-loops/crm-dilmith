@@ -961,7 +961,7 @@
 
         function editDeal(deal, isReadOnly = false) {
             const form = document.getElementById('editDealForm');
-            form.action = `/deals/${deal.id}`;
+            form.action = `{{ url('/deals') }}/${deal.id}`;
 
             document.getElementById('edit_title').value = deal.title;
             document.getElementById('edit_pipeline').value = deal.pipeline || 'Sales Pipeline';
@@ -1135,7 +1135,7 @@
                                 }
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    fetch(`/deals/${dealId}/stage`, {
+                                    fetch(`{{ url('/deals') }}/${dealId}/stage`, {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json',
@@ -1188,7 +1188,7 @@
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 // API Call
-                                fetch(`/deals/${dealId}/stage`, {
+                                fetch(`{{ url('/deals') }}/${dealId}/stage`, {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
@@ -1711,7 +1711,7 @@
                 }
             });
 
-            fetch(`/deals/${dealId}/create-estimate`, {
+            fetch(`{{ url('/deals') }}/${dealId}/create-estimate`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -1744,7 +1744,7 @@
                 }
             });
 
-            fetch(`/deals/${dealId}/create-invoice`, {
+            fetch(`{{ url('/deals') }}/${dealId}/create-invoice`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',

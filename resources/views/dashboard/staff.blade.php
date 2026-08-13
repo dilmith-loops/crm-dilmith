@@ -470,12 +470,12 @@
     }
 
     function openSettleIouModal(id) {
-        fetch(`/petty-cash/${id}`)
+        fetch(`{{ url('/petty-cash') }}/${id}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     const pc = data.pettyCash;
-                    document.getElementById('settleIouForm').action = `/petty-cash/${id}/settle`;
+                    document.getElementById('settleIouForm').action = `{{ url('/petty-cash') }}/${id}/settle`;
                     document.getElementById('settleIouModalRef').innerHTML = `<i class="fas fa-file-signature text-brand-purple mr-2"></i> Settle IOU Request: ${pc.reference_number}`;
                     
                     const container = document.getElementById('settleItemsContainer');
@@ -504,7 +504,7 @@
     }
 
     function viewPettyCashDetails(id) {
-        fetch(`/petty-cash/${id}`)
+        fetch(`{{ url('/petty-cash') }}/${id}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -604,12 +604,12 @@
     }
 
     function openReappealModal(id) {
-        fetch(`/petty-cash/${id}`)
+        fetch(`{{ url('/petty-cash') }}/${id}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     const pc = data.pettyCash;
-                    document.getElementById('reappealForm').action = `/petty-cash/${id}/reappeal`;
+                    document.getElementById('reappealForm').action = `{{ url('/petty-cash') }}/${id}/reappeal`;
                     if (pc.hod_id) document.getElementById('reappeal_hod_id').value = pc.hod_id;
                     if (pc.job_number) document.getElementById('reappeal_job_number').value = pc.job_number;
 
