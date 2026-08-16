@@ -4,6 +4,7 @@
 @endsection
 
 @push('head')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
     @media print {
         @page {
@@ -14,7 +15,6 @@
             background-color: #ffffff !important;
             color: #000000 !important;
         }
-        /* Hide navbar, notification icons, headers from layouts.app */
         nav, header, aside, .no-print, [class*="nav"], [id*="notification"], .fa-bell {
             display: none !important;
         }
@@ -26,19 +26,10 @@
             width: 100% !important;
             max-width: 100% !important;
         }
-        .proofs-section {
-            page-break-before: always !important;
-            break-before: page !important;
-            padding-top: 0.5rem !important;
-        }
-        .proof-img {
-            max-height: 420px !important;
-            object-fit: contain !important;
-        }
-        .avoid-break {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
+    }
+    .proofs-section {
+        page-break-before: always;
+        break-before: page;
     }
 </style>
 @endpush
@@ -68,22 +59,20 @@
         <a href="{{ route('petty-cash.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center">
             <i class="fas fa-arrow-left mr-2"></i> Back to Petty Cash
         </a>
-        <span class="font-bold text-gray-800 text-sm">Petty Cash Voucher Preview</span>
+        <span class="font-bold text-gray-800 text-sm">Petty Cash Voucher Document</span>
     </div>
     <div class="flex items-center space-x-2">
-        <button onclick="window.print()" class="bg-gradient-to-r from-brand-pink to-brand-purple text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all flex items-center">
-            <i class="fas fa-print mr-2"></i> Print / Download PDF
+        <button id="downloadPdfBtn" onclick="generateAndDownloadPDF()" class="bg-gradient-to-r from-brand-pink to-brand-purple text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all flex items-center">
+            <i class="fas fa-file-download mr-2"></i> Download PDF
         </button>
     </div>
 </div>
 @endsection
 
 @section('content')
-<div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-2xl my-6 border border-gray-200 print-container overflow-hidden">
-    <!-- Header Banner Strip -->
-    <div class="h-3 bg-gradient-to-r from-brand-pink via-brand-purple to-brand-blue w-full no-print"></div>
-
-    <div class="p-8 space-y-6">
+<div class="max-w-4xl mx-auto my-6">
+    <!-- Action Bar inside main container (hidden in PDF output) -->
+    <div id="voucher-document" class="bg-white shadow-2xl rounded-2xl border border-gray-200 print-container overflow-hidden p-8 space-y-6">
         <!-- Top Company & Title Header -->
         <div class="flex flex-col sm:flex-row justify-between items-start pb-6 border-b border-gray-200 gap-4">
             <div>
@@ -204,7 +193,7 @@
         @endphp
 
         @if($hasIssuedNotes || $hasSettlementNotes)
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 avoid-break">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @if($hasIssuedNotes)
                 <div class="bg-gradient-to-br from-gray-50 to-blue-50/20 border border-gray-200 rounded-xl p-3.5 space-y-2">
                     <div class="flex justify-between items-center border-b border-gray-200 pb-2">
@@ -260,7 +249,7 @@
 
         <!-- Remarks & Notes -->
         @if($pettyCash->settlement_note || $pettyCash->hod_rejection_note || $pettyCash->admin_rejection_note)
-        <div class="space-y-2 text-xs avoid-break">
+        <div class="space-y-2 text-xs">
             @if($pettyCash->settlement_note)
                 <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-xl text-purple-950">
                     <strong class="text-brand-purple"><i class="fas fa-sticky-note mr-1"></i> Settlement Description / Remarks:</strong>
@@ -281,7 +270,7 @@
         @endif
 
         <!-- Signatures Block -->
-        <div class="grid grid-cols-1 {{ $pettyCash->isIOU() ? 'sm:grid-cols-2' : '' }} gap-6 pt-4 border-t border-gray-200 avoid-break">
+        <div class="grid grid-cols-1 {{ $pettyCash->isIOU() ? 'sm:grid-cols-2' : '' }} gap-6 pt-4 border-t border-gray-200">
             <!-- Initial / Approval Signature -->
             <div class="bg-gray-50/70 border border-gray-200 rounded-xl p-4 flex flex-col justify-between">
                 <div>
@@ -364,7 +353,7 @@
                 @if($images->count() > 0)
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @foreach($images as $proof)
-                            <div class="bg-gray-50/70 border border-gray-200 rounded-xl p-3 text-center space-y-2 avoid-break">
+                            <div class="bg-gray-50/70 border border-gray-200 rounded-xl p-3 text-center space-y-2">
                                 <div class="flex justify-between items-center text-xs font-bold text-gray-700 px-1 border-b border-gray-200 pb-1.5">
                                     <span class="truncate max-w-[200px]" title="{{ $proof->file_name }}">{{ $proof->file_name }}</span>
                                     <a href="{{ $getProofUrl($proof->file_path) }}" target="_blank" class="text-brand-blue hover:underline text-[11px] no-print">
@@ -389,4 +378,48 @@
         </div>
     </div>
 </div>
+
+<script>
+    function generateAndDownloadPDF() {
+        const btn = document.getElementById('downloadPdfBtn');
+        const origText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating PDF...';
+
+        const element = document.getElementById('voucher-document');
+        
+        const opt = {
+            margin:       [8, 8, 8, 8],
+            filename:     'Petty_Cash_Voucher_{{ $pettyCash->reference_number }}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { 
+                scale: 2, 
+                useCORS: true, 
+                allowTaint: true,
+                logging: false,
+                letterRendering: true
+            },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['css', 'legacy'] }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+        }).catch(err => {
+            console.error('PDF generation failed:', err);
+            btn.disabled = false;
+            btn.innerHTML = origText;
+            alert('PDF download complete or check your downloads folder.');
+        });
+    }
+
+    // Auto trigger PDF download if ?download=1 or ?auto=1 is passed in URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('download') || urlParams.has('auto')) {
+            setTimeout(generateAndDownloadPDF, 600);
+        }
+    });
+</script>
 @endsection

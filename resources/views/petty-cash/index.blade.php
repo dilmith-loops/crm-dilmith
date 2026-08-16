@@ -148,7 +148,7 @@
                                         class="px-2.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center whitespace-nowrap">
                                         <i class="fas fa-eye mr-1"></i> Details
                                     </button>
-                                    <a href="{{ route('petty-cash.download', $pc) }}" target="_blank"
+                                    <a href="{{ route('petty-cash.download', $pc) }}?download=1" target="_blank"
                                         class="px-2.5 py-1.5 bg-brand-blue text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center whitespace-nowrap shadow-sm" title="Download / Print Voucher">
                                         <i class="fas fa-file-pdf mr-1"></i> Voucher
                                     </a>
@@ -1052,7 +1052,7 @@
     function viewPettyCashDetails(id) {
         const voucherBtn = document.getElementById('modalVoucherLink');
         if (voucherBtn) {
-            voucherBtn.href = "{{ url('/petty-cash') }}/" + id + "/download";
+            voucherBtn.href = "{{ url('/petty-cash') }}/" + id + "/download?download=1";
         }
         fetch("{{ url('/petty-cash') }}/" + id)
             .then(res => res.json())
