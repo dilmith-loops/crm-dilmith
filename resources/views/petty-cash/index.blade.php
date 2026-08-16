@@ -1078,7 +1078,7 @@
                     let signatureHtml = pc.signature_path ? `
                         <div class="mt-4 pt-3 border-t border-gray-200">
                             <h4 class="text-xs sm:text-sm font-bold text-gray-800 mb-2 flex items-center">
-                                <i class="fas fa-signature text-brand-purple mr-1.5"></i> Initial Approved Signature (Money Handed Over)
+                                <i class="fas fa-signature text-brand-purple mr-1.5"></i> ${pc.is_iou ? 'IOU Issued Signature (Money Handed Over)' : 'Approved Signature'}
                             </h4>
                             <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 inline-block">
                                 <img src="{{ url('/public') }}/${pc.signature_path.replace(/^\//, '')}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded">

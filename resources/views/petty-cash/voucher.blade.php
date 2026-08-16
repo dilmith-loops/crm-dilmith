@@ -272,11 +272,12 @@
 
         <!-- Signatures Block -->
         <div class="grid grid-cols-1 {{ $pettyCash->isIOU() ? 'sm:grid-cols-2' : '' }} gap-6 pt-4 border-t border-gray-200">
-            <!-- Initial Approval Signature -->
+            <!-- Initial / Approval Signature -->
             <div class="bg-gray-50/70 border border-gray-200 rounded-xl p-4 flex flex-col justify-between">
                 <div>
                     <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center mb-2">
-                        <i class="fas fa-signature text-brand-purple mr-1.5"></i> Initial Cash Approval / Handover Signature
+                        <i class="fas fa-signature text-brand-purple mr-1.5"></i> 
+                        {{ $pettyCash->isIOU() ? 'IOU Issued / Handover Signature' : 'Approved Signature' }}
                     </h4>
                     @if($pettyCash->signature_path)
                         <div class="bg-white border border-gray-200 rounded-lg p-2 flex items-center justify-center h-24 mb-2">
@@ -290,12 +291,12 @@
                 </div>
                 <div class="text-[11px] text-gray-500 pt-2 border-t border-gray-200/80">
                     <p><strong>Signed Person:</strong> {{ $pettyCash->user->name ?? 'Requester' }}</p>
-                    <p><strong>Handover Date:</strong> {{ $pettyCash->issued_at ? $pettyCash->issued_at->format('d M Y') : ($pettyCash->created_at ? $pettyCash->created_at->format('d M Y') : '-') }}</p>
+                    <p><strong>{{ $pettyCash->isIOU() ? 'Handover Date:' : 'Approval Date:' }}</strong> {{ $pettyCash->issued_at ? $pettyCash->issued_at->format('d M Y') : ($pettyCash->created_at ? $pettyCash->created_at->format('d M Y') : '-') }}</p>
                 </div>
             </div>
 
             @if($pettyCash->isIOU())
-            <!-- Settlement Signature (Only for IOU) -->
+            <!-- Settlement Signature (ONLY for IOU requests) -->
             <div class="bg-emerald-50/50 border border-emerald-200/80 rounded-xl p-4 flex flex-col justify-between">
                 <div>
                     <h4 class="text-xs font-bold text-emerald-900 uppercase tracking-wide flex items-center mb-2">
