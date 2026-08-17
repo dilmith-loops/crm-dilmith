@@ -15,6 +15,7 @@ class PettyCashRequest extends Model
         'hod_id',
         'department',
         'job_number',
+        'extra_notes',
         'total_amount',
         'is_iou',
         'issued_at',

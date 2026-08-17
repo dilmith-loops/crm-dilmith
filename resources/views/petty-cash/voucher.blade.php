@@ -53,25 +53,24 @@
     };
 @endphp
 
-@section('header')
-<div class="flex justify-between items-center no-print w-full max-w-5xl mx-auto px-4 py-2">
-    <div class="flex items-center space-x-2">
-        <a href="{{ route('petty-cash.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Petty Cash
-        </a>
-        <span class="font-bold text-gray-800 text-sm">Petty Cash Voucher Document</span>
-    </div>
-    <div class="flex items-center space-x-2">
-        <button id="downloadPdfBtn" onclick="generateAndDownloadPDF()" class="bg-gradient-to-r from-brand-pink to-brand-purple text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all flex items-center">
-            <i class="fas fa-file-download mr-2"></i> Download PDF
-        </button>
-    </div>
-</div>
-@endsection
+@section('header', 'Petty Cash Voucher')
 
 @section('content')
 <div class="max-w-4xl mx-auto my-6">
-    <!-- Action Bar inside main container (hidden in PDF output) -->
+    <!-- Top Action Bar (hidden in PDF output & print) -->
+    <div class="no-print mb-4 flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-gray-200">
+        <a href="{{ route('petty-cash.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold transition-colors inline-flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Petty Cash
+        </a>
+        <div class="flex items-center gap-3">
+            <span class="text-xs font-bold text-gray-600 hidden sm:inline">Reference: <span class="font-mono text-gray-900">{{ $pettyCash->reference_number }}</span></span>
+            <button id="downloadPdfBtn" onclick="generateAndDownloadPDF()" class="bg-gradient-to-r from-brand-pink to-brand-purple text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all inline-flex items-center cursor-pointer">
+                <i class="fas fa-file-download mr-2"></i> Download PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Voucher Document Container -->
     <div id="voucher-document" class="bg-white shadow-2xl rounded-2xl border border-gray-200 print-container overflow-hidden p-8 space-y-6">
         <!-- Top Company & Title Header -->
         <div class="flex flex-col sm:flex-row justify-between items-start pb-6 border-b border-gray-200 gap-4">
@@ -248,8 +247,14 @@
         @endif
 
         <!-- Remarks & Notes -->
-        @if($pettyCash->settlement_note || $pettyCash->hod_rejection_note || $pettyCash->admin_rejection_note)
+        @if($pettyCash->extra_notes || $pettyCash->settlement_note || $pettyCash->hod_rejection_note || $pettyCash->admin_rejection_note)
         <div class="space-y-2 text-xs">
+            @if($pettyCash->extra_notes)
+                <div class="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-950">
+                    <strong class="text-amber-800"><i class="fas fa-comment-alt mr-1"></i> Extra Notes / Remarks:</strong>
+                    <p class="mt-0.5 text-gray-800">{{ $pettyCash->extra_notes }}</p>
+                </div>
+            @endif
             @if($pettyCash->settlement_note)
                 <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-xl text-purple-950">
                     <strong class="text-brand-purple"><i class="fas fa-sticky-note mr-1"></i> Settlement Description / Remarks:</strong>

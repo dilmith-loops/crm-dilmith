@@ -93,6 +93,7 @@ class PettyCashController extends Controller
         $request->validate([
             'hod_id' => 'required|exists:users,id',
             'job_number' => 'nullable|string|max:255',
+            'extra_notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.expense_category_id' => 'required|exists:expense_categories,id',
             'items.*.amount' => 'required|numeric|min:0.01',
@@ -117,6 +118,7 @@ class PettyCashController extends Controller
             'hod_id' => $request->hod_id,
             'department' => $user->department ?: 'General',
             'job_number' => $request->job_number,
+            'extra_notes' => $request->extra_notes,
             'total_amount' => $totalAmount,
             'is_iou' => $isIou,
             'status' => 'pending_hod',
@@ -409,6 +411,7 @@ class PettyCashController extends Controller
         $request->validate([
             'hod_id' => 'required|exists:users,id',
             'job_number' => 'nullable|string|max:255',
+            'extra_notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.expense_category_id' => 'required|exists:expense_categories,id',
             'items.*.amount' => 'required|numeric|min:0.01',
@@ -438,6 +441,7 @@ class PettyCashController extends Controller
         $pettyCash->update([
             'hod_id' => $request->hod_id,
             'job_number' => $request->job_number,
+            'extra_notes' => $request->extra_notes,
             'total_amount' => $totalAmount,
             'is_iou' => $isIou,
             'status' => $newStatus,
@@ -506,6 +510,7 @@ class PettyCashController extends Controller
         $request->validate([
             'hod_id' => 'required|exists:users,id',
             'job_number' => 'nullable|string|max:255',
+            'extra_notes' => 'nullable|string',
             'status' => 'required|string|in:pending_hod,pending_super_admin,approved,rejected_by_hod,rejected_by_super_admin,iou_issued,pending_settlement,settled',
             'created_at' => 'nullable|date',
             'issued_at' => 'nullable|date',
@@ -533,6 +538,7 @@ class PettyCashController extends Controller
         $updateData = [
             'hod_id' => $request->hod_id,
             'job_number' => $request->job_number,
+            'extra_notes' => $request->extra_notes,
             'status' => $request->status,
             'total_amount' => $totalAmount,
             'is_iou' => $isIou,

@@ -197,7 +197,7 @@
                                             class="px-2.5 py-1.5 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-700 transition-colors inline-flex items-center whitespace-nowrap shadow-sm" title="Edit Request">
                                             <i class="fas fa-edit mr-1"></i> Edit
                                         </button>
-                                        <form action="{{ route('petty-cash.destroy', $pc) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete request {{ $pc->reference_number }}? This will permanently remove all associated items and proofs.');">
+                                        <form action="{{ route('petty-cash.destroy', $pc) }}" method="POST" class="inline-block" onsubmit="return confirmDeletePettyCash(event, this, '{{ $pc->reference_number }}');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit"
@@ -297,6 +297,11 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-800 mb-1">Extra Notes / Remarks</label>
+                <textarea name="extra_notes" rows="2" placeholder="Optional extra notes, remarks, or justification for this request..." class="w-full rounded-lg border-gray-300 text-xs focus:border-brand-blue focus:ring-brand-blue"></textarea>
             </div>
 
             <div>
@@ -701,6 +706,11 @@
             </div>
 
             <div>
+                <label class="block text-sm font-bold text-gray-800 mb-1">Extra Notes / Remarks</label>
+                <textarea name="extra_notes" id="reappealExtraNotes" rows="2" placeholder="Optional extra notes or justification for re-appeal..." class="w-full rounded-lg border-gray-300 text-xs focus:border-brand-blue focus:ring-brand-blue"></textarea>
+            </div>
+
+            <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="block text-sm font-bold text-gray-800">Add Additional Expenditure Proofs</label>
                     <button type="button" onclick="addProofFileInput('reappealProofContainer')" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-md hover:bg-brand-purple transition-all flex items-center">
@@ -818,6 +828,11 @@
                 <div id="editExpenseItemsContainer" class="space-y-2">
                     <!-- Dynamic rows inserted here -->
                 </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-800 mb-1">Extra Notes / Remarks</label>
+                <textarea name="extra_notes" id="editExtraNotes" rows="2" placeholder="Optional extra notes, remarks, or justification..." class="w-full rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500"></textarea>
             </div>
 
             <!-- Proof Attachments Section -->
@@ -1252,14 +1267,17 @@
                     ` : '';
 
                     let notesHtml = '';
+                    if (pc.extra_notes) {
+                        notesHtml += `<div class="p-3 bg-amber-50/80 border border-amber-200 rounded-lg text-xs text-amber-900 mb-2"><strong class="flex items-center gap-1"><i class="fas fa-comment-alt text-amber-700 mr-1"></i> Extra Notes / Remarks:</strong><p class="mt-1 whitespace-pre-line text-gray-800">${pc.extra_notes}</p></div>`;
+                    }
                     if (pc.hod_rejection_note) {
-                        notesHtml += `<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800"><strong>HOD Rejection Note:</strong> ${pc.hod_rejection_note}</div>`;
+                        notesHtml += `<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 mb-2"><strong>HOD Rejection Note:</strong> ${pc.hod_rejection_note}</div>`;
                     }
                     if (pc.admin_rejection_note) {
-                        notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mt-2"><strong>Super Admin Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
+                        notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong>Super Admin Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
                     }
                     if (pc.settlement_note) {
-                        notesHtml += `<div class="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-900 mt-2"><strong><i class="fas fa-sticky-note text-brand-purple mr-1"></i> IOU Settlement Note:</strong> ${pc.settlement_note}</div>`;
+                        notesHtml += `<div class="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-900 mb-2"><strong><i class="fas fa-sticky-note text-brand-purple mr-1"></i> IOU Settlement Note:</strong> ${pc.settlement_note}</div>`;
                     }
 
                     let issuedNotesHtml = renderMoneyNotesBreakdownHtml(pc.issued_money_notes, pc.is_iou ? 'IOU Money Handed Over Breakdown' : 'Approval Money Notes Breakdown');
@@ -1329,6 +1347,8 @@
                     document.getElementById('reappealForm').action = "{{ url('/petty-cash') }}/" + id + "/reappeal";
                     if (pc.hod_id) document.getElementById('reappeal_hod_id').value = pc.hod_id;
                     if (pc.job_number) document.getElementById('reappeal_job_number').value = pc.job_number;
+                    const reappealNotesInput = document.getElementById('reappealExtraNotes');
+                    if (reappealNotesInput) reappealNotesInput.value = pc.extra_notes || '';
 
                     const container = document.getElementById('reappealItemsContainer');
                     container.innerHTML = '';
@@ -1475,6 +1495,9 @@
                     const statusSelect = document.getElementById('editStatus');
                     if (statusSelect) statusSelect.value = pc.status;
 
+                    const extraNotesInput = document.getElementById('editExtraNotes');
+                    if (extraNotesInput) extraNotesInput.value = pc.extra_notes || '';
+
                     const createdAtInput = document.getElementById('editCreatedAt');
                     if (createdAtInput) createdAtInput.value = pc.created_at ? pc.created_at.substring(0, 10) : '';
 
@@ -1570,6 +1593,33 @@
             setTimeout(function() { openReappealModal({{ request('reappeal_id') }}); }, 200);
         });
     @endif
+    function confirmDeletePettyCash(event, formElement, refNumber) {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Delete Petty Cash Request?',
+            html: `Are you sure you want to delete request <strong class="font-mono text-gray-900 whitespace-nowrap">${refNumber}</strong>?<br><span class="text-xs text-red-600 font-medium mt-1.5 block">This will permanently remove all associated items and proofs.</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#4b5563',
+            confirmButtonText: '<i class="fas fa-trash-alt mr-1.5"></i> Yes, Delete Request',
+            cancelButtonText: 'Cancel',
+            buttonsStyling: true,
+            width: '420px',
+            customClass: {
+                popup: 'rounded-2xl shadow-2xl border border-gray-100 p-5',
+                title: 'text-base font-bold text-gray-800 mt-2',
+                htmlContainer: 'text-xs text-gray-600 mt-1',
+                confirmButton: 'px-4 py-2 rounded-lg font-bold text-xs text-white shadow-md transition-all mr-2',
+                cancelButton: 'px-4 py-2 rounded-lg font-semibold text-xs text-gray-700 bg-gray-200 hover:bg-gray-300 transition-all'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                formElement.submit();
+            }
+        });
+        return false;
+    }
 </script>
 @endpush
 @endsection
