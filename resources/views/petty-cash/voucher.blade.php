@@ -27,9 +27,15 @@
             max-width: 100% !important;
         }
     }
+    .page-break-avoid,
+    .signature-block,
+    .notes-block {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
     .proofs-section {
-        page-break-before: always;
-        break-before: page;
+        page-break-before: always !important;
+        break-before: page !important;
     }
 </style>
 @endpush
@@ -71,7 +77,7 @@
     </div>
 
     <!-- Voucher Document Container -->
-    <div id="voucher-document" class="bg-white shadow-2xl rounded-2xl border border-gray-200 print-container overflow-hidden p-8 space-y-6">
+    <div id="voucher-document" class="bg-white shadow-2xl rounded-2xl border border-gray-200 print-container overflow-hidden p-6 space-y-4 sm:p-8 sm:space-y-5">
         <!-- Top Company & Title Header -->
         <div class="flex flex-col sm:flex-row justify-between items-start pb-6 border-b border-gray-200 gap-4">
             <div>
@@ -275,25 +281,25 @@
         @endif
 
         <!-- Signatures Block -->
-        <div class="grid grid-cols-1 {{ $pettyCash->isIOU() ? 'sm:grid-cols-2' : '' }} gap-6 pt-4 border-t border-gray-200">
+        <div class="grid grid-cols-1 {{ $pettyCash->isIOU() ? 'sm:grid-cols-2' : '' }} gap-4 pt-3 border-t border-gray-200 signature-block page-break-avoid">
             <!-- Initial / Approval Signature -->
-            <div class="bg-gray-50/70 border border-gray-200 rounded-xl p-4 flex flex-col justify-between">
+            <div class="bg-gray-50/70 border border-gray-200 rounded-xl p-3.5 flex flex-col justify-between">
                 <div>
-                    <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center mb-2">
+                    <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center mb-1.5">
                         <i class="fas fa-signature text-brand-purple mr-1.5"></i> 
                         {{ $pettyCash->isIOU() ? 'IOU Issued / Handover Signature' : 'Approved Signature' }}
                     </h4>
                     @if($pettyCash->signature_path)
-                        <div class="bg-white border border-gray-200 rounded-lg p-2 flex items-center justify-center h-24 mb-2">
-                            <img src="{{ $getProofUrl($pettyCash->signature_path) }}" alt="Handover Signature" class="max-h-20 max-w-full object-contain">
+                        <div class="bg-white border border-gray-200 rounded-lg p-1.5 flex items-center justify-center h-20 mb-1.5">
+                            <img src="{{ $getProofUrl($pettyCash->signature_path) }}" alt="Handover Signature" class="max-h-16 max-w-full object-contain">
                         </div>
                     @else
-                        <div class="border border-dashed border-gray-300 rounded-lg h-24 flex items-center justify-center text-gray-400 text-xs mb-2 bg-white">
+                        <div class="border border-dashed border-gray-300 rounded-lg h-20 flex items-center justify-center text-gray-400 text-xs mb-1.5 bg-white">
                             No Digital Signature Recorded
                         </div>
                     @endif
                 </div>
-                <div class="text-[11px] text-gray-500 pt-2 border-t border-gray-200/80">
+                <div class="text-[11px] text-gray-500 pt-1.5 border-t border-gray-200/80">
                     <p><strong>Signed Person:</strong> {{ $pettyCash->user->name ?? 'Requester' }}</p>
                     <p><strong>{{ $pettyCash->isIOU() ? 'Handover Date:' : 'Approval Date:' }}</strong> {{ $pettyCash->issued_at ? $pettyCash->issued_at->format('d M Y') : ($pettyCash->created_at ? $pettyCash->created_at->format('d M Y') : '-') }}</p>
                 </div>
@@ -301,22 +307,22 @@
 
             @if($pettyCash->isIOU())
             <!-- Settlement Signature (ONLY for IOU requests) -->
-            <div class="bg-emerald-50/50 border border-emerald-200/80 rounded-xl p-4 flex flex-col justify-between">
+            <div class="bg-emerald-50/50 border border-emerald-200/80 rounded-xl p-3.5 flex flex-col justify-between">
                 <div>
-                    <h4 class="text-xs font-bold text-emerald-900 uppercase tracking-wide flex items-center mb-2">
+                    <h4 class="text-xs font-bold text-emerald-900 uppercase tracking-wide flex items-center mb-1.5">
                         <i class="fas fa-signature text-emerald-600 mr-1.5"></i> IOU Settlement Approval Signature
                     </h4>
                     @if($pettyCash->settlement_signature_path)
-                        <div class="bg-white border border-emerald-200 rounded-lg p-2 flex items-center justify-center h-24 mb-2">
-                            <img src="{{ $getProofUrl($pettyCash->settlement_signature_path) }}" alt="Settlement Signature" class="max-h-20 max-w-full object-contain">
+                        <div class="bg-white border border-emerald-200 rounded-lg p-1.5 flex items-center justify-center h-20 mb-1.5">
+                            <img src="{{ $getProofUrl($pettyCash->settlement_signature_path) }}" alt="Settlement Signature" class="max-h-16 max-w-full object-contain">
                         </div>
                     @else
-                        <div class="border border-dashed border-emerald-200 rounded-lg h-24 flex items-center justify-center text-emerald-400 text-xs mb-2 bg-white">
+                        <div class="border border-dashed border-emerald-200 rounded-lg h-20 flex items-center justify-center text-emerald-400 text-xs mb-1.5 bg-white">
                             Pending Final Settlement Signature
                         </div>
                     @endif
                 </div>
-                <div class="text-[11px] text-emerald-800 pt-2 border-t border-emerald-200/80">
+                <div class="text-[11px] text-emerald-800 pt-1.5 border-t border-emerald-200/80">
                     <p><strong>Settled By:</strong> {{ $pettyCash->user->name ?? 'Requester' }}</p>
                     <p><strong>Settled Date:</strong> {{ $pettyCash->settled_at ? $pettyCash->settled_at->format('d M Y') : 'Not Settled' }}</p>
                 </div>
@@ -394,7 +400,7 @@
         const formattedTime = "{{ now('Asia/Colombo')->format('d M Y, h:i A') }}";
 
         const opt = {
-            margin:       [8, 8, 14, 8],
+            margin:       [6, 6, 12, 6],
             filename:     'Petty_Cash_Voucher_{{ $pettyCash->reference_number }}.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { 
@@ -405,7 +411,7 @@
                 letterRendering: true
             },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: ['css', 'legacy'] }
+            pagebreak:    { mode: ['css', 'legacy'], avoid: ['.page-break-avoid', '.signature-block', '.notes-block', 'tr'] }
         };
 
         html2pdf().set(opt).from(element).toPdf().get('pdf').then(function(pdf) {
