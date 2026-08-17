@@ -555,7 +555,8 @@
                 </div>
             </div>
 
-            <!-- Money Notes Breakdown for Settlement (Optional) -->
+            @if(auth()->user()->hasRole('super_admin'))
+            <!-- Money Notes Breakdown for Settlement (Optional - Super Admin Only) -->
             <div class="bg-gradient-to-r from-purple-50/50 to-pink-50/30 border border-purple-100 rounded-xl p-3.5 space-y-2.5">
                 <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('settleMoneyBreakdownBody').classList.toggle('hidden')">
                     <label class="text-xs font-bold text-purple-900 flex items-center cursor-pointer">
@@ -601,6 +602,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             <div>
                 <div class="flex justify-between items-center mb-1.5">
