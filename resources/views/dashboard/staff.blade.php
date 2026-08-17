@@ -248,6 +248,11 @@
             </div>
 
             <div>
+                <label class="block text-xs sm:text-sm font-bold text-gray-800 mb-1">Extra Notes / Remarks</label>
+                <textarea name="extra_notes" rows="2" placeholder="Optional extra notes, remarks, or justification for this request..." class="w-full rounded-lg border-gray-300 text-base sm:text-xs focus:border-brand-blue focus:ring-brand-blue"></textarea>
+            </div>
+
+            <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="block text-xs sm:text-sm font-bold text-gray-800">Proofs of Expenditure</label>
                     <button type="button" onclick="addProofFileInput('newProofContainerStaff')" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-md hover:bg-brand-purple transition-all flex items-center font-semibold">
@@ -348,6 +353,11 @@
             </div>
 
             <div>
+                <label class="block text-xs sm:text-sm font-bold text-gray-800 mb-1">Extra Notes / Remarks</label>
+                <textarea name="extra_notes" id="reappealExtraNotes" rows="2" placeholder="Optional extra notes or justification for re-appeal..." class="w-full rounded-lg border-gray-300 text-base sm:text-xs focus:border-brand-blue focus:ring-brand-blue"></textarea>
+            </div>
+
+            <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="block text-xs sm:text-sm font-bold text-gray-800">Add Additional Expenditure Proofs</label>
                     <button type="button" onclick="addProofFileInput('reappealProofContainerStaff')" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-md hover:bg-brand-purple transition-all flex items-center font-semibold">
@@ -403,6 +413,14 @@
                 <div id="settleItemsContainer" class="space-y-3">
                     <!-- Dynamic JS content -->
                 </div>
+            </div>
+
+            <!-- Extra Notes / Remarks -->
+            <div>
+                <label class="block text-xs font-bold text-gray-800 mb-1">
+                    <i class="fas fa-comment-alt text-brand-purple mr-1"></i> Extra Notes / Remarks
+                </label>
+                <textarea name="extra_notes" id="staffSettleExtraNotesInput" rows="2" placeholder="Optional extra notes, remarks, or details about settlement..." class="w-full rounded-lg border-gray-300 text-xs focus:border-brand-purple focus:ring-brand-purple"></textarea>
             </div>
 
             <div>
@@ -498,6 +516,11 @@
                         container.appendChild(div);
                     });
 
+                    const notesInput = document.getElementById('staffSettleExtraNotesInput');
+                    if (notesInput) {
+                        notesInput.value = pc.extra_notes || pc.settlement_note || '';
+                    }
+
                     document.getElementById('settleIouModal').classList.remove('hidden');
                 }
             });
@@ -526,11 +549,14 @@
                     `).join('') : '<p class="text-xs text-gray-400">No proof attachments uploaded.</p>';
 
                     let notesHtml = '';
+                    if (pc.extra_notes) {
+                        notesHtml += `<div class="p-3 bg-amber-50/80 border border-amber-200 rounded-lg text-xs text-amber-900 mb-2"><strong class="flex items-center gap-1"><i class="fas fa-comment-alt text-amber-700 mr-1"></i> Extra Notes / Remarks:</strong><p class="mt-1 whitespace-pre-line text-gray-800">${pc.extra_notes}</p></div>`;
+                    }
                     if (pc.hod_rejection_note) {
-                        notesHtml += `<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800"><strong>HOD Rejection Note:</strong> ${pc.hod_rejection_note}</div>`;
+                        notesHtml += `<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 mb-2"><strong>HOD Rejection Note:</strong> ${pc.hod_rejection_note}</div>`;
                     }
                     if (pc.admin_rejection_note) {
-                        notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mt-2"><strong>Super Admin Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
+                        notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong>Super Admin Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
                     }
 
                     let signatureHtml = pc.signature_path ? `
@@ -612,6 +638,8 @@
                     document.getElementById('reappealForm').action = `{{ url('/petty-cash') }}/${id}/reappeal`;
                     if (pc.hod_id) document.getElementById('reappeal_hod_id').value = pc.hod_id;
                     if (pc.job_number) document.getElementById('reappeal_job_number').value = pc.job_number;
+                    const reappealNotesInput = document.getElementById('reappealExtraNotes');
+                    if (reappealNotesInput) reappealNotesInput.value = pc.extra_notes || '';
 
                     const container = document.getElementById('reappealItemsContainer');
                     container.innerHTML = '';

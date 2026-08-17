@@ -341,6 +341,7 @@ class PettyCashController extends Controller
             'items.*.id' => 'required|exists:petty_cash_items,id',
             'items.*.amount' => 'required|numeric|min:0.01',
             'settled_at' => 'nullable|date',
+            'extra_notes' => 'nullable|string',
             'settlement_note' => 'nullable|string',
             'settlement_money_notes' => 'nullable|array',
         ]);
@@ -384,11 +385,13 @@ class PettyCashController extends Controller
         }
 
         $settledAt = $request->filled('settled_at') ? $request->input('settled_at') : now();
+        $settledNote = $request->input('extra_notes') ?: $request->input('settlement_note');
 
         $pettyCash->update([
             'status' => 'pending_settlement',
             'settled_at' => $settledAt,
-            'settlement_note' => $request->input('settlement_note'),
+            'settlement_note' => $settledNote,
+            'extra_notes' => $settledNote ?: $pettyCash->extra_notes,
             'settlement_money_notes' => $request->input('settlement_money_notes'),
         ]);
 

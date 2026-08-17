@@ -541,9 +541,10 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1">
-                        <i class="fas fa-sticky-note text-brand-purple mr-1"></i> Settlement Description / Remarks
+                        <i class="fas fa-comment-alt text-brand-purple mr-1"></i> Extra Notes / Remarks
                     </label>
-                    <input type="text" name="settlement_note" id="settleNoteInput" placeholder="Notes/details about settlement..." class="w-full rounded-lg border-gray-300 text-xs focus:border-brand-purple focus:ring-brand-purple">
+                    <textarea name="extra_notes" id="settleNoteInput" rows="2" placeholder="Optional extra notes or details about settlement..." class="w-full rounded-lg border-gray-300 text-xs focus:border-brand-purple focus:ring-brand-purple"></textarea>
+                    <input type="hidden" name="settlement_note" id="settleNoteHiddenInput">
                 </div>
             </div>
 
@@ -1131,7 +1132,11 @@
 
                     const noteInput = document.getElementById('settleNoteInput');
                     if (noteInput) {
-                        noteInput.value = pc.settlement_note || '';
+                        noteInput.value = pc.extra_notes || pc.settlement_note || '';
+                    }
+                    const noteHiddenInput = document.getElementById('settleNoteHiddenInput');
+                    if (noteHiddenInput) {
+                        noteHiddenInput.value = pc.settlement_note || pc.extra_notes || '';
                     }
 
                     const notesObj = pc.settlement_money_notes || {};
