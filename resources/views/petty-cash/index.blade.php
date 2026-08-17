@@ -178,7 +178,7 @@
                                     <!-- Super Admin Actions (Allowed Anytime) -->
                                     @if(auth()->user()->hasRole('super_admin') || auth()->user()->role === 'Management')
                                         @if(!in_array($pc->status, ['approved', 'settled']))
-                                            <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}')"
+                                            <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}', {{ $pc->total_amount }})"
                                                 class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center whitespace-nowrap">
                                                 <i class="fas fa-check-double mr-1"></i> {{ $pc->status === 'pending_settlement' ? 'Approve Settlement' : 'Approve' }}
                                             </button>
@@ -393,8 +393,11 @@
                 <p class="text-amber-800 text-[11px] mt-0.5">Since this request contains an IOU expense category, a drawn signature from the requested person is REQUIRED to proceed with approval or settlement.</p>
             </div>
 
-            <div class="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5 text-xs text-blue-900 space-y-1">
-                <p><strong>Requester:</strong> <span id="approveRequesterName">-</span></p>
+            <div class="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5 text-xs text-blue-900 space-y-1.5">
+                <div class="flex flex-wrap justify-between items-center gap-2 pb-1 border-b border-blue-100/80">
+                    <p><strong>Requester:</strong> <span id="approveRequesterName">-</span></p>
+                    <p><strong>Requested Amount:</strong> <span id="approveRequestedAmount" class="font-bold text-brand-purple">LKR 0.00</span></p>
+                </div>
                 <p class="text-blue-700" id="approveConfirmationText">Are you sure you want to approve this petty cash request?</p>
             </div>
 
@@ -850,12 +853,21 @@
         }
     }
 
-    function openAdminApproveModal(id, ref, requester, isIou = false, status = '') {
+    function openAdminApproveModal(id, ref, requester, isIou = false, status = '', amount = 0) {
         currentApproveIsIou = isIou;
         document.getElementById('adminApproveForm').action = "{{ url('/petty-cash') }}/" + id + "/admin-approve";
         const actionTitle = status === 'pending_settlement' ? 'Approve Settlement' : 'Approve Request';
         document.getElementById('adminApproveModalRef').innerHTML = `<i class="fas fa-check-double text-brand-pink mr-2"></i> ${actionTitle}: ${ref}`;
         document.getElementById('approveRequesterName').textContent = requester;
+
+        const formattedAmount = typeof amount === 'number'
+            ? amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+            : parseFloat(amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const amountEl = document.getElementById('approveRequestedAmount');
+        if (amountEl) {
+            amountEl.textContent = 'LKR ' + formattedAmount;
+        }
+
         document.getElementById('approveConfirmationText').textContent = status === 'pending_settlement' 
             ? 'Are you sure you want to approve the final settlement for this IOU request?' 
             : 'Are you sure you want to approve this petty cash request?';
@@ -1243,7 +1255,8 @@
                     '{{ $autoPc->reference_number }}',
                     '{{ addslashes($autoPc->user->name ?? "Staff") }}',
                     {{ $autoPc->isIOU() ? 'true' : 'false' }},
-                    '{{ $autoPc->status }}'
+                    '{{ $autoPc->status }}',
+                    {{ $autoPc->total_amount }}
                 );
             }, 200);
         });
