@@ -66,7 +66,7 @@
         </a>
         <a href="{{ route('petty-cash.index', ['scope' => $scope, 'status' => 'pending_super_admin']) }}" 
            class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'pending_super_admin' ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-50 text-blue-800 hover:bg-blue-100' }}">
-            Pending Super Admin
+            Pending Finance Approval
         </a>
         <a href="{{ route('petty-cash.index', ['scope' => $scope, 'status' => 'approved']) }}" 
            class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'approved' ? 'bg-green-600 text-white shadow-sm' : 'bg-green-50 text-green-800 hover:bg-green-100' }}">
@@ -78,7 +78,7 @@
         </a>
         <a href="{{ route('petty-cash.index', ['scope' => $scope, 'status' => 'rejected_by_super_admin']) }}" 
            class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'rejected_by_super_admin' ? 'bg-rose-600 text-white shadow-sm' : 'bg-rose-50 text-rose-800 hover:bg-rose-100' }}">
-            Rejected by Admin
+            Rejected by Finance
         </a>
     </div>
 
@@ -114,7 +114,7 @@
                                     </span>
                                 @elseif($pc->status === 'pending_super_admin')
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center whitespace-nowrap">
-                                        <i class="fas fa-user-shield mr-1"></i> Pending Admin
+                                        <i class="fas fa-user-shield mr-1"></i> Pending Finance Approval
                                     </span>
                                 @elseif($pc->status === 'approved')
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 inline-flex items-center whitespace-nowrap">
@@ -138,7 +138,7 @@
                                     </span>
                                 @elseif($pc->status === 'rejected_by_super_admin')
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 inline-flex items-center whitespace-nowrap" title="{{ $pc->admin_rejection_note }}">
-                                        <i class="fas fa-ban mr-1"></i> Rejected by Admin
+                                        <i class="fas fa-ban mr-1"></i> Rejected by Finance
                                     </span>
                                 @endif
                             </td>
@@ -189,6 +189,22 @@
                                                 <i class="fas fa-ban mr-1"></i> Reject
                                             </button>
                                         @endif
+                                    @endif
+
+                                    <!-- Super Admin Edit & Delete Options -->
+                                    @if(auth()->user()->hasRole('super_admin'))
+                                        <button onclick="openEditPettyCashModal({{ $pc->id }})"
+                                            class="px-2.5 py-1.5 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-700 transition-colors inline-flex items-center whitespace-nowrap shadow-sm" title="Edit Request">
+                                            <i class="fas fa-edit mr-1"></i> Edit
+                                        </button>
+                                        <form action="{{ route('petty-cash.destroy', $pc) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete request {{ $pc->reference_number }}? This will permanently remove all associated items and proofs.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="px-2.5 py-1.5 bg-red-700 text-white text-xs font-semibold rounded-lg hover:bg-red-800 transition-colors inline-flex items-center whitespace-nowrap shadow-sm" title="Delete Request">
+                                                <i class="fas fa-trash-alt mr-1"></i> Delete
+                                            </button>
+                                        </form>
                                     @endif
 
                                     <!-- Re-appeal Action -->
@@ -709,6 +725,132 @@
                 <button type="submit"
                     class="px-5 py-2.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white font-medium rounded-lg hover:opacity-90 shadow-md">
                     Resubmit Re-appeal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Petty Cash Request Modal (Super Admin Only) -->
+<div id="editPettyCashModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 p-2 sm:p-4 md:p-6 flex items-center justify-center">
+    <div class="relative my-auto p-5 sm:p-6 border w-full max-w-3xl shadow-2xl rounded-2xl bg-white max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+            <h3 class="text-lg font-bold text-gray-800 flex items-center" id="editModalRef">
+                <i class="fas fa-edit text-amber-600 mr-2"></i> Edit Petty Cash Request
+            </h3>
+            <button onclick="document.getElementById('editPettyCashModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 p-1">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <form id="editPettyCashForm" action="" method="POST" enctype="multipart/form-data" class="mt-4 space-y-5">
+            @csrf
+            @method('PUT')
+
+            <!-- Requester Banner -->
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex justify-between items-center">
+                <p><strong>Requester:</strong> <span id="editRequesterName">-</span></p>
+                <p><strong>Reference:</strong> <span id="editRefDisplay" class="font-mono font-bold">-</span></p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">HOD Associated With *</label>
+                    <select name="hod_id" id="editHodId" required class="w-full rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500">
+                        @foreach($hods as $h)
+                            <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->department ?: 'HOD' }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Job Number</label>
+                    <select name="job_number" id="editJobNumber" class="w-full rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500">
+                        <option value="">-- Select Job Number (Optional) --</option>
+                        @foreach($jobs as $jobNo)
+                            <option value="{{ $jobNo }}">{{ $jobNo }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Status *</label>
+                    <select name="status" id="editStatus" required class="w-full rounded-lg border-gray-300 text-xs font-semibold focus:border-amber-500 focus:ring-amber-500" onchange="toggleEditDateFields()">
+                        <option value="pending_hod">Pending HOD</option>
+                        <option value="pending_super_admin">Pending Finance Approval</option>
+                        <option value="approved">Approved</option>
+                        <option value="iou_issued">Approved (IOU Unsettled)</option>
+                        <option value="pending_settlement">Settlement Pending</option>
+                        <option value="settled">IOU Settled</option>
+                        <option value="rejected_by_hod">Rejected by HOD</option>
+                        <option value="rejected_by_super_admin">Rejected by Finance</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Date Fields -->
+            <div class="flex flex-wrap items-start gap-4 sm:gap-6" id="editDateFieldsGrid">
+                <div id="editCreatedAtGroup" class="w-full sm:w-auto">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
+                        <i class="fas fa-calendar-alt text-brand-blue mr-1"></i> Request Date (Created) *
+                    </label>
+                    <input type="date" name="created_at" id="editCreatedAt" required class="w-full sm:w-48 rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500 shadow-sm">
+                </div>
+                <div id="editIssuedAtGroup" class="w-full sm:w-auto">
+                    <label class="block text-xs font-bold text-gray-700 mb-1" id="editIssuedAtLabel">
+                        <i class="fas fa-calendar-check text-brand-purple mr-1"></i> Approval Date
+                    </label>
+                    <input type="date" name="issued_at" id="editIssuedAt" class="w-full sm:w-48 rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500 shadow-sm">
+                </div>
+                <div id="editSettledAtGroup" class="w-full sm:w-auto hidden">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
+                        <i class="fas fa-calendar-day text-emerald-600 mr-1"></i> IOU Settled Date
+                    </label>
+                    <input type="date" name="settled_at" id="editSettledAt" class="w-full sm:w-48 rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500 shadow-sm">
+                </div>
+            </div>
+
+            <!-- Line Items Section -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-xs font-bold text-gray-800">Expense Line Items *</label>
+                    <button type="button" onclick="addEditExpenseItemRow()" class="text-xs bg-amber-600 text-white px-3 py-1 rounded-md hover:bg-amber-700 transition-all font-semibold">
+                        <i class="fas fa-plus mr-1"></i> Add Line Item
+                    </button>
+                </div>
+                <div id="editExpenseItemsContainer" class="space-y-2">
+                    <!-- Dynamic rows inserted here -->
+                </div>
+            </div>
+
+            <!-- Proof Attachments Section -->
+            <div>
+                <label class="block text-xs font-bold text-gray-800 mb-1">Existing Proofs / Attachments</label>
+                <div id="editExistingProofsContainer" class="space-y-1.5 mb-3 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                    <p class="text-xs text-gray-400 italic">No existing proofs attached.</p>
+                </div>
+
+                <div class="flex justify-between items-center mb-1.5">
+                    <label class="block text-xs font-bold text-gray-800">Upload Additional Proofs</label>
+                    <button type="button" onclick="addProofFileInput('editProofContainer')" class="text-xs bg-gray-700 text-white px-2.5 py-1 rounded-md hover:bg-gray-800 transition-all">
+                        <i class="fas fa-plus mr-1"></i> Add File
+                    </button>
+                </div>
+                <div id="editProofContainer" class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <input type="file" name="proofs[]" accept="image/*,.pdf,.doc,.docx" class="w-full text-xs text-gray-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 border border-gray-200 rounded-lg p-1">
+                        <button type="button" onclick="if(document.querySelectorAll('#editProofContainer > div').length > 1) this.parentElement.remove()" class="text-red-500 hover:text-red-700 text-xs px-1 flex-shrink-0">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-gray-200">
+                <button type="button" onclick="document.getElementById('editPettyCashModal').classList.add('hidden')"
+                    class="px-4 py-2 bg-gray-200 text-gray-800 text-xs font-medium rounded-lg hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="px-4 py-2 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 shadow-md">
+                    <i class="fas fa-save mr-1"></i> Save Changes
                 </button>
             </div>
         </form>
@@ -1243,6 +1385,156 @@
             </button>
         `;
         container.appendChild(div);
+    }
+
+    let editItemIndex = 0;
+
+    function toggleEditDateFields() {
+        let isIou = window.currentEditIsIou || false;
+        const selects = document.querySelectorAll('#editExpenseItemsContainer select');
+        selects.forEach(select => {
+            const selectedOpt = select.options[select.selectedIndex];
+            if (selectedOpt && selectedOpt.text && selectedOpt.text.toUpperCase().includes('IOU')) {
+                isIou = true;
+            }
+        });
+
+        const statusSelect = document.getElementById('editStatus');
+        if (statusSelect && ['iou_issued', 'pending_settlement', 'settled'].includes(statusSelect.value)) {
+            isIou = true;
+        }
+
+        const settledGroup = document.getElementById('editSettledAtGroup');
+        const issuedLabel = document.getElementById('editIssuedAtLabel');
+
+        if (settledGroup) {
+            if (isIou) {
+                settledGroup.classList.remove('hidden');
+            } else {
+                settledGroup.classList.add('hidden');
+                const settledInput = document.getElementById('editSettledAt');
+                if (settledInput) settledInput.value = '';
+            }
+        }
+
+        if (issuedLabel) {
+            issuedLabel.innerHTML = isIou 
+                ? '<i class="fas fa-calendar-check text-brand-purple mr-1"></i> IOU Handover Date' 
+                : '<i class="fas fa-calendar-check text-brand-purple mr-1"></i> Approval Date';
+        }
+    }
+
+    function addEditExpenseItemRow(catId = '', amount = '', desc = '') {
+        const container = document.getElementById('editExpenseItemsContainer');
+        const div = document.createElement('div');
+        div.className = 'grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-gray-50 p-2.5 rounded-lg border border-gray-200';
+
+        let catOptions = `<option value="">Select Category *</option>` + categoriesData.map(c => 
+            `<option value="${c.id}" ${c.id == catId ? 'selected' : ''}>${c.name}</option>`
+        ).join('');
+
+        div.innerHTML = `
+            <div class="md:col-span-4">
+                <select name="items[${editItemIndex}][expense_category_id]" required class="w-full rounded-md border-gray-300 text-xs focus:ring-amber-500" onchange="toggleEditDateFields()">
+                    ${catOptions}
+                </select>
+            </div>
+            <div class="md:col-span-3">
+                <input type="number" step="0.01" min="0.01" name="items[${editItemIndex}][amount]" value="${amount}" required placeholder="Amount *" class="w-full rounded-md border-gray-300 text-xs focus:ring-amber-500">
+            </div>
+            <div class="md:col-span-4">
+                <input type="text" name="items[${editItemIndex}][description]" value="${desc || ''}" placeholder="Note / Details" class="w-full rounded-md border-gray-300 text-xs focus:ring-amber-500">
+            </div>
+            <div class="md:col-span-1 text-right">
+                <button type="button" onclick="if(document.querySelectorAll('#editExpenseItemsContainer > div').length > 1) this.closest('.grid').remove()" class="text-red-500 hover:text-red-700 p-1">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(div);
+        editItemIndex++;
+    }
+
+    function openEditPettyCashModal(id) {
+        fetch("{{ url('/petty-cash') }}/" + id)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const pc = data.pettyCash;
+                    document.getElementById('editPettyCashForm').action = "{{ url('/petty-cash') }}/" + id;
+                    document.getElementById('editModalRef').innerHTML = `<i class="fas fa-edit text-amber-600 mr-2"></i> Edit Petty Cash Request: ${pc.reference_number}`;
+                    document.getElementById('editRequesterName').textContent = pc.user ? pc.user.name : 'Staff';
+                    document.getElementById('editRefDisplay').textContent = pc.reference_number;
+
+                    const hodSelect = document.getElementById('editHodId');
+                    if (hodSelect) hodSelect.value = pc.hod_id;
+
+                    const jobSelect = document.getElementById('editJobNumber');
+                    if (jobSelect) jobSelect.value = pc.job_number || '';
+
+                    const statusSelect = document.getElementById('editStatus');
+                    if (statusSelect) statusSelect.value = pc.status;
+
+                    const createdAtInput = document.getElementById('editCreatedAt');
+                    if (createdAtInput) createdAtInput.value = pc.created_at ? pc.created_at.substring(0, 10) : '';
+
+                    const issuedAtInput = document.getElementById('editIssuedAt');
+                    if (issuedAtInput) issuedAtInput.value = pc.issued_at ? pc.issued_at.substring(0, 10) : '';
+
+                    const settledAtInput = document.getElementById('editSettledAt');
+                    if (settledAtInput) settledAtInput.value = pc.settled_at ? pc.settled_at.substring(0, 10) : '';
+
+                    window.currentEditIsIou = pc.is_iou;
+                    toggleEditDateFields();
+
+                    // Populate line items
+                    const container = document.getElementById('editExpenseItemsContainer');
+                    container.innerHTML = '';
+                    editItemIndex = 0;
+
+                    if (pc.items && pc.items.length > 0) {
+                        pc.items.forEach(item => {
+                            addEditExpenseItemRow(item.expense_category_id, item.amount, item.description);
+                        });
+                    } else {
+                        addEditExpenseItemRow();
+                    }
+
+                    // Populate existing proofs
+                    const proofsContainer = document.getElementById('editExistingProofsContainer');
+                    proofsContainer.innerHTML = '';
+                    if (pc.proofs && pc.proofs.length > 0) {
+                        pc.proofs.forEach(proof => {
+                            const div = document.createElement('div');
+                            div.className = 'flex items-center justify-between bg-white p-2 rounded border border-gray-200 text-xs';
+                            div.innerHTML = `
+                                <a href="{{ url('/') }}/${proof.file_path}" target="_blank" class="text-brand-blue hover:underline flex items-center gap-1.5 truncate">
+                                    <i class="fas fa-paperclip text-gray-400"></i> ${proof.file_name || 'Proof File'}
+                                </a>
+                                <label class="flex items-center gap-1 text-red-600 text-[11px] font-semibold cursor-pointer whitespace-nowrap ml-2">
+                                    <input type="checkbox" name="delete_proofs[]" value="${proof.id}" class="rounded text-red-600 focus:ring-red-500"> Delete
+                                </label>
+                            `;
+                            proofsContainer.appendChild(div);
+                        });
+                    } else {
+                        proofsContainer.innerHTML = '<p class="text-xs text-gray-400 italic">No existing proofs attached.</p>';
+                    }
+
+                    // Reset new proof container
+                    const newProofContainer = document.getElementById('editProofContainer');
+                    newProofContainer.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <input type="file" name="proofs[]" accept="image/*,.pdf,.doc,.docx" class="w-full text-xs text-gray-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 border border-gray-200 rounded-lg p-1">
+                            <button type="button" onclick="if(document.querySelectorAll('#editProofContainer > div').length > 1) this.parentElement.remove()" class="text-red-500 hover:text-red-700 text-xs px-1 flex-shrink-0">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    document.getElementById('editPettyCashModal').classList.remove('hidden');
+                }
+            });
     }
 
     @if(request('approve_id'))

@@ -494,4 +494,144 @@ class PettyCashController extends Controller
         $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
         return view('petty-cash.voucher', compact('pettyCash'));
     }
+
+    public function update(Request $request, PettyCashRequest $pettyCash)
+    {
+        $user = auth()->user();
+
+        if (!$user->hasRole('super_admin')) {
+            return redirect()->back()->with('error', 'Unauthorized action. Only Super Admin can edit petty cash requests.');
+        }
+
+        $request->validate([
+            'hod_id' => 'required|exists:users,id',
+            'job_number' => 'nullable|string|max:255',
+            'status' => 'required|string|in:pending_hod,pending_super_admin,approved,rejected_by_hod,rejected_by_super_admin,iou_issued,pending_settlement,settled',
+            'created_at' => 'nullable|date',
+            'issued_at' => 'nullable|date',
+            'settled_at' => 'nullable|date',
+            'items' => 'required|array|min:1',
+            'items.*.expense_category_id' => 'required|exists:expense_categories,id',
+            'items.*.amount' => 'required|numeric|min:0.01',
+            'items.*.description' => 'nullable|string',
+            'proofs' => 'nullable|array',
+            'proofs.*' => 'file|mimes:jpeg,png,jpg,pdf,doc,docx|max:10240',
+            'delete_proofs' => 'nullable|array',
+            'delete_proofs.*' => 'exists:petty_cash_proofs,id',
+        ]);
+
+        $totalAmount = 0;
+        $isIou = false;
+        foreach ($request->items as $item) {
+            $totalAmount += (float)$item['amount'];
+            $category = ExpenseCategory::find($item['expense_category_id']);
+            if ($category && stripos($category->name, 'IOU') !== false) {
+                $isIou = true;
+            }
+        }
+
+        $updateData = [
+            'hod_id' => $request->hod_id,
+            'job_number' => $request->job_number,
+            'status' => $request->status,
+            'total_amount' => $totalAmount,
+            'is_iou' => $isIou,
+        ];
+
+        if ($request->filled('created_at')) {
+            $updateData['created_at'] = $request->created_at;
+        }
+        if ($request->has('issued_at')) {
+            $updateData['issued_at'] = $request->filled('issued_at') ? $request->issued_at : null;
+        }
+        if ($request->has('settled_at')) {
+            $updateData['settled_at'] = $request->filled('settled_at') ? $request->settled_at : null;
+        }
+
+        $pettyCash->update($updateData);
+
+        // Recreate items
+        $pettyCash->items()->delete();
+        foreach ($request->items as $itemData) {
+            PettyCashItem::create([
+                'petty_cash_request_id' => $pettyCash->id,
+                'expense_category_id' => $itemData['expense_category_id'],
+                'amount' => $itemData['amount'],
+                'description' => $itemData['description'] ?? null,
+            ]);
+        }
+
+        // Handle deletion of existing proofs
+        if ($request->has('delete_proofs')) {
+            $proofsToDelete = PettyCashProof::whereIn('id', $request->delete_proofs)
+                ->where('petty_cash_request_id', $pettyCash->id)
+                ->get();
+            foreach ($proofsToDelete as $proof) {
+                $fullPath = public_path($proof->file_path);
+                if (file_exists($fullPath)) {
+                    @unlink($fullPath);
+                }
+                $proof->delete();
+            }
+        }
+
+        // Upload new proof files
+        if ($request->hasFile('proofs')) {
+            foreach ($request->file('proofs') as $file) {
+                $filename = time() . '_' . uniqid() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+                $destinationPath = public_path('uploads/petty_cash_proofs');
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0777, true);
+                }
+                $file->move($destinationPath, $filename);
+                $filePath = 'uploads/petty_cash_proofs/' . $filename;
+
+                PettyCashProof::create([
+                    'petty_cash_request_id' => $pettyCash->id,
+                    'file_path' => $filePath,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_type' => $file->getClientMimeType(),
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Petty Cash request updated successfully.');
+    }
+
+    public function destroy(PettyCashRequest $pettyCash)
+    {
+        $user = auth()->user();
+
+        if (!$user->hasRole('super_admin')) {
+            return redirect()->back()->with('error', 'Unauthorized action. Only Super Admin can delete petty cash requests.');
+        }
+
+        // Clean up proof files
+        foreach ($pettyCash->proofs as $proof) {
+            $fullPath = public_path($proof->file_path);
+            if (file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
+        }
+
+        // Clean up signature files
+        if ($pettyCash->signature_path) {
+            $sigPath = public_path($pettyCash->signature_path);
+            if (file_exists($sigPath)) {
+                @unlink($sigPath);
+            }
+        }
+        if ($pettyCash->settlement_signature_path) {
+            $setSigPath = public_path($pettyCash->settlement_signature_path);
+            if (file_exists($setSigPath)) {
+                @unlink($setSigPath);
+            }
+        }
+
+        $pettyCash->items()->delete();
+        $pettyCash->proofs()->delete();
+        $pettyCash->delete();
+
+        return redirect()->back()->with('success', 'Petty Cash request deleted successfully.');
+    }
 }

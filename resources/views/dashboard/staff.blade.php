@@ -119,7 +119,7 @@
                                     </span>
                                 @elseif($pc->status === 'pending_super_admin')
                                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center whitespace-nowrap">
-                                        Pending Admin
+                                        Pending Finance Approval
                                     </span>
                                 @elseif($pc->status === 'approved')
                                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 inline-flex items-center whitespace-nowrap">
@@ -143,7 +143,7 @@
                                     </span>
                                 @elseif($pc->status === 'rejected_by_super_admin')
                                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 inline-flex items-center whitespace-nowrap" title="{{ $pc->admin_rejection_note }}">
-                                        Rejected by Admin
+                                        Rejected by Finance
                                     </span>
                                 @endif
                             </td>

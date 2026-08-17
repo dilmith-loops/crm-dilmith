@@ -39,6 +39,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/petty-cash', [PettyCashController::class, 'index'])->name('petty-cash.index');
     Route::post('/petty-cash', [PettyCashController::class, 'store'])->name('petty-cash.store');
     Route::get('/petty-cash/{pettyCash}', [PettyCashController::class, 'show'])->name('petty-cash.show');
+    Route::put('/petty-cash/{pettyCash}', [PettyCashController::class, 'update'])->name('petty-cash.update');
+    Route::delete('/petty-cash/{pettyCash}', [PettyCashController::class, 'destroy'])->name('petty-cash.destroy');
     Route::post('/petty-cash/{pettyCash}/hod-approve', [PettyCashController::class, 'hodApprove'])->name('petty-cash.hodApprove');
     Route::get('/petty-cash/{id}/hod-approve', function ($id) { return redirect()->route('petty-cash.index', ['hod_approve_id' => $id, 'scope' => 'approvals']); });
     Route::post('/petty-cash/{pettyCash}/hod-reject', [PettyCashController::class, 'hodReject'])->name('petty-cash.hodReject');
