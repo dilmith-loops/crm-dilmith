@@ -2,12 +2,10 @@
 
 namespace App\Notifications;
 
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Mail\PettyCashVoucherMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Log;
 
 class PettyCashNotification extends Notification
 {
@@ -70,112 +68,10 @@ class PettyCashNotification extends Notification
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $notifiable): PettyCashVoucherMail
     {
-        $ref = $this->pettyCash->reference_number;
-        $amountStr = "LKR " . number_format($this->pettyCash->total_amount, 2);
-        $isIou = $this->pettyCash->isIOU();
-        $typeStr = $isIou ? 'IOU Request' : 'Petty Cash Request';
-
-        $subject = "";
-        $customMessage = "";
-
-        switch ($this->action) {
-            case 'admin_approved':
-                $subject = "Approved: {$typeStr} {$ref}";
-                $customMessage = "Your {$typeStr} {$ref} for {$amountStr} has been APPROVED by Finance.";
-                break;
-
-            case 'iou_settled':
-                $subject = "IOU Request Settled: {$ref}";
-                $customMessage = "The settlement for IOU request {$ref} ({$amountStr}) has been APPROVED and officially marked as SETTLED by Finance.";
-                break;
-
-            case 'iou_reminder':
-                $issuedDateStr = $this->pettyCash->issued_at ? $this->pettyCash->issued_at->format('d M Y') : 'N/A';
-                $subject = "URGENT REMINDER: Please Settle IOU {$ref}";
-                $customMessage = "This is an urgent reminder regarding your IOU request {$ref} for {$amountStr} issued on {$issuedDateStr}. Please submit your expenditure proofs and settlement promptly.";
-                break;
-
-            case 'submitted':
-                $subject = "New Request Submitted: {$ref}";
-                $customMessage = "A new {$typeStr} {$ref} for {$amountStr} has been submitted and requires review.";
-                break;
-
-            case 'hod_approved':
-                $subject = "HOD Approved: {$ref}";
-                $customMessage = "{$typeStr} {$ref} for {$amountStr} was approved by HOD and is awaiting Finance Approval.";
-                break;
-
-            case 'hod_rejected':
-                $subject = "Request Rejected by HOD: {$ref}";
-                $customMessage = "Your {$typeStr} {$ref} was REJECTED by HOD. Reason: " . ($this->note ?: 'No reason provided');
-                break;
-
-            case 'admin_rejected':
-                $subject = "Request Rejected by Finance: {$ref}";
-                $customMessage = "Your {$typeStr} {$ref} was REJECTED by Finance. Reason: " . ($this->note ?: 'No reason provided');
-                break;
-
-            case 'reappealed':
-                $subject = "Request Re-appealed: {$ref}";
-                $customMessage = "{$typeStr} {$ref} has been re-appealed.";
-                break;
-
-            default:
-                $subject = "Update on Petty Cash Request {$ref}";
-                $customMessage = "{$typeStr} {$ref} was updated.";
-                break;
-        }
-
-        // Generate PDF voucher attachment using DomPDF
-        $tempPdfPath = null;
-        $pdfContent = null;
-        try {
-            $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
-                'pettyCash' => $this->pettyCash
-            ])->setPaper('a4', 'portrait');
-            $pdfContent = $pdf->output();
-
-            if (!empty($pdfContent)) {
-                $tempDir = storage_path('app/temp_vouchers');
-                if (!file_exists($tempDir)) {
-                    mkdir($tempDir, 0777, true);
-                }
-                $filename = "Petty_Cash_Voucher_{$ref}.pdf";
-                $tempPdfPath = $tempDir . '/' . $filename;
-                file_put_contents($tempPdfPath, $pdfContent);
-            }
-        } catch (\Throwable $e) {
-            Log::error('PettyCash PDF Generation Error: ' . $e->getMessage());
-        }
-
-        $mail = (new MailMessage)
-            ->subject($subject)
-            ->view('emails.petty_cash_notification', [
-                'pettyCash' => $this->pettyCash,
-                'action' => $this->action,
-                'actorName' => $this->actor->name ?? 'System',
-                'notifiableName' => $notifiable->name ?? 'User',
-                'customMessage' => $customMessage,
-            ]);
-
-        $filename = "Petty_Cash_Voucher_{$ref}.pdf";
-
-        if (!empty($pdfContent)) {
-            $mail->attachData($pdfContent, $filename, [
-                'mime' => 'application/pdf',
-            ]);
-        }
-
-        if ($tempPdfPath && file_exists($tempPdfPath)) {
-            $mail->attach($tempPdfPath, [
-                'as' => $filename,
-                'mime' => 'application/pdf',
-            ]);
-        }
-
-        return $mail;
+        return (new PettyCashVoucherMail($this->pettyCash, $this->action, $this->actor, $this->note, $notifiable))
+            ->to($notifiable->email);
     }
 
     /**
