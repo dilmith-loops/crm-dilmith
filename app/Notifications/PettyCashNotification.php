@@ -128,20 +128,23 @@ class PettyCashNotification extends Notification
                 break;
         }
 
-        // Get sidebar logo as Base64 Data URI
-        $logoBase64 = '';
-        $logoPath = public_path('images/logo_loops_light.png');
-        if (file_exists($logoPath)) {
-            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
-        }
-
         // Generate PDF voucher attachment using DomPDF
-        $pdfContent = null;
+        $tempPdfPath = null;
         try {
             $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
                 'pettyCash' => $this->pettyCash
             ])->setPaper('a4', 'portrait');
             $pdfContent = $pdf->output();
+
+            if (!empty($pdfContent)) {
+                $tempDir = storage_path('app/temp_vouchers');
+                if (!file_exists($tempDir)) {
+                    mkdir($tempDir, 0777, true);
+                }
+                $filename = "Petty_Cash_Voucher_{$ref}.pdf";
+                $tempPdfPath = $tempDir . '/' . $filename;
+                file_put_contents($tempPdfPath, $pdfContent);
+            }
         } catch (\Throwable $e) {
             Log::error('PettyCash PDF Generation Error: ' . $e->getMessage());
         }
@@ -154,12 +157,12 @@ class PettyCashNotification extends Notification
                 'actorName' => $this->actor->name ?? 'System',
                 'notifiableName' => $notifiable->name ?? 'User',
                 'customMessage' => $customMessage,
-                'logoBase64' => $logoBase64,
             ]);
 
-        if (!empty($pdfContent)) {
+        if ($tempPdfPath && file_exists($tempPdfPath)) {
             $filename = "Petty_Cash_Voucher_{$ref}.pdf";
-            $mail->attachData($pdfContent, $filename, [
+            $mail->attach($tempPdfPath, [
+                'as' => $filename,
                 'mime' => 'application/pdf',
             ]);
         }

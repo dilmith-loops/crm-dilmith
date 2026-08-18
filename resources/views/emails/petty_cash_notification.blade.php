@@ -11,9 +11,13 @@
         <!-- Header Banner with Sidebar Logo -->
         <tr>
             <td style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 24px; text-align: center; color: #ffffff;">
-                @if(!empty($logoBase64))
+                @if(isset($message) && file_exists(public_path('images/logo_loops_light.png')))
                     <div style="margin-bottom: 12px;">
-                        <img src="{{ $logoBase64 }}" alt="Loops Integrated" style="height: 44px; width: auto; display: inline-block;">
+                        <img src="{{ $message->embed(public_path('images/logo_loops_light.png')) }}" alt="Loops Integrated" style="height: 46px; width: auto; display: inline-block;">
+                    </div>
+                @elseif(file_exists(public_path('images/logo_loops_light.png')))
+                    <div style="margin-bottom: 12px;">
+                        <img src="{{ asset('images/logo_loops_light.png') }}" alt="Loops Integrated" style="height: 46px; width: auto; display: inline-block;">
                     </div>
                 @endif
                 <h1 style="margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #ffffff;">
