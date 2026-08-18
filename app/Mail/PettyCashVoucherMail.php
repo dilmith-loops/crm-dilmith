@@ -40,6 +40,9 @@ class PettyCashVoucherMail extends Mailable
         $isIou = $this->pettyCash->isIOU();
         $typeStr = $isIou ? 'IOU Request' : 'Petty Cash Request';
 
+        // Ensure relations are loaded
+        $this->pettyCash->loadMissing('user', 'hod', 'items.category');
+
         $subject = match ($this->action) {
             'admin_approved' => "Approved: {$typeStr} {$ref}",
             'iou_settled' => "IOU Request Settled: {$ref}",
@@ -70,20 +73,22 @@ class PettyCashVoucherMail extends Mailable
         try {
             $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
                 'pettyCash' => $this->pettyCash,
-            ])->setPaper('a4', 'portrait');
+            ])->setPaper('a4', 'portrait')
+              ->setOption('isRemoteEnabled', true)
+              ->setOption('isHtml5ParserEnabled', true);
 
             $pdfBytes = $pdf->output();
             if (!empty($pdfBytes)) {
                 $filename = "Petty_Cash_Voucher_{$ref}.pdf";
                 $tempDir = storage_path('app/public/vouchers');
                 if (!file_exists($tempDir)) {
-                    mkdir($tempDir, 0777, true);
+                    @mkdir($tempDir, 0777, true);
                 }
                 $tempPdfPath = $tempDir . '/' . $filename;
-                file_put_contents($tempPdfPath, $pdfBytes);
+                @file_put_contents($tempPdfPath, $pdfBytes);
             }
         } catch (\Throwable $e) {
-            Log::error('PettyCash Mailable PDF Attachment Error: ' . $e->getMessage());
+            Log::error('PettyCash Mailable PDF Attachment Error: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
         }
 
         $mailable = $this->subject($subject)
@@ -103,7 +108,9 @@ class PettyCashVoucherMail extends Mailable
                 'as' => $filename,
                 'mime' => 'application/pdf',
             ]);
-        } elseif (!empty($pdfBytes)) {
+        }
+
+        if (!empty($pdfBytes)) {
             $mailable->attachData($pdfBytes, $filename, [
                 'mime' => 'application/pdf',
             ]);

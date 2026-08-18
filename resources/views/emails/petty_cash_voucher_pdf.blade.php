@@ -140,6 +140,32 @@
 </head>
 <body>
 
+    @php
+        $sigDataUri = null;
+        if (!empty($pettyCash->signature_path)) {
+            $realSigPath = public_path(ltrim($pettyCash->signature_path, '/'));
+            if (file_exists($realSigPath) && is_file($realSigPath)) {
+                $type = pathinfo($realSigPath, PATHINFO_EXTENSION) ?: 'png';
+                $content = @file_get_contents($realSigPath);
+                if ($content) {
+                    $sigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+                }
+            }
+        }
+
+        $settleSigDataUri = null;
+        if (!empty($pettyCash->settlement_signature_path)) {
+            $realSettleSigPath = public_path(ltrim($pettyCash->settlement_signature_path, '/'));
+            if (file_exists($realSettleSigPath) && is_file($realSettleSigPath)) {
+                $type = pathinfo($realSettleSigPath, PATHINFO_EXTENSION) ?: 'png';
+                $content = @file_get_contents($realSettleSigPath);
+                if ($content) {
+                    $settleSigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+                }
+            }
+        }
+    @endphp
+
     <!-- Header -->
     <table class="header-table">
         <tr>
@@ -258,8 +284,8 @@
                     <div style="font-size: 9px; font-weight: bold; color: #475569; text-transform: uppercase; margin-bottom: 6px;">
                         {{ $pettyCash->isIOU() ? 'IOU Issued / Handover Signature' : 'Approved Signature' }}
                     </div>
-                    @if($pettyCash->signature_path && file_exists(public_path(ltrim($pettyCash->signature_path, '/'))))
-                        <img src="{{ public_path(ltrim($pettyCash->signature_path, '/')) }}" class="sig-image">
+                    @if(!empty($sigDataUri))
+                        <img src="{{ $sigDataUri }}" class="sig-image">
                     @else
                         <div style="height: 40px; line-height: 40px; color: #94a3b8; font-size: 10px;">Digital Signature Recorded</div>
                     @endif
@@ -275,8 +301,8 @@
                     <div style="font-size: 9px; font-weight: bold; color: #065f46; text-transform: uppercase; margin-bottom: 6px;">
                         IOU Settlement Approval Signature
                     </div>
-                    @if($pettyCash->settlement_signature_path && file_exists(public_path(ltrim($pettyCash->settlement_signature_path, '/'))))
-                        <img src="{{ public_path(ltrim($pettyCash->settlement_signature_path, '/')) }}" class="sig-image">
+                    @if(!empty($settleSigDataUri))
+                        <img src="{{ $settleSigDataUri }}" class="sig-image">
                     @else
                         <div style="height: 40px; line-height: 40px; color: #a7f3d0; font-size: 10px;">Pending Final Settlement</div>
                     @endif
