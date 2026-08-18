@@ -72,7 +72,6 @@ class PettyCashNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $actorName = $this->actor->name ?? 'System';
         $ref = $this->pettyCash->reference_number;
         $amountStr = "LKR " . number_format($this->pettyCash->total_amount, 2);
         $isIou = $this->pettyCash->isIOU();
@@ -84,12 +83,12 @@ class PettyCashNotification extends Notification
         switch ($this->action) {
             case 'admin_approved':
                 $subject = "Approved: {$typeStr} {$ref}";
-                $customMessage = "Your {$typeStr} {$ref} for {$amountStr} has been APPROVED by Finance / Super Admin ({$actorName}).";
+                $customMessage = "Your {$typeStr} {$ref} for {$amountStr} has been APPROVED by Finance.";
                 break;
 
             case 'iou_settled':
                 $subject = "IOU Request Settled: {$ref}";
-                $customMessage = "The settlement for IOU request {$ref} ({$amountStr}) has been APPROVED and officially marked as SETTLED by {$actorName}.";
+                $customMessage = "The settlement for IOU request {$ref} ({$amountStr}) has been APPROVED and officially marked as SETTLED by Finance.";
                 break;
 
             case 'iou_reminder':
@@ -100,30 +99,40 @@ class PettyCashNotification extends Notification
 
             case 'submitted':
                 $subject = "New Request Submitted: {$ref}";
-                $customMessage = "A new {$typeStr} {$ref} for {$amountStr} has been submitted by {$actorName} and requires review.";
+                $customMessage = "A new {$typeStr} {$ref} for {$amountStr} has been submitted and requires review.";
                 break;
 
             case 'hod_approved':
                 $subject = "HOD Approved: {$ref}";
-                $customMessage = "{$typeStr} {$ref} for {$amountStr} was approved by HOD ({$actorName}) and is awaiting Finance Approval.";
+                $customMessage = "{$typeStr} {$ref} for {$amountStr} was approved by HOD and is awaiting Finance Approval.";
                 break;
 
             case 'hod_rejected':
+                $subject = "Request Rejected by HOD: {$ref}";
+                $customMessage = "Your {$typeStr} {$ref} was REJECTED by HOD. Reason: " . ($this->note ?: 'No reason provided');
+                break;
+
             case 'admin_rejected':
-                $byStr = $this->action === 'hod_rejected' ? 'HOD' : 'Finance / Super Admin';
-                $subject = "Request Rejected: {$ref}";
-                $customMessage = "Your {$typeStr} {$ref} was REJECTED by {$byStr} ({$actorName}). Reason: " . ($this->note ?: 'No reason provided');
+                $subject = "Request Rejected by Finance: {$ref}";
+                $customMessage = "Your {$typeStr} {$ref} was REJECTED by Finance. Reason: " . ($this->note ?: 'No reason provided');
                 break;
 
             case 'reappealed':
                 $subject = "Request Re-appealed: {$ref}";
-                $customMessage = "{$typeStr} {$ref} has been re-appealed by {$actorName}.";
+                $customMessage = "{$typeStr} {$ref} has been re-appealed.";
                 break;
 
             default:
                 $subject = "Update on Petty Cash Request {$ref}";
-                $customMessage = "{$typeStr} {$ref} was updated by {$actorName}.";
+                $customMessage = "{$typeStr} {$ref} was updated.";
                 break;
+        }
+
+        // Get sidebar logo as Base64 Data URI
+        $logoBase64 = '';
+        $logoPath = public_path('images/logo_loops_light.png');
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
         }
 
         // Generate PDF voucher attachment using DomPDF
@@ -142,12 +151,13 @@ class PettyCashNotification extends Notification
             ->view('emails.petty_cash_notification', [
                 'pettyCash' => $this->pettyCash,
                 'action' => $this->action,
-                'actorName' => $actorName,
+                'actorName' => $this->actor->name ?? 'System',
                 'notifiableName' => $notifiable->name ?? 'User',
                 'customMessage' => $customMessage,
+                'logoBase64' => $logoBase64,
             ]);
 
-        if ($pdfContent) {
+        if (!empty($pdfContent)) {
             $filename = "Petty_Cash_Voucher_{$ref}.pdf";
             $mail->attachData($pdfContent, $filename, [
                 'mime' => 'application/pdf',
@@ -170,31 +180,31 @@ class PettyCashNotification extends Notification
 
         switch ($this->action) {
             case 'submitted':
-                $message = "New Petty Cash request {$ref} submitted by {$actorName} requiring HOD approval.";
+                $message = "New Petty Cash request {$ref} submitted requiring HOD approval.";
                 break;
             case 'hod_approved':
-                $message = "Petty Cash request {$ref} was approved by HOD {$actorName} and awaits Finance approval.";
+                $message = "Petty Cash request {$ref} was approved by HOD and awaits Finance approval.";
                 break;
             case 'hod_rejected':
-                $message = "Petty Cash request {$ref} was rejected by HOD {$actorName}. Reason: {$this->note}";
+                $message = "Petty Cash request {$ref} was rejected by HOD. Reason: {$this->note}";
                 break;
             case 'admin_approved':
-                $message = "Petty Cash request {$ref} was APPROVED by {$actorName}." . ($this->pettyCash->isIOU() ? " (Must be settled within 72 hours)" : "");
+                $message = "Petty Cash request {$ref} was APPROVED by Finance." . ($this->pettyCash->isIOU() ? " (Must be settled within 72 hours)" : "");
                 break;
             case 'admin_rejected':
-                $message = "Petty Cash request {$ref} was REJECTED by {$actorName}. Reason: {$this->note}";
+                $message = "Petty Cash request {$ref} was REJECTED by Finance. Reason: {$this->note}";
                 break;
             case 'iou_settled':
-                $message = "IOU request {$ref} settlement has been APPROVED by {$actorName}.";
+                $message = "IOU request {$ref} settlement has been APPROVED by Finance.";
                 break;
             case 'iou_reminder':
                 $message = "REMINDER: IOU request {$ref} requires settlement (72-hour policy).";
                 break;
             case 'reappealed':
-                $message = "Petty Cash request {$ref} has been re-appealed by {$actorName}.";
+                $message = "Petty Cash request {$ref} has been re-appealed.";
                 break;
             default:
-                $message = "Petty Cash request {$ref} was updated by {$actorName}.";
+                $message = "Petty Cash request {$ref} was updated.";
                 break;
         }
 

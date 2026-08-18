@@ -8,13 +8,18 @@
 
     <table align="center" width="100%" max-width="640" style="max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
         
-        <!-- Header Banner -->
+        <!-- Header Banner with Sidebar Logo -->
         <tr>
-            <td style="background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%); padding: 24px; text-align: center; color: #ffffff;">
-                <h1 style="margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+            <td style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 24px; text-align: center; color: #ffffff;">
+                @if(!empty($logoBase64))
+                    <div style="margin-bottom: 12px;">
+                        <img src="{{ $logoBase64 }}" alt="Loops Integrated" style="height: 44px; width: auto; display: inline-block;">
+                    </div>
+                @endif
+                <h1 style="margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #ffffff;">
                     LOOPS FINANCE
                 </h1>
-                <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #c7d2fe; opacity: 0.9;">
                     {{ $pettyCash->isIOU() ? 'IOU Petty Cash System' : 'Petty Cash Management System' }}
                 </p>
             </td>
@@ -62,7 +67,7 @@
                     Hello <strong>{{ $notifiableName }}</strong>,
                 </p>
                 
-                <p style="font-size: 13px; color: #475569; margin-bottom: 20px;">
+                <p style="font-size: 13px; color: #475569; margin-bottom: 20px; font-weight: 500;">
                     {{ $customMessage }}
                 </p>
 
