@@ -524,10 +524,11 @@
         </div>
         <form id="settleIouForm" action="" method="POST" enctype="multipart/form-data" class="mt-4 space-y-5">
             @csrf
-            <div class="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2">
-                <i class="fas fa-info-circle text-brand-purple text-base mt-0.5 flex-shrink-0"></i>
+            <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2.5">
+                <i class="fas fa-clock text-brand-purple text-lg mt-0.5 flex-shrink-0"></i>
                 <div>
-                    <strong>IOU Settlement Process:</strong> Set the settlement date, upload expenditure proofs (receipts/bills), add optional notes, and confirm money breakdown. Once submitted, Super Admin will review and approve the settlement.
+                    <strong class="text-purple-950 font-extrabold block mb-0.5">IOU 72-Hour Settlement Requirement:</strong>
+                    All IOUs must be settled with expenditure proofs (receipts, bills, or invoices) <strong>within 72 hours of approval</strong>. Once submitted, Super Admin will review and approve the settlement.
                 </div>
             </div>
 
@@ -1290,10 +1291,30 @@
                     let issuedNotesHtml = renderMoneyNotesBreakdownHtml(pc.issued_money_notes, pc.is_iou ? 'IOU Money Handed Over Breakdown' : 'Approval Money Notes Breakdown');
                     let settlementNotesHtml = renderMoneyNotesBreakdownHtml(pc.settlement_money_notes, 'IOU Settlement Money Notes Breakdown');
 
-                    const createdOrIssuedDate = formatDateStr(pc.issued_at || pc.created_at);
-                    const settledDateDisplay = pc.settled_at ? formatDateStr(pc.settled_at) : (pc.status === 'pending_settlement' ? 'Pending Approval' : 'Not Settled Yet');
+                    let iouPolicyBannerHtml = '';
+                    if (pc.is_iou && pc.status !== 'settled') {
+                        iouPolicyBannerHtml = `
+                            <div class="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 shadow-2xs">
+                                <div>
+                                    <strong class="flex items-center text-amber-900 font-bold text-xs sm:text-sm">
+                                        <i class="fas fa-clock text-amber-600 mr-1.5"></i> 72-Hour IOU Settlement Policy Notice
+                                    </strong>
+                                    <p class="mt-0.5 text-amber-800 text-xs">
+                                        This IOU must be settled with expenditure proofs & receipts <strong>within 72 hours of approval</strong>.
+                                    </p>
+                                </div>
+                                <form action="{{ url('/petty-cash') }}/${pc.id}/remind-iou" method="POST" class="flex-shrink-0">
+                                    @csrf
+                                    <button type="submit" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs shadow transition-colors flex items-center gap-1.5">
+                                        <i class="fas fa-paper-plane"></i> Send Email Reminder
+                                    </button>
+                                </form>
+                            </div>
+                        `;
+                    }
 
                     document.getElementById('modalBody').innerHTML = `
+                        ${iouPolicyBannerHtml}
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl text-xs">
                             <div><span class="text-gray-500 block">Requested By:</span><strong class="text-gray-800 text-sm">${pc.user ? pc.user.name : '-'}</strong></div>
                             <div><span class="text-gray-500 block">Department:</span><strong class="text-gray-800 text-sm">${pc.department || '-'}</strong></div>

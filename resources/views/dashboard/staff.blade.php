@@ -401,10 +401,11 @@
         </div>
         <form id="settleIouForm" action="" method="POST" enctype="multipart/form-data" class="mt-4 space-y-5">
             @csrf
-            <div class="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2">
-                <i class="fas fa-info-circle text-brand-purple text-base mt-0.5 flex-shrink-0"></i>
+            <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2.5">
+                <i class="fas fa-clock text-brand-purple text-lg mt-0.5 flex-shrink-0"></i>
                 <div>
-                    <strong>IOU Settlement Process:</strong> Upload your expenditure proofs (receipts, bills, or invoices) and confirm the final spent line item amounts. Once submitted, Super Admin will review and approve the settlement.
+                    <strong class="text-purple-950 font-extrabold block mb-0.5">IOU 72-Hour Settlement Requirement:</strong>
+                    All IOUs must be settled with expenditure proofs (receipts, bills, or invoices) <strong>within 72 hours of approval</strong>. Once submitted, Super Admin will review and approve the settlement.
                 </div>
             </div>
 
@@ -581,7 +582,21 @@
                         </div>
                     ` : '';
 
+                    let iouPolicyBannerHtml = '';
+                    if (pc.is_iou && pc.status !== 'settled') {
+                        iouPolicyBannerHtml = `
+                            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 mb-3 flex items-start gap-2">
+                                <i class="fas fa-clock text-amber-600 text-base mt-0.5 flex-shrink-0"></i>
+                                <div>
+                                    <strong class="text-amber-950 font-bold block">72-Hour IOU Settlement Policy Notice:</strong>
+                                    This IOU must be settled with expenditure proofs & receipts <strong>within 72 hours of approval</strong>.
+                                </div>
+                            </div>
+                        `;
+                    }
+
                     document.getElementById('modalBody').innerHTML = `
+                        ${iouPolicyBannerHtml}
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 bg-gray-50 p-3.5 sm:p-4 rounded-xl text-xs">
                             <div><span class="text-gray-500 block text-[10px] sm:text-xs">Requested By:</span><strong class="text-gray-800 text-xs sm:text-sm">${pc.user ? pc.user.name : '-'}</strong></div>
                             <div><span class="text-gray-500 block text-[10px] sm:text-xs">Department:</span><strong class="text-gray-800 text-xs sm:text-sm">${pc.department || '-'}</strong></div>

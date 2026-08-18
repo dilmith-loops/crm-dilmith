@@ -266,7 +266,10 @@ class PettyCashController extends Controller
             $pettyCash->update($updateData);
 
             if ($pettyCash->user) {
-                $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
+                $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'iou_settled', $user));
+            }
+            if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
+                $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'iou_settled', $user));
             }
             return redirect()->back()->with('success', 'IOU Settlement has been APPROVED and marked as SETTLED.');
         }
@@ -296,6 +299,31 @@ class PettyCashController extends Controller
 
         $msg = $isIOU ? 'IOU Request APPROVED & Money Handed Over (Status: Unsettled IOU).' : 'Petty Cash request APPROVED successfully.';
         return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * Send email reminder to Staff and HOD for unsettled IOU.
+     */
+    public function sendIouReminder(Request $request, PettyCashRequest $pettyCash)
+    {
+        $user = auth()->user();
+
+        if (!$user->hasRole('super_admin') && $user->id !== $pettyCash->hod_id) {
+            return redirect()->back()->with('error', 'Unauthorized action.');
+        }
+
+        if (!$pettyCash->isIOU() || $pettyCash->status === 'settled') {
+            return redirect()->back()->with('error', 'This request is not an active unsettled IOU.');
+        }
+
+        if ($pettyCash->user) {
+            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $user));
+        }
+        if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
+            $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $user));
+        }
+
+        return redirect()->back()->with('success', 'Reminder email to settle the IOU has been sent to ' . ($pettyCash->user->name ?? 'Staff') . ' and HOD.');
     }
 
     public function adminReject(Request $request, PettyCashRequest $pettyCash)

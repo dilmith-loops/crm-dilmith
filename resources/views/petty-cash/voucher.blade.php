@@ -112,6 +112,13 @@
             </div>
         </div>
 
+        @if($pettyCash->isIOU() && $pettyCash->status !== 'settled')
+        <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900 font-semibold flex items-center gap-2">
+            <i class="fas fa-clock text-amber-600 text-xs"></i>
+            <span><strong>72-Hour IOU Settlement Policy Notice:</strong> This IOU should be settled with expenditure proofs & receipts within <strong>72 hours of approval</strong>.</span>
+        </div>
+        @endif
+
         <!-- Meta Details Grid -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gray-50/80 p-4 rounded-xl border border-gray-100 text-xs">
             <div>

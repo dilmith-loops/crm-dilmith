@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('invoices:check-pending')->daily();
+Schedule::command('petty-cash:send-iou-reminders')->daily();
