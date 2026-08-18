@@ -8,18 +8,12 @@
 
     <table align="center" width="100%" max-width="640" style="max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
         
-        <!-- Header Banner with Sidebar Logo -->
+        <!-- Header Banner with Logo -->
         <tr>
             <td style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 24px; text-align: center; color: #ffffff;">
-                @if(isset($message) && file_exists(public_path('images/logo_loops_light.png')))
-                    <div style="margin-bottom: 12px;">
-                        <img src="{{ $message->embed(public_path('images/logo_loops_light.png')) }}" alt="Loops Integrated" style="height: 46px; width: auto; display: inline-block;">
-                    </div>
-                @elseif(file_exists(public_path('images/logo_loops_light.png')))
-                    <div style="margin-bottom: 12px;">
-                        <img src="{{ asset('images/logo_loops_light.png') }}" alt="Loops Integrated" style="height: 46px; width: auto; display: inline-block;">
-                    </div>
-                @endif
+                <div style="margin-bottom: 12px;">
+                    <img src="{{ url('images/logo_loops_light.png') }}" alt="Loops Integrated" style="height: 46px; width: auto; display: inline-block;">
+                </div>
                 <h1 style="margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #ffffff;">
                     LOOPS FINANCE
                 </h1>

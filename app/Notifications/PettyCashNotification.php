@@ -130,6 +130,7 @@ class PettyCashNotification extends Notification
 
         // Generate PDF voucher attachment using DomPDF
         $tempPdfPath = null;
+        $pdfContent = null;
         try {
             $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
                 'pettyCash' => $this->pettyCash
@@ -159,8 +160,15 @@ class PettyCashNotification extends Notification
                 'customMessage' => $customMessage,
             ]);
 
+        $filename = "Petty_Cash_Voucher_{$ref}.pdf";
+
+        if (!empty($pdfContent)) {
+            $mail->attachData($pdfContent, $filename, [
+                'mime' => 'application/pdf',
+            ]);
+        }
+
         if ($tempPdfPath && file_exists($tempPdfPath)) {
-            $filename = "Petty_Cash_Voucher_{$ref}.pdf";
             $mail->attach($tempPdfPath, [
                 'as' => $filename,
                 'mime' => 'application/pdf',
