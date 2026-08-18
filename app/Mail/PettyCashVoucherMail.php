@@ -5,9 +5,6 @@ namespace App\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
@@ -34,11 +31,12 @@ class PettyCashVoucherMail extends Mailable
     }
 
     /**
-     * Get the message envelope.
+     * Build the message.
      */
-    public function envelope(): Envelope
+    public function build()
     {
         $ref = $this->pettyCash->reference_number;
+        $amountStr = "LKR " . number_format($this->pettyCash->total_amount, 2);
         $isIou = $this->pettyCash->isIOU();
         $typeStr = $isIou ? 'IOU Request' : 'Petty Cash Request';
 
@@ -54,21 +52,6 @@ class PettyCashVoucherMail extends Mailable
             default => "Update on Petty Cash Request {$ref}",
         };
 
-        return new Envelope(
-            subject: $subject,
-        );
-    }
-
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        $ref = $this->pettyCash->reference_number;
-        $amountStr = "LKR " . number_format($this->pettyCash->total_amount, 2);
-        $isIou = $this->pettyCash->isIOU();
-        $typeStr = $isIou ? 'IOU Request' : 'Petty Cash Request';
-
         $customMessage = match ($this->action) {
             'admin_approved' => "Your {$typeStr} {$ref} for {$amountStr} has been APPROVED by Finance.",
             'iou_settled' => "The settlement for IOU request {$ref} ({$amountStr}) has been APPROVED and officially marked as SETTLED by Finance.",
@@ -81,28 +64,10 @@ class PettyCashVoucherMail extends Mailable
             default => "{$typeStr} {$ref} was updated.",
         };
 
-        return new Content(
-            view: 'emails.petty_cash_notification',
-            with: [
-                'pettyCash' => $this->pettyCash,
-                'action' => $this->action,
-                'actorName' => $this->actor->name ?? 'System',
-                'notifiableName' => $this->notifiable->name ?? 'User',
-                'customMessage' => $customMessage,
-            ],
-        );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        $attachments = [];
+        // Generate PDF voucher attachment using DomPDF
+        $pdfBytes = null;
+        $tempPdfPath = null;
         try {
-            $ref = $this->pettyCash->reference_number;
             $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
                 'pettyCash' => $this->pettyCash,
             ])->setPaper('a4', 'portrait');
@@ -110,13 +75,40 @@ class PettyCashVoucherMail extends Mailable
             $pdfBytes = $pdf->output();
             if (!empty($pdfBytes)) {
                 $filename = "Petty_Cash_Voucher_{$ref}.pdf";
-                $attachments[] = Attachment::fromData(fn () => $pdfBytes, $filename)
-                    ->withMime('application/pdf');
+                $tempDir = storage_path('app/public/vouchers');
+                if (!file_exists($tempDir)) {
+                    mkdir($tempDir, 0777, true);
+                }
+                $tempPdfPath = $tempDir . '/' . $filename;
+                file_put_contents($tempPdfPath, $pdfBytes);
             }
         } catch (\Throwable $e) {
             Log::error('PettyCash Mailable PDF Attachment Error: ' . $e->getMessage());
         }
 
-        return $attachments;
+        $mailable = $this->subject($subject)
+            ->view('emails.petty_cash_notification')
+            ->with([
+                'pettyCash' => $this->pettyCash,
+                'action' => $this->action,
+                'actorName' => $this->actor->name ?? 'System',
+                'notifiableName' => $this->notifiable->name ?? 'User',
+                'customMessage' => $customMessage,
+            ]);
+
+        $filename = "Petty_Cash_Voucher_{$ref}.pdf";
+
+        if ($tempPdfPath && file_exists($tempPdfPath)) {
+            $mailable->attach($tempPdfPath, [
+                'as' => $filename,
+                'mime' => 'application/pdf',
+            ]);
+        } elseif (!empty($pdfBytes)) {
+            $mailable->attachData($pdfBytes, $filename, [
+                'mime' => 'application/pdf',
+            ]);
+        }
+
+        return $mailable;
     }
 }
