@@ -186,8 +186,11 @@ class PettyCashController extends Controller
             'status' => 'pending_super_admin',
         ]);
 
-        // Notify Super Admins
-        $superAdmins = User::where('role', 'Super Admin')->get();
+        // Notify Super Admins (rifky@loopsintegrated.com, logini@loopsintegrated.com)
+        $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
+        if ($superAdmins->isEmpty()) {
+            $superAdmins = User::where('role', 'Super Admin')->get();
+        }
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'hod_approved', $user));
 
         return redirect()->back()->with('success', 'Petty Cash request approved and forwarded to Super Admin.');
@@ -423,8 +426,11 @@ class PettyCashController extends Controller
             'settlement_money_notes' => $request->input('settlement_money_notes'),
         ]);
 
-        // Notify Super Admins
-        $superAdmins = User::where('role', 'Super Admin')->get();
+        // Notify Super Admins (rifky@loopsintegrated.com, logini@loopsintegrated.com)
+        $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
+        if ($superAdmins->isEmpty()) {
+            $superAdmins = User::where('role', 'Super Admin')->get();
+        }
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
 
         return redirect()->back()->with('success', 'IOU Settlement details and proofs submitted successfully. Pending Super Admin final approval.');
@@ -512,7 +518,10 @@ class PettyCashController extends Controller
 
         // Notify HOD or Super Admin based on new status
         if ($newStatus === 'pending_super_admin') {
-            $superAdmins = User::where('role', 'Super Admin')->get();
+            $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
+            if ($superAdmins->isEmpty()) {
+                $superAdmins = User::where('role', 'Super Admin')->get();
+            }
             Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'reappealed', $user));
         } else {
             $hod = User::find($request->hod_id);

@@ -2,10 +2,12 @@
 
 namespace App\Notifications;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class PettyCashNotification extends Notification
 {
@@ -13,6 +15,20 @@ class PettyCashNotification extends Notification
     public $action;
     public $note;
     public $actor;
+
+    /**
+     * Master toggle for Super Admin emails.
+     * Set to true when development is finished to enable emails to Super Admins.
+     */
+    public const ENABLE_SUPER_ADMIN_EMAILS = false;
+
+    /**
+     * Target Super Admin email addresses.
+     */
+    public const SUPER_ADMIN_EMAILS = [
+        'rifky@loopsintegrated.com',
+        'logini@loopsintegrated.com',
+    ];
 
     /**
      * Create a new notification instance.
@@ -33,9 +49,21 @@ class PettyCashNotification extends Notification
     public function via(object $notifiable): array
     {
         $channels = ['database'];
+
         if (!empty($notifiable->email)) {
-            $channels[] = 'mail';
+            $isSuperAdmin = in_array(strtolower($notifiable->email), array_map('strtolower', self::SUPER_ADMIN_EMAILS));
+
+            // If recipient is one of the Super Admins, check if Super Admin emails are enabled
+            if ($isSuperAdmin) {
+                if (self::ENABLE_SUPER_ADMIN_EMAILS) {
+                    $channels[] = 'mail';
+                }
+            } else {
+                // Requested Staff and Associated HOD always receive emails
+                $channels[] = 'mail';
+            }
         }
+
         return $channels;
     }
 
@@ -49,80 +77,81 @@ class PettyCashNotification extends Notification
         $amountStr = "LKR " . number_format($this->pettyCash->total_amount, 2);
         $isIou = $this->pettyCash->isIOU();
         $typeStr = $isIou ? 'IOU Request' : 'Petty Cash Request';
-        $url = route('petty-cash.index');
 
-        $mail = new MailMessage();
+        $subject = "";
+        $customMessage = "";
 
         switch ($this->action) {
             case 'admin_approved':
-                $mail->subject("Approved: {$typeStr} {$ref}")
-                    ->greeting("Hello {$notifiable->name},")
-                    ->line("Your {$typeStr} **{$ref}** for **{$amountStr}** has been **APPROVED** by Finance / Super Admin ({$actorName}).");
-                
-                if ($isIou) {
-                    $mail->line("⚠️ **IMPORTANT POLICY NOTICE**: This IOU must be settled with expenditure proofs and receipts **within 72 hours of approval**.");
-                }
-                
-                $mail->action('View Request Details', $url)
-                    ->line('Thank you for using Loops Finance!');
+                $subject = "Approved: {$typeStr} {$ref}";
+                $customMessage = "Your {$typeStr} {$ref} for {$amountStr} has been APPROVED by Finance / Super Admin ({$actorName}).";
                 break;
 
             case 'iou_settled':
-                $mail->subject("IOU Request Settled: {$ref}")
-                    ->greeting("Hello {$notifiable->name},")
-                    ->line("The settlement for IOU request **{$ref}** ({$amountStr}) has been **APPROVED** and officially marked as **SETTLED** by {$actorName}.")
-                    ->action('View Voucher & Details', route('petty-cash.voucher', $this->pettyCash->id))
-                    ->line('Thank you!');
+                $subject = "IOU Request Settled: {$ref}";
+                $customMessage = "The settlement for IOU request {$ref} ({$amountStr}) has been APPROVED and officially marked as SETTLED by {$actorName}.";
                 break;
 
             case 'iou_reminder':
                 $issuedDateStr = $this->pettyCash->issued_at ? $this->pettyCash->issued_at->format('d M Y') : 'N/A';
-                $mail->subject("URGENT REMINDER: Please Settle IOU {$ref}")
-                    ->greeting("Hello {$notifiable->name},")
-                    ->line("This is an urgent reminder regarding your IOU request **{$ref}** for **{$amountStr}** issued on {$issuedDateStr}.")
-                    ->line("⏰ **Policy Notice**: All IOUs should be settled with expenditure bills/receipts **within 72 hours of approval**.")
-                    ->line("Please upload your receipts and submit your settlement request promptly.")
-                    ->action('Settle IOU Now', $url)
-                    ->line('Thank you for your cooperation!');
+                $subject = "URGENT REMINDER: Please Settle IOU {$ref}";
+                $customMessage = "This is an urgent reminder regarding your IOU request {$ref} for {$amountStr} issued on {$issuedDateStr}. Please submit your expenditure proofs and settlement promptly.";
                 break;
 
             case 'submitted':
-                $mail->subject("New Request Submitted: {$ref}")
-                    ->greeting("Hello {$notifiable->name},")
-                    ->line("A new {$typeStr} **{$ref}** for **{$amountStr}** has been submitted by {$actorName} and requires approval.")
-                    ->action('Review Request', $url);
+                $subject = "New Request Submitted: {$ref}";
+                $customMessage = "A new {$typeStr} {$ref} for {$amountStr} has been submitted by {$actorName} and requires review.";
                 break;
 
             case 'hod_approved':
-                $mail->subject("HOD Approved: {$ref}")
-                    ->greeting("Hello {$notifiable->name},")
-                    ->line("{$typeStr} **{$ref}** for **{$amountStr}** was approved by HOD ({$actorName}) and is awaiting Finance Approval.")
-                    ->action('Review Request', $url);
+                $subject = "HOD Approved: {$ref}";
+                $customMessage = "{$typeStr} {$ref} for {$amountStr} was approved by HOD ({$actorName}) and is awaiting Finance Approval.";
                 break;
 
             case 'hod_rejected':
             case 'admin_rejected':
                 $byStr = $this->action === 'hod_rejected' ? 'HOD' : 'Finance / Super Admin';
-                $mail->subject("Request Rejected: {$ref}")
-                    ->greeting("Hello {$notifiable->name},")
-                    ->line("Your {$typeStr} **{$ref}** was **REJECTED** by {$byStr} ({$actorName}).")
-                    ->line("Reason: *" . ($this->note ?: 'No reason provided') . "*")
-                    ->action('View Request', $url);
+                $subject = "Request Rejected: {$ref}";
+                $customMessage = "Your {$typeStr} {$ref} was REJECTED by {$byStr} ({$actorName}). Reason: " . ($this->note ?: 'No reason provided');
                 break;
 
             case 'reappealed':
-                $mail->subject("Request Re-appealed: {$ref}")
-                    ->greeting("Hello {$notifiable->name},")
-                    ->line("{$typeStr} **{$ref}** has been re-appealed by {$actorName}.")
-                    ->action('Review Re-appeal', $url);
+                $subject = "Request Re-appealed: {$ref}";
+                $customMessage = "{$typeStr} {$ref} has been re-appealed by {$actorName}.";
                 break;
 
             default:
-                $mail->subject("Update on Petty Cash Request {$ref}")
-                    ->greeting("Hello {$notifiable->name},")
-                    ->line("{$typeStr} **{$ref}** was updated by {$actorName}.")
-                    ->action('View Request', $url);
+                $subject = "Update on Petty Cash Request {$ref}";
+                $customMessage = "{$typeStr} {$ref} was updated by {$actorName}.";
                 break;
+        }
+
+        // Generate PDF voucher attachment using DomPDF
+        $pdfContent = null;
+        try {
+            $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
+                'pettyCash' => $this->pettyCash
+            ])->setPaper('a4', 'portrait');
+            $pdfContent = $pdf->output();
+        } catch (\Throwable $e) {
+            Log::error('PettyCash PDF Generation Error: ' . $e->getMessage());
+        }
+
+        $mail = (new MailMessage)
+            ->subject($subject)
+            ->view('emails.petty_cash_notification', [
+                'pettyCash' => $this->pettyCash,
+                'action' => $this->action,
+                'actorName' => $actorName,
+                'notifiableName' => $notifiable->name ?? 'User',
+                'customMessage' => $customMessage,
+            ]);
+
+        if ($pdfContent) {
+            $filename = "Petty_Cash_Voucher_{$ref}.pdf";
+            $mail->attachData($pdfContent, $filename, [
+                'mime' => 'application/pdf',
+            ]);
         }
 
         return $mail;
