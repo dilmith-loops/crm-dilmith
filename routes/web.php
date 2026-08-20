@@ -115,6 +115,41 @@ JS;
     return response($sw, 200)->header('Content-Type', 'application/javascript');
 });
 
+// Dynamic Square PWA Icon Route
+Route::get('images/pwa-icon-{size}.png', function ($size) {
+    $size = in_array((int)$size, [192, 512]) ? (int)$size : 192;
+    $logoPath = public_path('images/logo_loops.png');
+    if (!file_exists($logoPath)) {
+        return response('', 404);
+    }
+    
+    $src = imagecreatefrompng($logoPath);
+    $srcW = imagesx($src);
+    $srcH = imagesy($src);
+
+    $dst = imagecreatetruecolor($size, $size);
+    imagealphablending($dst, false);
+    imagesavealpha($dst, true);
+    $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+    imagefill($dst, 0, 0, $transparent);
+
+    $ratio = min(($size - 30) / $srcW, ($size - 30) / $srcH);
+    $newW = (int)($srcW * $ratio);
+    $newH = (int)($srcH * $ratio);
+    $posX = (int)(($size - $newW) / 2);
+    $posY = (int)(($size - $newH) / 2);
+
+    imagecopyresampled($dst, $src, $posX, $posY, 0, 0, $newW, $newH, $srcW, $srcH);
+
+    ob_start();
+    imagepng($dst);
+    $imageData = ob_get_clean();
+
+    return response($imageData, 200)
+        ->header('Content-Type', 'image/png')
+        ->header('Cache-Control', 'public, max-age=604800');
+});
+
 Route::get('maintenance', function () {
     if (\App\Models\Setting::get('maintenance_mode') != 1) {
         return redirect()->route('login');
