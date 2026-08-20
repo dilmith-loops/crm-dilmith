@@ -757,6 +757,59 @@
         container.appendChild(row);
     }
 
+    function validateProofFile(input) {
+        if (!input || !input.files || !input.files[0]) return true;
+        
+        const file = input.files[0];
+        const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'];
+        const fileName = file.name || 'Selected file';
+        const fileExt = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+
+        // Validate format extension
+        if (!allowedExtensions.includes(fileExt)) {
+            input.value = ''; // Reset invalid input
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid File Format',
+                    html: `The file <strong>"${fileName}"</strong> is not in a supported format.<br><br>Allowed formats: <strong>PNG, JPG, JPEG, PDF, DOC, DOCX</strong>.`,
+                    confirmButtonColor: '#ec4899',
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                alert(`Invalid File Format: "${fileName}". Allowed formats are PNG, JPG, JPEG, PDF, DOC, DOCX.`);
+            }
+            return false;
+        }
+
+        // Validate size limit (10MB)
+        if (file.size > maxSizeBytes) {
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            input.value = ''; // Reset invalid input
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'File Too Large',
+                    html: `The file <strong>"${fileName}"</strong> (${fileSizeMB} MB) exceeds the maximum allowed size limit of <strong>10MB</strong>.`,
+                    confirmButtonColor: '#ec4899',
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                alert(`File Too Large: "${fileName}" (${fileSizeMB} MB) exceeds the 10MB limit.`);
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.matches && e.target.matches('input[type="file"][name="proofs[]"]')) {
+            validateProofFile(e.target);
+        }
+    });
+
     function addProofFileInput(containerId) {
         const container = document.getElementById(containerId);
         const div = document.createElement('div');
