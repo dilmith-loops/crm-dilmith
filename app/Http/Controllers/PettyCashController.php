@@ -558,7 +558,11 @@ class PettyCashController extends Controller
     public function downloadVoucher(PettyCashRequest $pettyCash)
     {
         $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
-        return view('petty-cash.voucher', compact('pettyCash'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.petty_cash_voucher_pdf', compact('pettyCash'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isHtml5ParserEnabled', true);
+        return $pdf->download("Petty_Cash_Voucher_{$pettyCash->reference_number}.pdf");
     }
 
     public function update(Request $request, PettyCashRequest $pettyCash)

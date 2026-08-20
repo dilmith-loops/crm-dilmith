@@ -5,6 +5,7 @@ namespace App\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
@@ -97,5 +98,36 @@ class PettyCashVoucherMail extends Mailable
         }
 
         return $this;
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        try {
+            $this->pettyCash->loadMissing('user', 'hod', 'items.category');
+            $ref = $this->pettyCash->reference_number;
+            $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
+                'pettyCash' => $this->pettyCash,
+            ])->setPaper('a4', 'portrait')
+              ->setOption('isRemoteEnabled', true)
+              ->setOption('isHtml5ParserEnabled', true);
+
+            $pdfBytes = $pdf->output();
+            if (!empty($pdfBytes)) {
+                $filename = "Petty_Cash_Voucher_{$ref}.pdf";
+                return [
+                    Attachment::fromData(fn () => $pdfBytes, $filename)
+                        ->withMime('application/pdf'),
+                ];
+            }
+        } catch (\Throwable $e) {
+            Log::error('PettyCash Mailable PDF Attachment Error: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
+        }
+
+        return [];
     }
 }
