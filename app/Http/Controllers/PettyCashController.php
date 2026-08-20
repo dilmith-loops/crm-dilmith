@@ -154,16 +154,17 @@ class PettyCashController extends Controller
             }
         }
 
-        // 1. Notify Super Admins & HOD upon request submission
-        $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
-        if ($superAdmins->isEmpty()) {
-            $superAdmins = User::where('role', 'Super Admin')->get();
-        }
+        // 1. Notify Super Admins, HOD, and Staff upon request submission
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
 
         $hod = User::find($request->hod_id);
         if ($hod) {
             $hod->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
+        }
+
+        if ($user) {
+            $user->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
         }
 
         return redirect()->back()->with('success', 'Petty Cash request submitted successfully and sent to HOD for approval.');
@@ -193,10 +194,7 @@ class PettyCashController extends Controller
         ]);
 
         // 2. Notify Staff & Super Admins upon HOD Approval
-        $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
-        if ($superAdmins->isEmpty()) {
-            $superAdmins = User::where('role', 'Super Admin')->get();
-        }
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'hod_approved', $user));
 
         if ($pettyCash->user) {
@@ -230,10 +228,7 @@ class PettyCashController extends Controller
         if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
             $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'hod_rejected', $user, $request->hod_rejection_note));
         }
-        $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
-        if ($superAdmins->isEmpty()) {
-            $superAdmins = User::where('role', 'Super Admin')->get();
-        }
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'hod_rejected', $user, $request->hod_rejection_note));
 
         return redirect()->back()->with('success', 'Petty Cash request rejected. Staff has been notified.');
@@ -317,10 +312,7 @@ class PettyCashController extends Controller
         if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
             $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
         }
-        $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
-        if ($superAdmins->isEmpty()) {
-            $superAdmins = User::where('role', 'Super Admin')->get();
-        }
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'admin_approved', $user));
 
         $msg = $isIOU ? 'IOU Request APPROVED & Money Handed Over (Status: Unsettled IOU).' : 'Petty Cash request APPROVED successfully.';
@@ -376,10 +368,7 @@ class PettyCashController extends Controller
         if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
             $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
         }
-        $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
-        if ($superAdmins->isEmpty()) {
-            $superAdmins = User::where('role', 'Super Admin')->get();
-        }
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
 
         return redirect()->back()->with('success', 'Petty Cash request rejected by Super Admin. Staff and HOD have been notified.');
@@ -455,10 +444,7 @@ class PettyCashController extends Controller
         ]);
 
         // Notify Super Admins & Requested Staff User
-        $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
-        if ($superAdmins->isEmpty()) {
-            $superAdmins = User::where('role', 'Super Admin')->get();
-        }
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
 
         if ($pettyCash->user && $pettyCash->user->id !== $user->id) {

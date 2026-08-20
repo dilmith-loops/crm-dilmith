@@ -3,9 +3,11 @@
 namespace App\Notifications;
 
 use App\Mail\PettyCashVoucherMail;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class PettyCashNotification extends Notification
 {
@@ -15,23 +17,39 @@ class PettyCashNotification extends Notification
     public $actor;
 
     /**
-     * Master toggle for Super Admin emails.
-     * Set to true when development is finished to enable emails to Super Admins.
-     */
-    public const ENABLE_SUPER_ADMIN_EMAILS = true;
-
-    /**
-     * Master toggle for HOD emails.
-     * Set to true to enable emails to HODs.
-     */
-    public const ENABLE_HOD_EMAILS = false;
-
-    /**
      * Target Super Admin email addresses.
      */
     public const SUPER_ADMIN_EMAILS = [
-        'dilmithsenupa2@gmail.com'
+        'dilmithsenupa2@gmail.com',
+        'rifky@loopsintegrated.com',
+        'logini@loopsintegrated.com',
     ];
+
+    /**
+     * Helper to retrieve all Super Admin notification targets (DB users + custom emails).
+     */
+    public static function getSuperAdminRecipients()
+    {
+        $admins = User::where('role', 'Super Admin')
+            ->orWhere('role', 'super_admin')
+            ->get();
+
+        $existingEmails = $admins->pluck('email')->map(fn($e) => strtolower($e))->toArray();
+
+        foreach (self::SUPER_ADMIN_EMAILS as $email) {
+            if (!empty($email) && !in_array(strtolower($email), $existingEmails)) {
+                $user = User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
+                if ($user) {
+                    $admins->push($user);
+                } else {
+                    $admins->push(NotificationFacade::route('mail', $email));
+                }
+                $existingEmails[] = strtolower($email);
+            }
+        }
+
+        return $admins;
+    }
 
     /**
      * Create a new notification instance.
