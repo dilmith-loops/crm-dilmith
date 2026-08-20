@@ -54,13 +54,14 @@ class PettyCashVoucherMail extends Mailable
         $requesterEmail = strtolower($this->pettyCash->user->email ?? '');
         $hodEmail = strtolower($this->pettyCash->hod->email ?? '');
 
+        // Requester priority: If the notifiable is the user who requested the petty cash, treat as Requester
         $isRequester = ($notifiableId && $notifiableId == $this->pettyCash->user_id) 
             || ($notifiableEmail && $requesterEmail && $notifiableEmail === $requesterEmail);
 
-        $isHod = ($notifiableId && $this->pettyCash->hod_id && $notifiableId == $this->pettyCash->hod_id) 
-            || ($notifiableEmail && $hodEmail && $notifiableEmail === $hodEmail);
+        $isHod = (!$isRequester) && (($notifiableId && $this->pettyCash->hod_id && $notifiableId == $this->pettyCash->hod_id) 
+            || ($notifiableEmail && $hodEmail && $notifiableEmail === $hodEmail));
 
-        $isSuperAdmin = (!$isRequester && !$isHod) || (is_object($this->notifiable) && isset($this->notifiable->role) && in_array(strtolower($this->notifiable->role), ['super admin', 'super_admin']));
+        $isSuperAdmin = (!$isRequester && !$isHod);
 
         $subject = match ($this->action) {
             'submitted' => $isRequester 
