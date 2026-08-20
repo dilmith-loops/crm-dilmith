@@ -590,6 +590,24 @@
         </div>
     </div>
 
+    <!-- Floating iOS PWA Install Banner -->
+    <div id="iosPwaBanner" class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-50 hidden bg-gray-900/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-brand-pink/40 max-w-sm transition-all duration-500 transform">
+        <div class="flex items-start space-x-3">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-pink to-brand-purple p-0.5 flex-shrink-0">
+                <img src="{{ url('images/pwa-icon-192.png') }}" alt="Loops CRM" class="w-full h-full object-contain rounded-xl bg-white p-1">
+            </div>
+            <div class="flex-1 min-w-0">
+                <h4 class="text-xs font-bold text-white leading-tight">Install on iPhone / iPad</h4>
+                <p class="text-[11px] text-gray-300 mt-1 leading-snug">
+                    Tap <i class="fas fa-share-alt text-blue-400"></i> <strong>Share</strong> in Safari and select <strong class="text-brand-pink">Add to Home Screen</strong>.
+                </p>
+            </div>
+            <button type="button" onclick="document.getElementById('iosPwaBanner').classList.add('hidden')" class="text-gray-400 hover:text-white p-1 text-xs flex-shrink-0">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- Service Worker & PWA Installation Script -->
     <script>
         if ('serviceWorker' in navigator) {
@@ -605,17 +623,24 @@
         let deferredPrompt;
         const pwaBtn = document.getElementById('pwaInstallBtn');
         const androidBanner = document.getElementById('androidPwaBanner');
+        const iosBanner = document.getElementById('iosPwaBanner');
 
-        // Hide install button if app is ALREADY running as an installed standalone app
-        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        // Hide install elements if app is ALREADY running as an installed standalone app
+        if (isStandalone) {
             if (pwaBtn) pwaBtn.style.display = 'none';
             if (androidBanner) androidBanner.style.display = 'none';
+            if (iosBanner) iosBanner.style.display = 'none';
+        } else if (isIos) {
+            if (iosBanner) iosBanner.classList.remove('hidden');
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            if (androidBanner && !window.matchMedia('(display-mode: standalone)').matches) {
+            if (androidBanner && !isStandalone) {
                 androidBanner.classList.remove('hidden');
             }
         });
