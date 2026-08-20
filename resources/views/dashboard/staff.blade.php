@@ -528,7 +528,12 @@
     }
 
     function viewPettyCashDetails(id) {
-        fetch(`{{ route('petty-cash.index') }}/${id}`)
+        fetch(`{{ route('petty-cash.index') }}/${id}`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
             .then(res => {
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 return res.json();
@@ -536,6 +541,7 @@
             .then(data => {
                 if (data.success) {
                     const pc = data.pettyCash;
+                    const baseUrl = "{{ url('/') }}";
                     document.getElementById('modalRef').innerHTML = `<i class="fas fa-info-circle text-brand-blue mr-2 text-base sm:text-lg"></i> Request: ${pc.reference_number}`;
                     
                     let itemsHtml = pc.items.map(item => `
@@ -546,11 +552,12 @@
                         </tr>
                     `).join('');
 
-                    let proofsHtml = pc.proofs && pc.proofs.length > 0 ? pc.proofs.map(p => `
-                        <a href="{{ url('/public') }}/${p.file_path.replace(/^\//, '')}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-brand-blue rounded-lg text-xs font-semibold mr-2 mb-2">
+                    let proofsHtml = pc.proofs && pc.proofs.length > 0 ? pc.proofs.map(p => {
+                        const pUrl = p.file_path.startsWith('http') ? p.file_path : `${baseUrl}/${p.file_path.replace(/^\/?(public\/)?/, '')}`;
+                        return `<a href="${pUrl}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-brand-blue rounded-lg text-xs font-semibold mr-2 mb-2">
                             <i class="fas fa-paperclip mr-1.5"></i> ${p.file_name}
-                        </a>
-                    `).join('') : '<p class="text-xs text-gray-400">No proof attachments uploaded.</p>';
+                        </a>`;
+                    }).join('') : '<p class="text-xs text-gray-400">No proof attachments uploaded.</p>';
 
                     let notesHtml = '';
                     if (pc.extra_notes) {
@@ -563,24 +570,26 @@
                         notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong>Super Admin Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
                     }
 
+                    let sigUrl = pc.signature_path ? (pc.signature_path.startsWith('data:image/') ? pc.signature_path : `${baseUrl}/${pc.signature_path.replace(/^\/?(public\/)?/, '')}`) : '';
                     let signatureHtml = pc.signature_path ? `
                         <div class="mt-4 pt-3 border-t border-gray-200">
                             <h4 class="text-xs sm:text-sm font-bold text-gray-800 mb-2 flex items-center">
                                 <i class="fas fa-signature text-brand-purple mr-1.5"></i> Initial Approved Signature (Money Handed Over)
                             </h4>
                             <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 inline-block">
-                                <img src="{{ url('/public') }}/${pc.signature_path.replace(/^\//, '')}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded">
+                                <img src="${sigUrl}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded">
                             </div>
                         </div>
                     ` : '';
 
+                    let settleSigUrl = pc.settlement_signature_path ? (pc.settlement_signature_path.startsWith('data:image/') ? pc.settlement_signature_path : `${baseUrl}/${pc.settlement_signature_path.replace(/^\/?(public\/)?/, '')}`) : '';
                     let settlementSignatureHtml = pc.settlement_signature_path ? `
                         <div class="mt-4 pt-3 border-t border-gray-200">
                             <h4 class="text-xs sm:text-sm font-bold text-emerald-800 mb-2 flex items-center">
                                 <i class="fas fa-signature text-emerald-600 mr-1.5"></i> Settlement Approved Signature (IOU Settled)
                             </h4>
                             <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 inline-block">
-                                <img src="{{ url('/public') }}/${pc.settlement_signature_path.replace(/^\//, '')}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded">
+                                <img src="${settleSigUrl}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded">
                             </div>
                         </div>
                     ` : '';

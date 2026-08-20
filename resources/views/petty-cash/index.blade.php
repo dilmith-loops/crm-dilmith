@@ -1229,9 +1229,14 @@
     function viewPettyCashDetails(id) {
         const voucherBtn = document.getElementById('modalVoucherLink');
         if (voucherBtn) {
-            voucherBtn.href = "{{ route('petty-cash.index') }}/" + id + "/download?download=1";
+            voucherBtn.href = "{{ route('petty-cash.index') }}/" + id + "/download";
         }
-        fetch("{{ route('petty-cash.index') }}/" + id)
+        fetch("{{ route('petty-cash.index') }}/" + id, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
             .then(res => {
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 return res.json();
