@@ -186,7 +186,19 @@
                             <tr>
                                 <td class="py-2.5 px-4 text-gray-400 font-mono">{{ $index + 1 }}</td>
                                 <td class="py-2.5 px-4 font-bold text-gray-900">{{ $item->category->name ?? 'General' }}</td>
-                                <td class="py-2.5 px-4 text-gray-600">{{ $item->description ?: '-' }}</td>
+                                <td class="py-2.5 px-4 text-gray-600">
+                                    <div>{{ $item->description ?: '-' }}</div>
+                                    @if(!empty($item->attendees) && is_array($item->attendees))
+                                        <div class="mt-1 flex flex-wrap gap-1 items-center">
+                                            <span class="text-[10px] text-blue-700 font-bold flex items-center gap-1">
+                                                <i class="fas fa-users text-[9px]"></i> Attendees ({{ count($item->attendees) }}):
+                                            </span>
+                                            @foreach($item->attendees as $person)
+                                                <span class="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-blue-100 text-blue-800 rounded">{{ $person }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </td>
                                 <td class="py-2.5 px-4 text-right font-bold font-mono">LKR {{ number_format($item->amount, 2) }}</td>
                             </tr>
                         @empty

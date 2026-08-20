@@ -14,6 +14,11 @@ class PettyCashItem extends Model
         'expense_category_id',
         'description',
         'amount',
+        'attendees',
+    ];
+
+    protected $casts = [
+        'attendees' => 'array',
     ];
 
     public function request()

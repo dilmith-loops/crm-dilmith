@@ -225,7 +225,7 @@
                     <!-- Initial Row -->
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
                         <div class="md:col-span-4">
-                            <select name="items[0][expense_category_id]" required class="w-full rounded-md border-gray-300 text-base sm:text-xs focus:ring-brand-blue">
+                            <select name="items[0][expense_category_id]" required onchange="toggleDinnerAttendees(this)" class="w-full rounded-md border-gray-300 text-base sm:text-xs focus:ring-brand-blue">
                                 <option value="">Select Category *</option>
                                 @foreach($expenseCategories as $category)
                                     <option value="{{ $category->id }}">{{ $category->name }}</option>
@@ -242,6 +242,21 @@
                             <button type="button" onclick="if(document.querySelectorAll('#expenseItemsContainer .grid').length > 1) this.closest('.grid').remove()" class="text-red-500 hover:text-red-700 text-xs py-1 flex items-center gap-1 font-semibold">
                                 <i class="fas fa-trash"></i> <span class="md:hidden">Remove</span>
                             </button>
+                        </div>
+                        <div class="attendees-container hidden col-span-1 md:col-span-12 mt-2 p-2.5 bg-blue-50/80 border border-blue-200 rounded-lg text-xs">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="font-bold text-blue-900 flex items-center gap-1.5">
+                                    <i class="fas fa-utensils text-brand-blue"></i> Dinner Attendees / People Names (Max 5):
+                                </span>
+                                <span class="text-[11px] text-blue-700">Enter names of people who attended</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                                <input type="text" name="items[0][attendees][]" placeholder="Person 1 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                                <input type="text" name="items[0][attendees][]" placeholder="Person 2 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                                <input type="text" name="items[0][attendees][]" placeholder="Person 3 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                                <input type="text" name="items[0][attendees][]" placeholder="Person 4 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                                <input type="text" name="items[0][attendees][]" placeholder="Person 5 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -456,6 +471,21 @@
 <script>
     const categoriesData = @json($expenseCategories);
 
+    function toggleDinnerAttendees(selectElem) {
+        const row = selectElem.closest('.grid');
+        if (!row) return;
+        const container = row.querySelector('.attendees-container');
+        if (!container) return;
+        
+        const selectedText = selectElem.options[selectElem.selectedIndex]?.text || '';
+        if (selectedText.toLowerCase().includes('dinner')) {
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+            container.querySelectorAll('input').forEach(i => i.value = '');
+        }
+    }
+
     function addExpenseItemRow() {
         const container = document.getElementById('expenseItemsContainer');
         const index = container.children.length;
@@ -468,7 +498,7 @@
         row.className = 'grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center bg-gray-50 p-3 rounded-lg border border-gray-200';
         row.innerHTML = `
             <div class="md:col-span-4">
-                <select name="items[${index}][expense_category_id]" required class="w-full rounded-md border-gray-300 text-base sm:text-xs focus:ring-brand-blue">
+                <select name="items[${index}][expense_category_id]" required onchange="toggleDinnerAttendees(this)" class="w-full rounded-md border-gray-300 text-base sm:text-xs focus:ring-brand-blue">
                     <option value="">Select Category *</option>
                     ${catOptions}
                 </select>
@@ -483,6 +513,21 @@
                 <button type="button" onclick="this.closest('.grid').remove()" class="text-red-500 hover:text-red-700 text-xs py-1 flex items-center gap-1 font-semibold">
                     <i class="fas fa-trash"></i> <span class="md:hidden">Remove</span>
                 </button>
+            </div>
+            <div class="attendees-container hidden col-span-1 md:col-span-12 mt-2 p-2.5 bg-blue-50/80 border border-blue-200 rounded-lg text-xs">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="font-bold text-blue-900 flex items-center gap-1.5">
+                        <i class="fas fa-utensils text-brand-blue"></i> Dinner Attendees / People Names (Max 5):
+                    </span>
+                    <span class="text-[11px] text-blue-700">Enter names of people who attended</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                    <input type="text" name="items[${index}][attendees][]" placeholder="Person 1 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                    <input type="text" name="items[${index}][attendees][]" placeholder="Person 2 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                    <input type="text" name="items[${index}][attendees][]" placeholder="Person 3 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                    <input type="text" name="items[${index}][attendees][]" placeholder="Person 4 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                    <input type="text" name="items[${index}][attendees][]" placeholder="Person 5 Name" class="w-full rounded-md border-blue-200 text-xs focus:ring-brand-blue bg-white">
+                </div>
             </div>
         `;
         container.appendChild(row);

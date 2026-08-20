@@ -98,6 +98,8 @@ class PettyCashController extends Controller
             'items.*.expense_category_id' => 'required|exists:expense_categories,id',
             'items.*.amount' => 'required|numeric|min:0.01',
             'items.*.description' => 'nullable|string',
+            'items.*.attendees' => 'nullable|array|max:5',
+            'items.*.attendees.*' => 'nullable|string|max:100',
             'proofs' => 'nullable|array',
             'proofs.*' => 'file|mimes:jpeg,png,jpg,pdf,doc,docx|max:10240',
         ]);
@@ -126,11 +128,17 @@ class PettyCashController extends Controller
 
         // Save Items
         foreach ($request->items as $itemData) {
+            $attendees = [];
+            if (!empty($itemData['attendees']) && is_array($itemData['attendees'])) {
+                $attendees = array_values(array_slice(array_filter(array_map('trim', $itemData['attendees']), fn($n) => $n !== ''), 0, 5));
+            }
+
             PettyCashItem::create([
                 'petty_cash_request_id' => $pettyCash->id,
                 'expense_category_id' => $itemData['expense_category_id'],
                 'amount' => $itemData['amount'],
                 'description' => $itemData['description'] ?? null,
+                'attendees' => !empty($attendees) ? $attendees : null,
             ]);
         }
 
@@ -408,10 +416,15 @@ class PettyCashController extends Controller
             foreach ($request->items as $itemData) {
                 $item = PettyCashItem::find($itemData['id']);
                 if ($item) {
-                    $item->update([
+                    $updateItemData = [
                         'amount' => $itemData['amount'],
                         'description' => $itemData['description'] ?? $item->description,
-                    ]);
+                    ];
+                    if (isset($itemData['attendees']) && is_array($itemData['attendees'])) {
+                        $attendees = array_values(array_slice(array_filter(array_map('trim', $itemData['attendees']), fn($n) => $n !== ''), 0, 5));
+                        $updateItemData['attendees'] = !empty($attendees) ? $attendees : null;
+                    }
+                    $item->update($updateItemData);
                     $totalAmount += (float)$itemData['amount'];
                 }
             }
@@ -515,11 +528,17 @@ class PettyCashController extends Controller
         // Delete existing items and recreate
         $pettyCash->items()->delete();
         foreach ($request->items as $itemData) {
+            $attendees = [];
+            if (!empty($itemData['attendees']) && is_array($itemData['attendees'])) {
+                $attendees = array_values(array_slice(array_filter(array_map('trim', $itemData['attendees']), fn($n) => $n !== ''), 0, 5));
+            }
+
             PettyCashItem::create([
                 'petty_cash_request_id' => $pettyCash->id,
                 'expense_category_id' => $itemData['expense_category_id'],
                 'amount' => $itemData['amount'],
                 'description' => $itemData['description'] ?? null,
+                'attendees' => !empty($attendees) ? $attendees : null,
             ]);
         }
 

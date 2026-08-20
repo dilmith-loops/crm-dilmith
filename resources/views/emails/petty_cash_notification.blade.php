@@ -144,7 +144,12 @@
                                 {{ $item->category->name ?? 'General' }}
                             </td>
                             <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #64748b;">
-                                {{ $item->description ?: '-' }}
+                                <div>{{ $item->description ?: '-' }}</div>
+                                @if(!empty($item->attendees) && is_array($item->attendees))
+                                    <div style="font-size: 10px; color: #1d4ed8; margin-top: 3px;">
+                                        <strong>Attendees:</strong> {{ implode(', ', $item->attendees) }}
+                                    </div>
+                                @endif
                             </td>
                             <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-weight: bold; text-align: right; font-family: monospace;">
                                 LKR {{ number_format($item->amount, 2) }}

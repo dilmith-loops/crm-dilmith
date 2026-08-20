@@ -283,7 +283,14 @@
             <tr>
                 <td>{{ $idx + 1 }}</td>
                 <td><strong>{{ $item->category->name ?? 'General' }}</strong></td>
-                <td>{{ $item->description ?: '-' }}</td>
+                <td>
+                    <div>{{ $item->description ?: '-' }}</div>
+                    @if(!empty($item->attendees) && is_array($item->attendees))
+                        <div style="font-size: 10px; color: #1d4ed8; margin-top: 2px;">
+                            <strong>Attendees:</strong> {{ implode(', ', $item->attendees) }}
+                        </div>
+                    @endif
+                </td>
                 <td style="text-align: right; font-weight: bold;">LKR {{ number_format($item->amount, 2) }}</td>
             </tr>
             @endforeach
