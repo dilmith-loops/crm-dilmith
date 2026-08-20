@@ -312,8 +312,8 @@
                     </div>
                     @auth
                     <div class="flex items-center space-x-3">
-                        <button type="button" id="pwaInstallBtn" class="hidden px-3 py-1.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 shadow-sm hover:opacity-90 animate-pulse" title="Install App (PWA)">
-                            <i class="fas fa-download"></i>
+                        <button type="button" id="pwaInstallBtn" onclick="triggerPwaInstall()" class="px-3 py-1.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 shadow-sm hover:opacity-90 shadow-purple-500/20" title="Install App (PWA)">
+                            <i class="fas fa-download text-xs"></i>
                             <span class="hidden sm:inline">Install App</span>
                         </button>
                         <button type="button" onclick="document.getElementById('changePasswordModal').classList.remove('hidden')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm" title="Change Password">
@@ -534,13 +534,45 @@
             </form>
         </div>
     </div>
+    <!-- PWA Guidance Modal -->
+    <div id="pwaInstructionModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+        <div class="relative my-auto p-6 border w-full max-w-md shadow-2xl rounded-2xl bg-white text-center">
+            <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center text-brand-purple text-2xl mx-auto mb-3">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+            <h3 class="text-lg font-extrabold text-gray-900">Install Loops CRM App</h3>
+            <p class="text-xs text-gray-500 mt-1 mb-4">Install this application on your phone, tablet, or desktop computer for instant access.</p>
+            
+            <div class="bg-gray-50 p-4 rounded-xl text-left space-y-3 text-xs text-gray-700 border border-gray-200">
+                <div class="flex items-start gap-2.5">
+                    <span class="font-bold text-brand-purple bg-purple-100 px-2 py-0.5 rounded flex-shrink-0">1</span>
+                    <div>
+                        <strong>Chrome / Edge (Desktop & Mobile):</strong>
+                        <p class="text-gray-500 mt-0.5">Click the <i class="fas fa-desktop text-gray-700"></i> <strong>Install App icon</strong> in your browser address bar (top right) or open browser Menu &rarr; <em>Install Loops CRM</em>.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-2.5">
+                    <span class="font-bold text-brand-pink bg-pink-100 px-2 py-0.5 rounded flex-shrink-0">2</span>
+                    <div>
+                        <strong>Safari (iPhone / iPad / Mac):</strong>
+                        <p class="text-gray-500 mt-0.5">Tap the <i class="fas fa-share-alt text-blue-600"></i> <strong>Share button</strong> &rarr; scroll down and choose <em>Add to Home Screen</em>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="document.getElementById('pwaInstructionModal').classList.add('hidden')" class="mt-5 w-full py-2.5 bg-brand-purple text-white text-xs font-bold rounded-xl hover:bg-brand-pink transition-all shadow-md">
+                Got It
+            </button>
+        </div>
+    </div>
+
     <!-- Service Worker & PWA Installation Script -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
-                    console.log('PWA ServiceWorker registered with scope: ', registration.scope);
-                }, function(err) {
+                    console.log('PWA ServiceWorker registered: ', registration.scope);
+                }).catch(function(err) {
                     console.log('PWA ServiceWorker registration failed: ', err);
                 });
             });
@@ -549,25 +581,28 @@
         let deferredPrompt;
         const pwaBtn = document.getElementById('pwaInstallBtn');
 
+        // Hide install button if app is ALREADY running as an installed standalone app
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            if (pwaBtn) pwaBtn.style.display = 'none';
+        }
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            if (pwaBtn) {
-                pwaBtn.classList.remove('hidden');
-            }
         });
 
-        if (pwaBtn) {
-            pwaBtn.addEventListener('click', async () => {
-                if (!deferredPrompt) return;
+        async function triggerPwaInstall() {
+            if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
                 if (outcome === 'accepted') {
-                    console.log('PWA installed successfully');
+                    if (pwaBtn) pwaBtn.style.display = 'none';
                 }
                 deferredPrompt = null;
-                pwaBtn.classList.add('hidden');
-            });
+            } else {
+                const modal = document.getElementById('pwaInstructionModal');
+                if (modal) modal.classList.remove('hidden');
+            }
         }
     </script>
 </body>
