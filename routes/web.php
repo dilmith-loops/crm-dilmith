@@ -34,6 +34,7 @@ Route::get('manifest.json', function () {
         'start_url' => url('/login'),
         'scope' => url('/'),
         'display' => 'standalone',
+        'display_override' => ['standalone', 'minimal-ui'],
         'orientation' => 'any',
         'background_color' => '#ffffff',
         'theme_color' => '#8035ca',
