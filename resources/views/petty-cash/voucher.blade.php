@@ -63,6 +63,7 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto my-6">
+    @unless(isset($hideButtons) && $hideButtons)
     <!-- Top Action Bar (hidden in PDF output & print) -->
     <div class="no-print mb-4 flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-gray-200">
         <a href="{{ route('petty-cash.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold transition-colors inline-flex items-center">
@@ -75,6 +76,7 @@
             </button>
         </div>
     </div>
+    @endunless
 
     <!-- Voucher Document Container -->
     <div id="voucher-document" class="bg-white shadow-2xl rounded-2xl border border-gray-200 print-container overflow-hidden p-6 space-y-4 sm:p-8 sm:space-y-5">

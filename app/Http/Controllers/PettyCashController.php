@@ -564,11 +564,9 @@ class PettyCashController extends Controller
     {
         $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
 
-        if ($request->query('view') === 'app') {
-            return view('petty-cash.voucher', compact('pettyCash'));
-        }
+        $hideButtons = !$request->has('with_buttons');
 
-        return view('emails.petty_cash_voucher_pdf', compact('pettyCash'));
+        return view('petty-cash.voucher', compact('pettyCash', 'hideButtons'));
     }
 
     public function update(Request $request, PettyCashRequest $pettyCash)
