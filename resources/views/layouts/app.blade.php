@@ -7,15 +7,6 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Invoice System</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
-    
-    <!-- PWA Web App Meta Tags -->
-    <link rel="manifest" href="{{ url('manifest.json') }}">
-    <meta name="theme-color" content="#8035ca">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Loops CRM">
-    <link rel="apple-touch-icon" href="{{ url('images/pwa-icon-192.png') }}">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -259,11 +250,6 @@
                         <span>Reports</span>
                     </a>
 
-                    <button type="button" onclick="triggerPwaInstall()" class="w-full text-left flex items-center px-4 py-3 rounded-lg hover:bg-gray-700 transition text-gray-200 font-semibold mt-2 border border-brand-pink/30 bg-gradient-to-r from-brand-pink/20 to-brand-purple/20 shadow-sm" title="Install App (PWA)">
-                        <i class="fas fa-download text-brand-pink w-6"></i>
-                        <span>Install App</span>
-                    </button>
-
                     @if(auth()->check() && auth()->user()->role === 'Super Admin')
                         <a href="{{ route('users.index') }}"
                             class="flex items-center px-4 py-3 rounded-lg hover:bg-gray-700 transition {{ request()->is('users*') ? 'bg-gray-700 text-brand-pink font-semibold' : '' }}">
@@ -317,10 +303,6 @@
                     </div>
                     @auth
                     <div class="flex items-center space-x-3">
-                        <button type="button" id="pwaInstallBtn" onclick="triggerPwaInstall()" class="px-3 py-1.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 shadow-sm hover:opacity-90 shadow-purple-500/20" title="Install App (PWA)">
-                            <i class="fas fa-download text-xs"></i>
-                            <span class="hidden sm:inline">Install App</span>
-                        </button>
                         <button type="button" onclick="document.getElementById('changePasswordModal').classList.remove('hidden')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm" title="Change Password">
                             <i class="fas fa-key text-brand-purple"></i>
                             <span class="hidden sm:inline">Change Password</span>
@@ -539,127 +521,6 @@
             </form>
         </div>
     </div>
-    <!-- PWA Guidance Modal -->
-    <div id="pwaInstructionModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-        <div class="relative my-auto p-6 border w-full max-w-md shadow-2xl rounded-2xl bg-white text-center">
-            <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center text-brand-purple text-2xl mx-auto mb-3">
-                <i class="fas fa-mobile-alt"></i>
-            </div>
-            <h3 class="text-lg font-extrabold text-gray-900">Install Loops CRM App</h3>
-            <p class="text-xs text-gray-500 mt-1 mb-4">Install this application on your phone, tablet, or desktop computer for instant access.</p>
-            
-            <div class="bg-gray-50 p-4 rounded-xl text-left space-y-3 text-xs text-gray-700 border border-gray-200">
-                <div class="flex items-start gap-2.5">
-                    <span class="font-bold text-brand-purple bg-purple-100 px-2 py-0.5 rounded flex-shrink-0">1</span>
-                    <div>
-                        <strong>Chrome / Edge (Desktop & Mobile):</strong>
-                        <p class="text-gray-500 mt-0.5">Click the <i class="fas fa-desktop text-gray-700"></i> <strong>Install App icon</strong> in your browser address bar (top right) or open browser Menu &rarr; <em>Install Loops CRM</em>.</p>
-                    </div>
-                </div>
-                <div class="flex items-start gap-2.5">
-                    <span class="font-bold text-brand-pink bg-pink-100 px-2 py-0.5 rounded flex-shrink-0">2</span>
-                    <div>
-                        <strong>Safari (iPhone / iPad / Mac):</strong>
-                        <p class="text-gray-500 mt-0.5">Tap the <i class="fas fa-share-alt text-blue-600"></i> <strong>Share button</strong> &rarr; scroll down and choose <em>Add to Home Screen</em>.</p>
-                    </div>
-                </div>
-            </div>
-
-            <button type="button" onclick="document.getElementById('pwaInstructionModal').classList.add('hidden')" class="mt-5 w-full py-2.5 bg-brand-purple text-white text-xs font-bold rounded-xl hover:bg-brand-pink transition-all shadow-md">
-                Got It
-            </button>
-        </div>
-    </div>
-
-    <!-- Floating Android PWA Install Banner -->
-    <div id="androidPwaBanner" class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-50 hidden bg-gray-900/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-brand-purple/40 max-w-sm transition-all duration-500 transform">
-        <div class="flex items-center space-x-3">
-            <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-pink to-brand-purple p-0.5 flex-shrink-0">
-                <img src="{{ url('images/pwa-icon-192.png') }}" alt="Loops CRM" class="w-full h-full object-contain rounded-xl bg-white p-1">
-            </div>
-            <div class="flex-1 min-w-0">
-                <h4 class="text-xs font-bold text-white leading-tight truncate">Loops CRM App</h4>
-                <p class="text-[11px] text-gray-300 mt-0.5">Install on Android Device</p>
-            </div>
-            <button type="button" onclick="triggerPwaInstall()" class="px-3 py-1.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white text-xs font-bold rounded-xl hover:opacity-90 transition-all shadow-md flex-shrink-0">
-                Install
-            </button>
-            <button type="button" onclick="document.getElementById('androidPwaBanner').classList.add('hidden')" class="text-gray-400 hover:text-white p-1 text-xs flex-shrink-0">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Floating iOS PWA Install Banner -->
-    <div id="iosPwaBanner" class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-50 hidden bg-gray-900/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-brand-pink/40 max-w-sm transition-all duration-500 transform">
-        <div class="flex items-start space-x-3">
-            <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-pink to-brand-purple p-0.5 flex-shrink-0">
-                <img src="{{ url('images/pwa-icon-192.png') }}" alt="Loops CRM" class="w-full h-full object-contain rounded-xl bg-white p-1">
-            </div>
-            <div class="flex-1 min-w-0">
-                <h4 class="text-xs font-bold text-white leading-tight">Install on iPhone / iPad</h4>
-                <p class="text-[11px] text-gray-300 mt-1 leading-snug">
-                    Tap <i class="fas fa-share-alt text-blue-400"></i> <strong>Share</strong> in Safari and select <strong class="text-brand-pink">Add to Home Screen</strong>.
-                </p>
-            </div>
-            <button type="button" onclick="document.getElementById('iosPwaBanner').classList.add('hidden')" class="text-gray-400 hover:text-white p-1 text-xs flex-shrink-0">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Service Worker & PWA Installation Script -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('{{ url("serviceworker.js") }}').then(function(registration) {
-                    console.log('PWA ServiceWorker registered: ', registration.scope);
-                }).catch(function(err) {
-                    console.log('PWA ServiceWorker registration failed: ', err);
-                });
-            });
-        }
-
-        let deferredPrompt;
-        const pwaBtn = document.getElementById('pwaInstallBtn');
-        const androidBanner = document.getElementById('androidPwaBanner');
-        const iosBanner = document.getElementById('iosPwaBanner');
-
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-        // Hide install elements if app is ALREADY running as an installed standalone app
-        if (isStandalone) {
-            if (pwaBtn) pwaBtn.style.display = 'none';
-            if (androidBanner) androidBanner.style.display = 'none';
-            if (iosBanner) iosBanner.style.display = 'none';
-        } else if (isIos) {
-            if (iosBanner) iosBanner.classList.remove('hidden');
-        }
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            if (androidBanner && !isStandalone) {
-                androidBanner.classList.remove('hidden');
-            }
-        });
-
-        async function triggerPwaInstall() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    if (pwaBtn) pwaBtn.style.display = 'none';
-                    if (androidBanner) androidBanner.style.display = 'none';
-                }
-                deferredPrompt = null;
-            } else {
-                const modal = document.getElementById('pwaInstructionModal');
-                if (modal) modal.classList.remove('hidden');
-            }
-        }
-    </script>
 </body>
 
 </html>
