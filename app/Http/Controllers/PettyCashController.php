@@ -560,34 +560,10 @@ class PettyCashController extends Controller
         return redirect()->back()->with('success', 'Petty Cash request re-appealed and resubmitted successfully.');
     }
 
-    public function downloadVoucher(Request $request, PettyCashRequest $pettyCash)
+    public function downloadVoucher(PettyCashRequest $pettyCash)
     {
         $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
-
-        if ($request->query('pdf') == '1') {
-            @ini_set('memory_limit', '512M');
-            @set_time_limit(120);
-
-            try {
-                $tempDir = storage_path('app/temp');
-                if (!file_exists($tempDir)) {
-                    @mkdir($tempDir, 0777, true);
-                }
-
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.petty_cash_voucher_pdf', compact('pettyCash'))
-                    ->setPaper('a4', 'portrait')
-                    ->setOption('isRemoteEnabled', true)
-                    ->setOption('isHtml5ParserEnabled', true)
-                    ->setOption('tempDir', $tempDir)
-                    ->setOption('chroot', [public_path(), base_path(), storage_path()]);
-
-                return $pdf->download("Petty_Cash_Voucher_{$pettyCash->reference_number}.pdf");
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('PettyCash downloadVoucher PDF error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-            }
-        }
-
-        return view('emails.petty_cash_voucher_pdf', compact('pettyCash'));
+        return view('petty-cash.voucher', compact('pettyCash'));
     }
 
     public function update(Request $request, PettyCashRequest $pettyCash)

@@ -108,7 +108,7 @@
                     <span>Petty Cash</span>
                 </a>
 
-                @if(auth()->user()->role !== 'Staff')
+                @if(auth()->check() && auth()->user()->role !== 'Staff')
                     <a href="{{ route('customers.index') }}"
                         class="flex items-center px-4 py-3 rounded-md hover:bg-gray-700 transition {{ request()->routeIs('customers.*') ? 'bg-gray-700 text-brand-pink' : '' }}">
                         <i class="fas fa-users w-6"></i>
@@ -139,7 +139,7 @@
                         <span>Reports</span>
                     </a>
 
-                    @if(auth()->user()->role === 'Super Admin')
+                    @if(auth()->check() && auth()->user()->role === 'Super Admin')
                         <a href="{{ route('users.index') }}"
                             class="flex items-center px-4 py-3 rounded-md hover:bg-gray-700 transition {{ request()->is('users*') ? 'bg-gray-700 text-brand-pink' : '' }}">
                             <i class="fas fa-users-cog mr-3 w-5"></i> Users
@@ -219,7 +219,7 @@
                     <span>Petty Cash</span>
                 </a>
 
-                @if(auth()->user()->role !== 'Staff')
+                @if(auth()->check() && auth()->user()->role !== 'Staff')
                     <a href="{{ route('customers.index') }}"
                         class="flex items-center px-4 py-3 rounded-lg hover:bg-gray-700 transition {{ request()->routeIs('customers.*') ? 'bg-gray-700 text-brand-pink font-semibold' : '' }}">
                         <i class="fas fa-users w-6"></i>
@@ -250,7 +250,7 @@
                         <span>Reports</span>
                     </a>
 
-                    @if(auth()->user()->role === 'Super Admin')
+                    @if(auth()->check() && auth()->user()->role === 'Super Admin')
                         <a href="{{ route('users.index') }}"
                             class="flex items-center px-4 py-3 rounded-lg hover:bg-gray-700 transition {{ request()->is('users*') ? 'bg-gray-700 text-brand-pink font-semibold' : '' }}">
                             <i class="fas fa-users-cog mr-3 w-5"></i> Users
@@ -301,6 +301,7 @@
                         @endunless
                         <h2 class="text-lg sm:text-xl font-bold text-gray-800 truncate">@yield('header')</h2>
                     </div>
+                    @auth
                     <div class="flex items-center space-x-3">
                         <button type="button" onclick="document.getElementById('changePasswordModal').classList.remove('hidden')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm" title="Change Password">
                             <i class="fas fa-key text-brand-purple"></i>
@@ -308,7 +309,7 @@
                         </button>
                         <div x-data="{ 
                             open: false, 
-                            unreadCount: {{ auth()->user()->unreadNotifications->count() }},
+                            unreadCount: {{ auth()->check() ? auth()->user()->unreadNotifications->count() : 0 }},
                             markRead() {
                                 this.open = !this.open;
                                 if (this.open && this.unreadCount > 0) {
@@ -348,12 +349,12 @@
                             <div class="py-2">
                                  <div class="px-4 py-2 border-b border-gray-200 text-sm font-semibold text-gray-700 flex justify-between items-center">
                                     <span>Notifications</span>
-                                    @if(auth()->user()->unreadNotifications->count() > 0)
+                                    @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
                                         <button onclick="markAllAsRead()" class="text-xs text-brand-blue hover:underline">Mark all as read</button>
                                     @endif
                                 </div>
                                 <div class="max-h-96 overflow-y-auto">
-                                    @forelse(auth()->user()->notifications->take(10) as $notification)
+                                    @forelse((auth()->check() ? auth()->user()->notifications->take(10) : []) as $notification)
                                         <a href="{{ isset($notification->data['deal_id']) ? route('deals.index') : (isset($notification->data['petty_cash_id']) ? (auth()->user()->role === 'Staff' ? route('dashboard') : route('petty-cash.index')) : (isset($notification->data['request_id']) ? route('customers.requests.review', $notification->data['request_id']) : (isset($notification->data['customer_id']) ? route('customers.edit', $notification->data['customer_id']) : (isset($notification->data['invoice_id']) ? route('invoices.show', $notification->data['invoice_id']) : '#')))) }}"
                                             class="block px-4 py-3 hover:bg-gray-50 transition duration-150 ease-in-out border-b border-gray-100 last:border-b-0 {{ $notification->read_at ? 'opacity-60' : 'bg-blue-50 notification-item-unread' }}">
                                             <p class="text-sm font-medium text-gray-900">
@@ -375,6 +376,7 @@
                             </div>
                         </div>
                     </div>
+                    @endauth
                 </div>
             </header>
 
@@ -458,7 +460,7 @@
     </script>
 
     <!-- Change Password Modal (Accessible to All Logged In Users) -->
-    <div id="changePasswordModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm {{ $errors->has('current_password') || $errors->has('password') ? '' : 'hidden' }} overflow-y-auto h-full w-full z-50 p-4 flex items-center justify-center">
+    <div id="changePasswordModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm {{ (isset($errors) && ($errors->has('current_password') || $errors->has('password'))) ? '' : 'hidden' }} overflow-y-auto h-full w-full z-50 p-4 flex items-center justify-center">
         <div class="relative my-auto p-6 border w-full max-w-md shadow-2xl rounded-2xl bg-white">
             <div class="flex justify-between items-center pb-3 border-b border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 flex items-center">
