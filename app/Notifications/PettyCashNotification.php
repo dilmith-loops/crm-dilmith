@@ -47,6 +47,11 @@ class PettyCashNotification extends Notification
     {
         $channels = ['database'];
 
+        // No email notification when HOD approves (in-app notification only)
+        if ($this->action === 'hod_approved') {
+            return $channels;
+        }
+
         if (!empty($notifiable->email)) {
             $isSuperAdmin = in_array(strtolower($notifiable->email), array_map('strtolower', self::SUPER_ADMIN_EMAILS));
 

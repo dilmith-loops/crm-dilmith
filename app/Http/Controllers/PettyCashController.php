@@ -154,10 +154,13 @@ class PettyCashController extends Controller
             }
         }
 
-        // Notify HOD
+        // Notify HOD & Requested Staff User
         $hod = User::find($request->hod_id);
         if ($hod) {
             $hod->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
+        }
+        if ($user && ($hod ? $hod->id !== $user->id : true)) {
+            $user->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
         }
 
         return redirect()->back()->with('success', 'Petty Cash request submitted successfully and sent to HOD for approval.');
@@ -186,7 +189,7 @@ class PettyCashController extends Controller
             'status' => 'pending_super_admin',
         ]);
 
-        // Notify Super Admins (rifky@loopsintegrated.com, logini@loopsintegrated.com)
+        // Notify Super Admins (database notification)
         $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
         if ($superAdmins->isEmpty()) {
             $superAdmins = User::where('role', 'Super Admin')->get();
@@ -426,12 +429,16 @@ class PettyCashController extends Controller
             'settlement_money_notes' => $request->input('settlement_money_notes'),
         ]);
 
-        // Notify Super Admins (rifky@loopsintegrated.com, logini@loopsintegrated.com)
+        // Notify Super Admins & Requested Staff User
         $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
         if ($superAdmins->isEmpty()) {
             $superAdmins = User::where('role', 'Super Admin')->get();
         }
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
+
+        if ($pettyCash->user && $pettyCash->user->id !== $user->id) {
+            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
+        }
 
         return redirect()->back()->with('success', 'IOU Settlement details and proofs submitted successfully. Pending Super Admin final approval.');
     }
@@ -528,6 +535,10 @@ class PettyCashController extends Controller
             if ($hod) {
                 $hod->notify(new PettyCashNotification($pettyCash, 'reappealed', $user));
             }
+        }
+
+        if ($pettyCash->user && $pettyCash->user->id !== $user->id) {
+            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'reappealed', $user));
         }
 
         return redirect()->back()->with('success', 'Petty Cash request re-appealed and resubmitted successfully.');
