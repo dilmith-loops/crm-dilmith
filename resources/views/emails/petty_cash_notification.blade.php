@@ -103,10 +103,12 @@
                             <span style="color: #64748b; font-size: 11px; display: block;">Request Date:</span>
                             <strong style="color: #0f172a;">{{ $pettyCash->created_at ? $pettyCash->created_at->format('d M Y') : '-' }}</strong>
                         </td>
+                        @if($pettyCash->issued_at || in_array($pettyCash->status, ['approved', 'iou_issued', 'settled']))
                         <td style="padding: 4px 0;">
                             <span style="color: #64748b; font-size: 11px; display: block;">{{ $pettyCash->isIOU() ? 'Handover Date:' : 'Approval Date:' }}</span>
-                            <strong style="color: #a855f7;">{{ $pettyCash->issued_at ? $pettyCash->issued_at->format('d M Y') : ($pettyCash->created_at ? $pettyCash->created_at->format('d M Y') : '-') }}</strong>
+                            <strong style="color: #a855f7;">{{ $pettyCash->issued_at ? $pettyCash->issued_at->format('d M Y') : ($pettyCash->updated_at ? $pettyCash->updated_at->format('d M Y') : '-') }}</strong>
                         </td>
+                        @endif
                     </tr>
                     @if($pettyCash->isIOU() && $pettyCash->settled_at)
                     <tr>

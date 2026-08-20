@@ -249,10 +249,12 @@
                 <div class="meta-label">Request Date</div>
                 <div class="meta-value">{{ $pettyCash->created_at ? $pettyCash->created_at->format('d M Y') : '-' }}</div>
             </td>
+            @if($pettyCash->issued_at || in_array($pettyCash->status, ['approved', 'iou_issued', 'settled']))
             <td style="padding-top: 8px;">
                 <div class="meta-label">{{ $pettyCash->isIOU() ? 'Handover Date' : 'Approval Date' }}</div>
-                <div class="meta-value">{{ $pettyCash->issued_at ? $pettyCash->issued_at->format('d M Y') : ($pettyCash->created_at ? $pettyCash->created_at->format('d M Y') : '-') }}</div>
+                <div class="meta-value">{{ $pettyCash->issued_at ? $pettyCash->issued_at->format('d M Y') : ($pettyCash->updated_at ? $pettyCash->updated_at->format('d M Y') : '-') }}</div>
             </td>
+            @endif
             @if($pettyCash->isIOU())
             <td style="padding-top: 8px;" colspan="2">
                 <div class="meta-label">IOU Settled Date</div>

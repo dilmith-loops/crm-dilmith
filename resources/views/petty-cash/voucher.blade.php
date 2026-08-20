@@ -146,12 +146,14 @@
                 <span class="text-gray-500 block">Request Date:</span>
                 <strong class="text-gray-800">{{ $pettyCash->created_at ? $pettyCash->created_at->format('d M Y') : '-' }}</strong>
             </div>
+            @if($pettyCash->issued_at || in_array($pettyCash->status, ['approved', 'iou_issued', 'settled']))
             <div>
-                <span class="text-gray-500 block">{{ $pettyCash->isIOU() ? 'IOU Created Date:' : 'Approval Date:' }}</span>
+                <span class="text-gray-500 block">{{ $pettyCash->isIOU() ? 'Handover Date:' : 'Approval Date:' }}</span>
                 <strong class="text-brand-purple font-semibold">
-                    {{ $pettyCash->issued_at ? $pettyCash->issued_at->format('d M Y') : ($pettyCash->created_at ? $pettyCash->created_at->format('d M Y') : '-') }}
+                    {{ $pettyCash->issued_at ? $pettyCash->issued_at->format('d M Y') : ($pettyCash->updated_at ? $pettyCash->updated_at->format('d M Y') : '-') }}
                 </strong>
             </div>
+            @endif
             @if($pettyCash->isIOU())
             <div>
                 <span class="text-gray-500 block">IOU Settled Date:</span>
