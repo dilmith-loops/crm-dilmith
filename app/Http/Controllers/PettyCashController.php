@@ -560,10 +560,15 @@ class PettyCashController extends Controller
         return redirect()->back()->with('success', 'Petty Cash request re-appealed and resubmitted successfully.');
     }
 
-    public function downloadVoucher(PettyCashRequest $pettyCash)
+    public function downloadVoucher(Request $request, PettyCashRequest $pettyCash)
     {
         $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
-        return view('petty-cash.voucher', compact('pettyCash'));
+
+        if ($request->query('view') === 'app') {
+            return view('petty-cash.voucher', compact('pettyCash'));
+        }
+
+        return view('emails.petty_cash_voucher_pdf', compact('pettyCash'));
     }
 
     public function update(Request $request, PettyCashRequest $pettyCash)
