@@ -44,27 +44,69 @@ class PettyCashVoucherMail extends Mailable
         // Ensure relations are loaded
         $this->pettyCash->loadMissing('user', 'hod', 'items.category');
 
+        $requesterName = $this->pettyCash->user->name ?? 'Staff member';
+        $approverName = $this->actor->name ?? 'Loops Finance';
+
+        // Determine recipient relationship safely
+        $notifiableEmail = is_object($this->notifiable) ? strtolower($this->notifiable->email ?? '') : '';
+        $notifiableId = is_object($this->notifiable) ? ((method_exists($this->notifiable, 'getKey') ? $this->notifiable->getKey() : null) ?? ($this->notifiable->id ?? null)) : null;
+
+        $requesterEmail = strtolower($this->pettyCash->user->email ?? '');
+        $hodEmail = strtolower($this->pettyCash->hod->email ?? '');
+
+        $isRequester = ($notifiableId && $notifiableId == $this->pettyCash->user_id) 
+            || ($notifiableEmail && $requesterEmail && $notifiableEmail === $requesterEmail);
+
+        $isHod = ($notifiableId && $this->pettyCash->hod_id && $notifiableId == $this->pettyCash->hod_id) 
+            || ($notifiableEmail && $hodEmail && $notifiableEmail === $hodEmail);
+
+        $isSuperAdmin = (!$isRequester && !$isHod) || (is_object($this->notifiable) && isset($this->notifiable->role) && in_array(strtolower($this->notifiable->role), ['super admin', 'super_admin']));
+
         $subject = match ($this->action) {
-            'admin_approved' => "Approved: {$typeStr} {$ref}",
-            'iou_settled' => "IOU Request Settled: {$ref}",
-            'iou_reminder' => "URGENT REMINDER: Please Settle IOU {$ref}",
-            'submitted' => "New Request Submitted: {$ref}",
-            'hod_approved' => "HOD Approved: {$ref}",
+            'submitted' => $isRequester 
+                ? "Petty Cash Request Received: {$ref}"
+                : ($isHod ? "New Petty Cash Request from {$requesterName}: {$ref}" : "New Petty Cash Request Submitted: {$ref}"),
+
+            'hod_approved' => $isRequester
+                ? "Petty Cash Request Approved by HOD: {$ref}"
+                : ($isSuperAdmin ? "Petty Cash Request Waiting for Finance Approval: {$ref}" : "Petty Cash Request Approved: {$ref}"),
+
+            'admin_approved' => $isRequester
+                ? "Petty Cash Request Approved by Loops Finance: {$ref}"
+                : ($isHod ? "Team Member Petty Cash Request Approved: {$ref}" : "Petty Cash Request {$ref} Approved"),
+
             'hod_rejected' => "Request Rejected by HOD: {$ref}",
             'admin_rejected' => "Request Rejected by Finance: {$ref}",
+            'iou_settled' => "IOU Request Settled: {$ref}",
+            'iou_reminder' => "URGENT REMINDER: Please Settle IOU {$ref}",
             'reappealed' => "Request Re-appealed: {$ref}",
             default => "Update on Petty Cash Request {$ref}",
         };
 
         $customMessage = match ($this->action) {
-            'admin_approved' => "Your {$typeStr} {$ref} for {$amountStr} has been APPROVED by Finance.",
-            'iou_settled' => "The settlement for IOU request {$ref} ({$amountStr}) has been APPROVED and officially marked as SETTLED by Finance.",
-            'iou_reminder' => "This is an urgent reminder regarding your IOU request {$ref} for {$amountStr} issued on " . ($this->pettyCash->issued_at ? $this->pettyCash->issued_at->format('d M Y') : 'N/A') . ". Please submit your expenditure proofs and settlement promptly.",
-            'submitted' => "A new {$typeStr} {$ref} for {$amountStr} has been submitted and requires review.",
-            'hod_approved' => "{$typeStr} {$ref} for {$amountStr} was approved by HOD and is awaiting Finance Approval.",
+            'submitted' => $isRequester
+                ? "Thank you, your petty cash request is received and currently sent to the HOD approval."
+                : ($isHod 
+                    ? "Your team member {$requesterName} is requesting a petty cash."
+                    : "A new petty cash request {$ref} for {$amountStr} has been submitted by {$requesterName} and sent for HOD approval."),
+
+            'hod_approved' => $isRequester
+                ? "Your Petty cash request is Approved by the HOD, and currently goes to the Finance for the Approval."
+                : ($isSuperAdmin 
+                    ? "Petty cash request is waiting for the finance approval."
+                    : "You have approved the petty cash request {$ref} for {$requesterName}. It has been sent to Finance for final approval."),
+
+            'admin_approved' => $isRequester
+                ? "Your petty cash request was approved by the Loops Finance."
+                : ($isHod 
+                    ? "Your team member {$requesterName} petty cash request was approved by the Loops Finance."
+                    : "Petty cash request {$ref} is approved by {$approverName}."),
+
             'hod_rejected' => "Your {$typeStr} {$ref} was REJECTED by HOD. Reason: " . ($this->note ?: 'No reason provided'),
             'admin_rejected' => "Your {$typeStr} {$ref} was REJECTED by Finance. Reason: " . ($this->note ?: 'No reason provided'),
-            'reappealed' => "{$typeStr} {$ref} has been re-appealed.",
+            'iou_settled' => "The settlement for IOU request {$ref} ({$amountStr}) has been APPROVED and officially marked as SETTLED by Finance.",
+            'iou_reminder' => "This is an urgent reminder regarding your IOU request {$ref} for {$amountStr} issued on " . ($this->pettyCash->issued_at ? $this->pettyCash->issued_at->format('d M Y') : 'N/A') . ". Please submit your expenditure proofs and settlement promptly.",
+            'reappealed' => "Petty cash request {$ref} has been re-appealed by {$requesterName}.",
             default => "{$typeStr} {$ref} was updated.",
         };
 
