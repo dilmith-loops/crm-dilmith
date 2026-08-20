@@ -24,6 +24,97 @@ Route::post('forgot-password', [AuthController::class, 'sendOtp'])->name('passwo
 Route::get('reset-password/otp', [AuthController::class, 'showOtpForm'])->name('password.otp');
 Route::post('reset-password/otp', [AuthController::class, 'resetPasswordWithOtp'])->name('password.update-otp');
 
+// Dynamic PWA Manifest & Service Worker Routes for Hostinger / LiteSpeed
+Route::get('manifest.json', function () {
+    return response()->json([
+        'name' => 'Loops Integrated System',
+        'short_name' => 'Loops CRM',
+        'description' => 'Loops Integrated CRM, Petty Cash & Invoicing Management System',
+        'id' => url('/'),
+        'start_url' => url('/login'),
+        'scope' => url('/'),
+        'display' => 'standalone',
+        'orientation' => 'any',
+        'background_color' => '#ffffff',
+        'theme_color' => '#8035ca',
+        'prefer_related_applications' => false,
+        'icons' => [
+            [
+                'src' => url('images/pwa-icon-192.png'),
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any'
+            ],
+            [
+                'src' => url('images/pwa-icon-512.png'),
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any'
+            ],
+            [
+                'src' => url('images/pwa-icon-192.png'),
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'maskable'
+            ],
+            [
+                'src' => url('images/pwa-icon-512.png'),
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'maskable'
+            ]
+        ]
+    ])->header('Content-Type', 'application/manifest+json');
+});
+
+Route::get('serviceworker.js', function () {
+    $sw = <<<JS
+var staticCacheName = "pwa-v" + new Date().getTime();
+
+self.addEventListener("install", function (event) {
+    self.skipWaiting();
+});
+
+self.addEventListener("activate", function (event) {
+    event.waitUntil(
+        caches.keys().then(function (cacheNames) {
+            return Promise.all(
+                cacheNames.map(function (cacheName) {
+                    if (cacheName !== staticCacheName) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+    self.clients.claim();
+});
+
+self.addEventListener("fetch", function (event) {
+    if (event.request.method !== 'GET') return;
+    if (!event.request.url.startsWith('http')) return;
+
+    event.respondWith(
+        fetch(event.request)
+            .then(function (response) {
+                if (!response || response.status !== 200 || response.type !== 'basic') {
+                    return response;
+                }
+                var responseToCache = response.clone();
+                caches.open(staticCacheName).then(function (cache) {
+                    cache.put(event.request, responseToCache);
+                });
+                return response;
+            })
+            .catch(function () {
+                return caches.match(event.request);
+            })
+    );
+});
+JS;
+    return response($sw, 200)->header('Content-Type', 'application/javascript');
+});
+
 Route::get('maintenance', function () {
     if (\App\Models\Setting::get('maintenance_mode') != 1) {
         return redirect()->route('login');
