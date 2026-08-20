@@ -7,6 +7,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Invoice System</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    
+    <!-- PWA Web App Meta Tags -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#8035ca">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Loops CRM">
+    <link rel="apple-touch-icon" href="{{ asset('images/pwa-icon-192.png') }}">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -303,6 +312,10 @@
                     </div>
                     @auth
                     <div class="flex items-center space-x-3">
+                        <button type="button" id="pwaInstallBtn" class="hidden px-3 py-1.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 shadow-sm hover:opacity-90 animate-pulse" title="Install App (PWA)">
+                            <i class="fas fa-download"></i>
+                            <span class="hidden sm:inline">Install App</span>
+                        </button>
                         <button type="button" onclick="document.getElementById('changePasswordModal').classList.remove('hidden')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm" title="Change Password">
                             <i class="fas fa-key text-brand-purple"></i>
                             <span class="hidden sm:inline">Change Password</span>
@@ -521,6 +534,42 @@
             </form>
         </div>
     </div>
+    <!-- Service Worker & PWA Installation Script -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
+                    console.log('PWA ServiceWorker registered with scope: ', registration.scope);
+                }, function(err) {
+                    console.log('PWA ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+        let deferredPrompt;
+        const pwaBtn = document.getElementById('pwaInstallBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (pwaBtn) {
+                pwaBtn.classList.remove('hidden');
+            }
+        });
+
+        if (pwaBtn) {
+            pwaBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('PWA installed successfully');
+                }
+                deferredPrompt = null;
+                pwaBtn.classList.add('hidden');
+            });
+        }
+    </script>
 </body>
 
 </html>
