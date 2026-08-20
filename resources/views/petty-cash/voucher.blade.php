@@ -106,8 +106,10 @@
                         <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-yellow-100 text-yellow-800">STATUS: IOU ISSUED (UNSETTLED)</span>
                     @elseif($pettyCash->status === 'pending_settlement')
                         <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-purple-100 text-purple-800">STATUS: PENDING SETTLEMENT</span>
-                    @elseif($pettyCash->status === 'settled')
-                        <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-100 text-emerald-800">STATUS: SETTLED</span>
+                    @elseif($pettyCash->status === 'rejected_by_super_admin')
+                        <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-rose-100 text-rose-800">STATUS: REJECTED BY FINANCE</span>
+                    @elseif($pettyCash->status === 'rejected_by_hod')
+                        <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-rose-100 text-rose-800">STATUS: REJECTED BY HOD</span>
                     @else
                         <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-gray-100 text-gray-800">STATUS: {{ strtoupper(str_replace('_', ' ', $pettyCash->status)) }}</span>
                     @endif

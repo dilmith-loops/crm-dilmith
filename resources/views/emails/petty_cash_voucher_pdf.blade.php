@@ -210,6 +210,10 @@
                         <span class="status-badge status-iou">Status: IOU Issued (Unsettled)</span>
                     @elseif($pettyCash->status === 'settled')
                         <span class="status-badge status-settled">Status: Settled</span>
+                    @elseif($pettyCash->status === 'rejected_by_super_admin')
+                        <span class="status-badge status-default">Status: Rejected by Finance</span>
+                    @elseif($pettyCash->status === 'rejected_by_hod')
+                        <span class="status-badge status-default">Status: Rejected by HOD</span>
                     @else
                         <span class="status-badge status-default">Status: {{ strtoupper(str_replace('_', ' ', $pettyCash->status)) }}</span>
                     @endif

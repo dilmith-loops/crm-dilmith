@@ -47,9 +47,13 @@
                                 <span style="background-color: #d1fae5; color: #047857; border: 1px solid #a7f3d0; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                                     Settled
                                 </span>
-                            @elseif($action === 'iou_reminder')
-                                <span style="background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
-                                    Reminder
+                            @elseif($action === 'admin_rejected')
+                                <span style="background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                                    Rejected by Finance
+                                </span>
+                            @elseif($action === 'hod_rejected')
+                                <span style="background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                                    Rejected by HOD
                                 </span>
                             @else
                                 <span style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
