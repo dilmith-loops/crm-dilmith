@@ -90,6 +90,16 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
+        // Prevent new petty cash request if user has an active unsettled IOU
+        $activeUnsettledIou = PettyCashRequest::where('user_id', $user->id)
+            ->where('is_iou', true)
+            ->whereNotIn('status', ['settled', 'rejected_by_hod', 'rejected_by_super_admin'])
+            ->first();
+
+        if ($activeUnsettledIou) {
+            return redirect()->back()->with('error', 'Request Blocked: You cannot submit a new petty cash request because you have an active unsettled IOU (' . $activeUnsettledIou->reference_number . '). According to policy, you must settle your existing IOU first.');
+        }
+
         $request->validate([
             'hod_id' => 'required|exists:users,id',
             'job_number' => 'nullable|string|max:255',

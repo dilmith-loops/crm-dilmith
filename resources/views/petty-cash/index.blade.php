@@ -24,12 +24,63 @@
             <p class="text-sm text-gray-500 mt-1">Manage, review, and track petty cash expenditure requests across departments.</p>
         </div>
         <div class="flex items-center space-x-3 w-full md:w-auto">
-            <button onclick="document.getElementById('newPettyCashModal').classList.remove('hidden')"
+            <button onclick="handleNewRequestClick(event)"
                 class="w-full md:w-auto px-5 py-2.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white rounded-lg hover:opacity-90 font-medium transition-all flex items-center justify-center shadow-md">
                 <i class="fas fa-plus mr-2"></i> New Petty Cash Request
             </button>
         </div>
     </div>
+
+    @php
+        $unsettledIou = \App\Models\PettyCashRequest::where('user_id', auth()->id())
+            ->where('is_iou', true)
+            ->whereNotIn('status', ['settled', 'rejected_by_hod', 'rejected_by_super_admin'])
+            ->orderBy('created_at', 'desc')
+            ->first();
+    @endphp
+
+    @if($unsettledIou)
+        @php
+            $startDate = $unsettledIou->issued_at ?? $unsettledIou->updated_at ?? $unsettledIou->created_at;
+            $deadline = $startDate ? $startDate->copy()->addHours(72) : now()->addHours(72);
+            $isOverdue = now()->greaterThan($deadline);
+            $hoursLeft = max(0, now()->diffInHours($deadline, false));
+        @endphp
+
+        <div class="p-4 rounded-xl border {{ $isOverdue ? 'bg-rose-50 border-rose-300 text-rose-900' : 'bg-amber-50 border-amber-300 text-amber-900' }} shadow-sm">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-start gap-3">
+                    <div class="p-2.5 rounded-lg {{ $isOverdue ? 'bg-rose-200/80 text-rose-700' : 'bg-amber-200/80 text-amber-800' }} mt-0.5 flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm flex flex-wrap items-center gap-2">
+                            <span>Urgent IOU Settlement Reminder: {{ $unsettledIou->reference_number }}</span>
+                            @if($isOverdue)
+                                <span class="px-2 py-0.5 text-[10px] uppercase font-extrabold bg-rose-600 text-white rounded-full">OVERDUE</span>
+                            @else
+                                <span class="px-2 py-0.5 text-[10px] uppercase font-extrabold bg-amber-600 text-white rounded-full">72-Hour Policy</span>
+                            @endif
+                        </h4>
+                        <p class="text-xs mt-1 leading-relaxed">
+                            You have an active IOU for <strong>LKR {{ number_format($unsettledIou->total_amount, 2) }}</strong> approved on {{ $startDate ? $startDate->format('d M Y, h:i A') : 'N/A' }}.
+                            <br>
+                            @if($isOverdue)
+                                <span class="font-bold text-rose-700">Settlement deadline was {{ $deadline->format('d M Y, h:i A') }} (Passed 72 hours). Please submit expenditure bills immediately!</span>
+                            @else
+                                <span>Settlement Deadline: <strong class="font-semibold">{{ $deadline->format('d M Y, h:i A') }}</strong> ({{ $hoursLeft }} hours remaining).</span>
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                <div class="flex-shrink-0 w-full sm:w-auto">
+                    <button type="button" onclick="openSettleIouModal({{ json_encode($unsettledIou) }})" class="w-full sm:w-auto px-4 py-2.5 text-xs font-bold rounded-lg shadow-sm {{ $isOverdue ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-amber-600 text-white hover:bg-amber-700' }} transition-all flex items-center justify-center gap-1.5">
+                        <i class="fas fa-receipt"></i> Settle IOU Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- Primary Scope Tabs (My Requests vs Approvals vs Team) -->
     <div class="bg-white rounded-xl shadow-sm p-2 flex border border-gray-100 space-x-2">
@@ -1759,6 +1810,36 @@
             }
         });
         return false;
+    }
+
+    function handleNewRequestClick(e) {
+        if (e) e.preventDefault();
+        const activeIouRef = "{{ $unsettledIou ? $unsettledIou->reference_number : '' }}";
+        const activeIouData = @json($unsettledIou);
+
+        if (activeIouRef) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Active Unsettled IOU Detected',
+                    html: `You cannot submit a new petty cash request because you currently have an active unsettled IOU (<strong>${activeIouRef}</strong>).<br><br>According to company policy, you must settle your existing IOU before requesting new petty cash.`,
+                    showCancelButton: true,
+                    confirmButtonColor: '#d97706',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: '<i class="fas fa-receipt mr-1"></i> Settle IOU Now',
+                    cancelButtonText: 'Close'
+                }).then((result) => {
+                    if (result.isConfirmed && activeIouData) {
+                        openSettleIouModal(activeIouData);
+                    }
+                });
+            } else {
+                alert(`You have an active unsettled IOU (${activeIouRef}). Please settle it first.`);
+            }
+            return false;
+        }
+
+        document.getElementById('newPettyCashModal').classList.remove('hidden');
     }
 </script>
 @endpush
