@@ -18,14 +18,13 @@ class PettyCashNotification extends Notification
      * Master toggle for Super Admin emails.
      * Set to true when development is finished to enable emails to Super Admins.
      */
-    public const ENABLE_SUPER_ADMIN_EMAILS = false;
+    public const ENABLE_SUPER_ADMIN_EMAILS = true;
 
     /**
      * Target Super Admin email addresses.
      */
     public const SUPER_ADMIN_EMAILS = [
-        'rifky@loopsintegrated.com',
-        'logini@loopsintegrated.com',
+        'dilmithsenupa2@gmail.com'
     ];
 
     /**
