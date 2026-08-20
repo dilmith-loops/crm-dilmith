@@ -2,15 +2,13 @@
   "name": "Loops Integrated System",
   "short_name": "Loops CRM",
   "description": "Loops Integrated CRM, Petty Cash & Invoicing Management System",
-  "id": "/pc",
+  "id": "/pc/",
   "start_url": "/pc/",
-  "scope": "/pc",
+  "scope": "/pc/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#8035ca",
-  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/pc/images/pwa-icon-192.png",
