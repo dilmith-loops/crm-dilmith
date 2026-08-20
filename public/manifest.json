@@ -2,36 +2,35 @@
   "name": "Loops Integrated System",
   "short_name": "Loops CRM",
   "description": "Loops Integrated CRM, Petty Cash & Invoicing Management System",
-  "id": "loops-crm-pwa",
-  "start_url": "/pc/dashboard",
+  "id": "/pc/login",
+  "start_url": "/pc/login",
   "scope": "/pc/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#8035ca",
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/pc/images/pwa-icon-192.png",
+      "src": "images/pwa-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/pc/images/pwa-icon-512.png",
+      "src": "images/pwa-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/pc/images/pwa-icon-192.png",
+      "src": "images/pwa-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/pc/images/pwa-icon-512.png",
+      "src": "images/pwa-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
