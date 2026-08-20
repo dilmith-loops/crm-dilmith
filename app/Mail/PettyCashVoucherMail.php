@@ -69,42 +69,54 @@ class PettyCashVoucherMail extends Mailable
 
         $subject = match ($this->action) {
             'submitted' => $isRequester 
-                ? "Petty Cash Request Received: {$ref}"
-                : ($isHod ? "New Petty Cash Request from {$requesterName}: {$ref}" : "New Petty Cash Request Submitted: {$ref}"),
+                ? ($isIou ? "IOU Request Received: {$ref}" : "Petty Cash Request Received: {$ref}")
+                : ($isHod 
+                    ? ($isIou ? "New IOU Request from {$requesterName}: {$ref}" : "New Petty Cash Request from {$requesterName}: {$ref}") 
+                    : ($isIou ? "New IOU Request Submitted: {$ref}" : "New Petty Cash Request Submitted: {$ref}")),
 
             'hod_approved' => $isRequester
-                ? "Petty Cash Request Approved by HOD: {$ref}"
-                : ($isSuperAdmin ? "Petty Cash Request Waiting for Finance Approval: {$ref}" : "Petty Cash Request Approved: {$ref}"),
+                ? ($isIou ? "IOU Request Approved by HOD: {$ref}" : "Petty Cash Request Approved by HOD: {$ref}")
+                : ($isSuperAdmin 
+                    ? ($isIou ? "IOU Request Waiting for Finance Approval: {$ref}" : "Petty Cash Request Waiting for Finance Approval: {$ref}") 
+                    : ($isIou ? "IOU Request Approved: {$ref}" : "Petty Cash Request Approved: {$ref}")),
 
             'admin_approved' => $isRequester
-                ? "Petty Cash Request Approved by Loops Finance: {$ref}"
-                : ($isHod ? "Team Member Petty Cash Request Approved: {$ref}" : "Petty Cash Request {$ref} Approved"),
+                ? ($isIou ? "IOU Request Approved by Loops Finance: {$ref}" : "Petty Cash Request Approved by Loops Finance: {$ref}")
+                : ($isHod 
+                    ? ($isIou ? "Team Member IOU Request Approved: {$ref}" : "Team Member Petty Cash Request Approved: {$ref}") 
+                    : ($isIou ? "IOU Request {$ref} Approved" : "Petty Cash Request {$ref} Approved")),
 
             'hod_rejected' => "Request Rejected by HOD: {$ref}",
             'admin_rejected' => "Request Rejected by Finance: {$ref}",
             'iou_settled' => "IOU Request Settled: {$ref}",
             'iou_reminder' => "URGENT REMINDER: Please Settle IOU {$ref}",
             'reappealed' => "Request Re-appealed: {$ref}",
-            default => "Update on Petty Cash Request {$ref}",
+            default => "Update on {$typeStr} {$ref}",
         };
 
         $customMessage = match ($this->action) {
             'submitted' => $isRequester
-                ? "Thank you, your petty cash request is received and currently sent to the HOD approval."
+                ? ($isIou 
+                    ? "Thank you, your IOU request is received and currently sent to the HOD approval."
+                    : "Thank you, your petty cash request is received and currently sent to the HOD approval.")
                 : ($isHod 
-                    ? "Your team member {$requesterName} is requesting a petty cash."
-                    : "A new petty cash request {$ref} for {$amountStr} has been submitted by {$requesterName} and sent for HOD approval."),
+                    ? "Your team member {$requesterName} is requesting " . ($isIou ? "an IOU." : "a petty cash.")
+                    : "A new {$typeStr} {$ref} for {$amountStr} has been submitted by {$requesterName} and sent for HOD approval."),
 
             'hod_approved' => $isRequester
-                ? "Your Petty cash request is Approved by the HOD, and currently goes to the Finance for the Approval."
+                ? ($isIou
+                    ? "Your IOU request is Approved by the HOD, and currently goes to the Finance for the Approval."
+                    : "Your Petty cash request is Approved by the HOD, and currently goes to the Finance for the Approval.")
                 : ($isSuperAdmin 
-                    ? "Petty cash request is waiting for the finance approval."
-                    : "You have approved the petty cash request {$ref} for {$requesterName}. It has been sent to Finance for final approval."),
+                    ? ($isIou ? "IOU request is waiting for the finance approval." : "Petty cash request is waiting for the finance approval.")
+                    : "You have approved the {$typeStr} {$ref} for {$requesterName}. It has been sent to Finance for final approval."),
 
             'admin_approved' => $isRequester
-                ? "Your petty cash request was approved by the Loops Finance."
+                ? ($isIou
+                    ? "Your IOU request was approved by the Loops Finance."
+                    : "Your petty cash request was approved by the Loops Finance.")
                 : ($isHod 
-                    ? "Your team member {$requesterName} petty cash request was approved by the Loops Finance."
+                    ? "Your team member {$requesterName} " . ($isIou ? "IOU request" : "petty cash request") . " was approved by the Loops Finance."
                     : "Petty cash request {$ref} is approved by {$approverName}."),
 
             'hod_rejected' => "Your {$typeStr} {$ref} was REJECTED by HOD. Reason: " . ($this->note ?: 'No reason provided'),
