@@ -18,6 +18,12 @@ Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login'])->name('login.post');
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
+// Password Reset Routes (Email OTP)
+Route::get('forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('forgot-password', [AuthController::class, 'sendOtp'])->name('password.email');
+Route::get('reset-password/otp', [AuthController::class, 'showOtpForm'])->name('password.otp');
+Route::post('reset-password/otp', [AuthController::class, 'resetPasswordWithOtp'])->name('password.update-otp');
+
 Route::get('maintenance', function () {
     if (\App\Models\Setting::get('maintenance_mode') != 1) {
         return redirect()->route('login');
