@@ -146,12 +146,21 @@
             if (str_starts_with($pettyCash->signature_path, 'data:image/')) {
                 $sigDataUri = $pettyCash->signature_path;
             } else {
-                $realSigPath = public_path(ltrim($pettyCash->signature_path, '/'));
-                if (file_exists($realSigPath) && is_file($realSigPath)) {
-                    $type = pathinfo($realSigPath, PATHINFO_EXTENSION) ?: 'png';
-                    $content = @file_get_contents($realSigPath);
-                    if ($content) {
-                        $sigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+                $cleanPath = ltrim($pettyCash->signature_path, '/');
+                $possiblePaths = [
+                    public_path($cleanPath),
+                    base_path('public/' . $cleanPath),
+                    storage_path('app/public/' . str_replace('uploads/', '', $cleanPath)),
+                    storage_path('app/' . $cleanPath),
+                ];
+                foreach ($possiblePaths as $realSigPath) {
+                    if (file_exists($realSigPath) && is_file($realSigPath)) {
+                        $type = pathinfo($realSigPath, PATHINFO_EXTENSION) ?: 'png';
+                        $content = @file_get_contents($realSigPath);
+                        if ($content) {
+                            $sigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+                            break;
+                        }
                     }
                 }
             }
@@ -162,12 +171,21 @@
             if (str_starts_with($pettyCash->settlement_signature_path, 'data:image/')) {
                 $settleSigDataUri = $pettyCash->settlement_signature_path;
             } else {
-                $realSettleSigPath = public_path(ltrim($pettyCash->settlement_signature_path, '/'));
-                if (file_exists($realSettleSigPath) && is_file($realSettleSigPath)) {
-                    $type = pathinfo($realSettleSigPath, PATHINFO_EXTENSION) ?: 'png';
-                    $content = @file_get_contents($realSettleSigPath);
-                    if ($content) {
-                        $settleSigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+                $cleanSettlePath = ltrim($pettyCash->settlement_signature_path, '/');
+                $possibleSettlePaths = [
+                    public_path($cleanSettlePath),
+                    base_path('public/' . $cleanSettlePath),
+                    storage_path('app/public/' . str_replace('uploads/', '', $cleanSettlePath)),
+                    storage_path('app/' . $cleanSettlePath),
+                ];
+                foreach ($possibleSettlePaths as $realSettleSigPath) {
+                    if (file_exists($realSettleSigPath) && is_file($realSettleSigPath)) {
+                        $type = pathinfo($realSettleSigPath, PATHINFO_EXTENSION) ?: 'png';
+                        $content = @file_get_contents($realSettleSigPath);
+                        if ($content) {
+                            $settleSigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+                            break;
+                        }
                     }
                 }
             }

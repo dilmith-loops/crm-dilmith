@@ -68,7 +68,7 @@ class PettyCashVoucherMail extends Mailable
             default => "{$typeStr} {$ref} was updated.",
         };
 
-        $this->subject($subject)
+        return $this->subject($subject)
             ->view('emails.petty_cash_notification')
             ->with([
                 'pettyCash' => $this->pettyCash,
@@ -77,27 +77,6 @@ class PettyCashVoucherMail extends Mailable
                 'notifiableName' => $this->notifiable->name ?? 'User',
                 'customMessage' => $customMessage,
             ]);
-
-        // Generate PDF voucher attachment using DomPDF
-        try {
-            $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
-                'pettyCash' => $this->pettyCash,
-            ])->setPaper('a4', 'portrait')
-              ->setOption('isRemoteEnabled', true)
-              ->setOption('isHtml5ParserEnabled', true);
-
-            $pdfBytes = $pdf->output();
-            if (!empty($pdfBytes)) {
-                $filename = "Petty_Cash_Voucher_{$ref}.pdf";
-                $this->attachData($pdfBytes, $filename, [
-                    'mime' => 'application/pdf',
-                ]);
-            }
-        } catch (\Throwable $e) {
-            Log::error('PettyCash Mailable PDF Attachment Error: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
-        }
-
-        return $this;
     }
 
     /**
