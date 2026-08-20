@@ -1245,6 +1245,8 @@
                 if (data.success) {
                     const pc = data.pettyCash;
                     const baseUrl = "{{ url('/') }}";
+                    const createdOrIssuedDate = formatDateStr(pc.created_at);
+                    const settledDateDisplay = pc.settled_at ? formatDateStr(pc.settled_at) : (pc.status === 'settled' ? 'Settled' : 'Not Settled');
                     document.getElementById('modalRef').innerHTML = `<i class="fas fa-info-circle text-brand-blue mr-2"></i> Request: ${pc.reference_number}`;
                     
                     let itemsHtml = pc.items.map(item => `
