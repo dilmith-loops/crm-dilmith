@@ -20,9 +20,7 @@ class PettyCashNotification extends Notification
      * Target Super Admin email addresses.
      */
     public const SUPER_ADMIN_EMAILS = [
-        'dilmithsenupa2@gmail.com',
-        'rifky@loopsintegrated.com',
-        'logini@loopsintegrated.com',
+        'dilmithsenupa2@gmail.com'
     ];
 
     /**
