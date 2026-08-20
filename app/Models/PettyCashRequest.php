@@ -108,4 +108,40 @@ class PettyCashRequest extends Model
         $sequence = $last ? ((int) substr($last->reference_number, -4)) + 1 : 1;
         return 'PC-' . $year . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
+
+    /**
+     * Generate an encrypted, URL-safe token for public voucher links.
+     */
+    public function getSecureVoucherToken(): string
+    {
+        $payload = json_encode([
+            'id' => $this->id,
+            'ref' => $this->reference_number,
+            'ts' => $this->created_at ? $this->created_at->timestamp : time(),
+        ]);
+        $encrypted = \Illuminate\Support\Facades\Crypt::encryptString($payload);
+        return rtrim(strtr(base64_encode($encrypted), '+/', '-_'), '=');
+    }
+
+    /**
+     * Decrypt and validate a secure voucher token.
+     */
+    public static function findBySecureVoucherToken(string $token)
+    {
+        try {
+            $base64 = strtr($token, '-_', '+/');
+            $padding = strlen($base64) % 4;
+            if ($padding) {
+                $base64 .= str_repeat('=', 4 - $padding);
+            }
+            $decrypted = \Illuminate\Support\Facades\Crypt::decryptString(base64_decode($base64));
+            $data = json_decode($decrypted, true);
+            if (isset($data['id'])) {
+                return self::find($data['id']);
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+        return null;
+    }
 }

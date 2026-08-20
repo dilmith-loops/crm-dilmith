@@ -26,6 +26,7 @@ Route::get('maintenance', function () {
 })->name('maintenance');
 
 Route::get('/petty-cash/{pettyCash}/download', [PettyCashController::class, 'downloadVoucher'])->name('petty-cash.download');
+Route::get('/petty-cash/voucher/{token}', [PettyCashController::class, 'downloadVoucherSecure'])->name('petty-cash.download-secure');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

@@ -562,8 +562,26 @@ class PettyCashController extends Controller
 
     public function downloadVoucher(Request $request, PettyCashRequest $pettyCash)
     {
-        $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
+        $token = $pettyCash->getSecureVoucherToken();
+        $params = ['token' => $token];
+        if ($request->has('with_buttons')) {
+            $params['with_buttons'] = 1;
+        }
+        return redirect()->route('petty-cash.download-secure', $params);
+    }
 
+    public function downloadVoucherSecure(Request $request, $token)
+    {
+        $pettyCash = PettyCashRequest::findBySecureVoucherToken($token);
+        if (!$pettyCash && is_numeric($token)) {
+            $pettyCash = PettyCashRequest::find($token);
+        }
+
+        if (!$pettyCash) {
+            abort(404, 'Petty Cash Voucher not found or link has expired.');
+        }
+
+        $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
         $hideButtons = !$request->has('with_buttons');
 
         return view('petty-cash.voucher', compact('pettyCash', 'hideButtons'));
