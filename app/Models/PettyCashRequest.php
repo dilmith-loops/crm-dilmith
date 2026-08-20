@@ -110,34 +110,32 @@ class PettyCashRequest extends Model
     }
 
     /**
-     * Generate an encrypted, URL-safe token for public voucher links.
+     * Generate a short, encrypted URL-safe token for public voucher links.
      */
     public function getSecureVoucherToken(): string
     {
-        $payload = json_encode([
-            'id' => $this->id,
-            'ref' => $this->reference_number,
-            'ts' => $this->created_at ? $this->created_at->timestamp : time(),
-        ]);
-        $encrypted = \Illuminate\Support\Facades\Crypt::encryptString($payload);
-        return rtrim(strtr(base64_encode($encrypted), '+/', '-_'), '=');
+        $hash = substr(hash_hmac('sha256', 'pc_' . $this->id . '_' . $this->created_at, config('app.key')), 0, 10);
+        return base_convert($this->id, 10, 36) . 'z' . $hash;
     }
 
     /**
-     * Decrypt and validate a secure voucher token.
+     * Decrypt and validate a short secure voucher token.
      */
     public static function findBySecureVoucherToken(string $token)
     {
         try {
-            $base64 = strtr($token, '-_', '+/');
-            $padding = strlen($base64) % 4;
-            if ($padding) {
-                $base64 .= str_repeat('=', 4 - $padding);
-            }
-            $decrypted = \Illuminate\Support\Facades\Crypt::decryptString(base64_decode($base64));
-            $data = json_decode($decrypted, true);
-            if (isset($data['id'])) {
-                return self::find($data['id']);
+            if (str_contains($token, 'z')) {
+                $parts = explode('z', $token, 2);
+                $id = (int) base_convert($parts[0], 36, 10);
+                $hash = $parts[1] ?? '';
+
+                $pc = self::find($id);
+                if ($pc) {
+                    $expectedHash = substr(hash_hmac('sha256', 'pc_' . $pc->id . '_' . $pc->created_at, config('app.key')), 0, 10);
+                    if (hash_equals($expectedHash, $hash)) {
+                        return $pc;
+                    }
+                }
             }
         } catch (\Throwable $e) {
             return null;
