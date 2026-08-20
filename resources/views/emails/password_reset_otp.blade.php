@@ -10,10 +10,13 @@
         <!-- Header -->
         <tr>
             <td style="background: linear-gradient(135deg, #ff0878 0%, #8035ca 50%, #0057be 100%); padding: 30px 25px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+                <div style="margin-bottom: 12px;">
+                    <img src="{{ url('images/logo_loops_light.png') }}" alt="Loops Integrated" style="height: 48px; width: auto; display: inline-block;">
+                </div>
+                <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
                     Password Reset Request
                 </h1>
-                <p style="color: rgba(255,255,255,0.85); margin: 6px 0 0 0; font-size: 13px;">
+                <p style="color: rgba(255,255,255,0.85); margin: 6px 0 0 0; font-size: 12px;">
                     Loops Integrated System Security
                 </p>
             </td>
