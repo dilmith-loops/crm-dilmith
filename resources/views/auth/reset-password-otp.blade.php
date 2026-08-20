@@ -63,7 +63,7 @@
             </div>
         @endif
 
-        <form action="{{ route('password.update-otp') }}" method="POST" class="space-y-4 sm:space-y-5" x-data="{ showPassword: false }">
+        <form action="{{ route('password.update-otp') }}" method="POST" class="space-y-4 sm:space-y-5" x-data="{ showPassword: false, showConfirmPassword: false }">
             @csrf
             <!-- Email -->
             <div class="space-y-1 sm:space-y-1.5">
@@ -116,9 +116,13 @@
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
                         <i class="fas fa-lock"></i>
                     </span>
-                    <input :type="showPassword ? 'text' : 'password'" name="password_confirmation" id="password_confirmation" required minlength="8"
+                    <input :type="showConfirmPassword ? 'text' : 'password'" name="password_confirmation" id="password_confirmation" required minlength="8"
                         placeholder="••••••••"
                         class="block w-full pl-11 pr-12 py-3 bg-gray-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-300 text-gray-700 text-base sm:text-sm font-medium">
+                    <button type="button" @click="showConfirmPassword = !showConfirmPassword"
+                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-600 transition-colors focus:outline-none">
+                        <i class="fas" :class="showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                    </button>
                 </div>
             </div>
 
