@@ -25,6 +25,8 @@ Route::get('maintenance', function () {
     return view('errors.maintenance');
 })->name('maintenance');
 
+Route::get('/petty-cash/{pettyCash}/download', [PettyCashController::class, 'downloadVoucher'])->name('petty-cash.download');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/notifications/mark-as-read', function () {
@@ -54,7 +56,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/petty-cash/{pettyCash}/reappeal', [PettyCashController::class, 'reappeal'])->name('petty-cash.reappeal');
     Route::get('/petty-cash/{id}/reappeal', function ($id) { return redirect()->route('petty-cash.index', ['reappeal_id' => $id]); });
     Route::post('/petty-cash/{pettyCash}/remind-iou', [PettyCashController::class, 'sendIouReminder'])->name('petty-cash.remind-iou');
-    Route::get('/petty-cash/{pettyCash}/download', [PettyCashController::class, 'downloadVoucher'])->name('petty-cash.download');
 
     Route::middleware(['prevent.staff'])->group(function () {
         Route::get('/dashboard/export', [DashboardController::class, 'exportCsv'])->name('dashboard.export');
