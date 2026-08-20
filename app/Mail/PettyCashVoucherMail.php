@@ -67,9 +67,17 @@ class PettyCashVoucherMail extends Mailable
             default => "{$typeStr} {$ref} was updated.",
         };
 
+        $this->subject($subject)
+            ->view('emails.petty_cash_notification')
+            ->with([
+                'pettyCash' => $this->pettyCash,
+                'action' => $this->action,
+                'actorName' => $this->actor->name ?? 'System',
+                'notifiableName' => $this->notifiable->name ?? 'User',
+                'customMessage' => $customMessage,
+            ]);
+
         // Generate PDF voucher attachment using DomPDF
-        $pdfBytes = null;
-        $tempPdfPath = null;
         try {
             $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
                 'pettyCash' => $this->pettyCash,
@@ -80,42 +88,14 @@ class PettyCashVoucherMail extends Mailable
             $pdfBytes = $pdf->output();
             if (!empty($pdfBytes)) {
                 $filename = "Petty_Cash_Voucher_{$ref}.pdf";
-                $tempDir = storage_path('app/public/vouchers');
-                if (!file_exists($tempDir)) {
-                    @mkdir($tempDir, 0777, true);
-                }
-                $tempPdfPath = $tempDir . '/' . $filename;
-                @file_put_contents($tempPdfPath, $pdfBytes);
+                $this->attachData($pdfBytes, $filename, [
+                    'mime' => 'application/pdf',
+                ]);
             }
         } catch (\Throwable $e) {
             Log::error('PettyCash Mailable PDF Attachment Error: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
         }
 
-        $mailable = $this->subject($subject)
-            ->view('emails.petty_cash_notification')
-            ->with([
-                'pettyCash' => $this->pettyCash,
-                'action' => $this->action,
-                'actorName' => $this->actor->name ?? 'System',
-                'notifiableName' => $this->notifiable->name ?? 'User',
-                'customMessage' => $customMessage,
-            ]);
-
-        $filename = "Petty_Cash_Voucher_{$ref}.pdf";
-
-        if ($tempPdfPath && file_exists($tempPdfPath)) {
-            $mailable->attach($tempPdfPath, [
-                'as' => $filename,
-                'mime' => 'application/pdf',
-            ]);
-        }
-
-        if (!empty($pdfBytes)) {
-            $mailable->attachData($pdfBytes, $filename, [
-                'mime' => 'application/pdf',
-            ]);
-        }
-
-        return $mailable;
+        return $this;
     }
 }

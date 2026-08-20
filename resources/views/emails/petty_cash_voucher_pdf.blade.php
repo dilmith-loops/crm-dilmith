@@ -143,24 +143,32 @@
     @php
         $sigDataUri = null;
         if (!empty($pettyCash->signature_path)) {
-            $realSigPath = public_path(ltrim($pettyCash->signature_path, '/'));
-            if (file_exists($realSigPath) && is_file($realSigPath)) {
-                $type = pathinfo($realSigPath, PATHINFO_EXTENSION) ?: 'png';
-                $content = @file_get_contents($realSigPath);
-                if ($content) {
-                    $sigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+            if (str_starts_with($pettyCash->signature_path, 'data:image/')) {
+                $sigDataUri = $pettyCash->signature_path;
+            } else {
+                $realSigPath = public_path(ltrim($pettyCash->signature_path, '/'));
+                if (file_exists($realSigPath) && is_file($realSigPath)) {
+                    $type = pathinfo($realSigPath, PATHINFO_EXTENSION) ?: 'png';
+                    $content = @file_get_contents($realSigPath);
+                    if ($content) {
+                        $sigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+                    }
                 }
             }
         }
 
         $settleSigDataUri = null;
         if (!empty($pettyCash->settlement_signature_path)) {
-            $realSettleSigPath = public_path(ltrim($pettyCash->settlement_signature_path, '/'));
-            if (file_exists($realSettleSigPath) && is_file($realSettleSigPath)) {
-                $type = pathinfo($realSettleSigPath, PATHINFO_EXTENSION) ?: 'png';
-                $content = @file_get_contents($realSettleSigPath);
-                if ($content) {
-                    $settleSigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+            if (str_starts_with($pettyCash->settlement_signature_path, 'data:image/')) {
+                $settleSigDataUri = $pettyCash->settlement_signature_path;
+            } else {
+                $realSettleSigPath = public_path(ltrim($pettyCash->settlement_signature_path, '/'));
+                if (file_exists($realSettleSigPath) && is_file($realSettleSigPath)) {
+                    $type = pathinfo($realSettleSigPath, PATHINFO_EXTENSION) ?: 'png';
+                    $content = @file_get_contents($realSettleSigPath);
+                    if ($content) {
+                        $settleSigDataUri = 'data:image/' . $type . ';base64,' . base64_encode($content);
+                    }
                 }
             }
         }
