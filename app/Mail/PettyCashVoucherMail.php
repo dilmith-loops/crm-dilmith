@@ -48,24 +48,43 @@ class PettyCashVoucherMail extends Mailable
         $approverName = $this->actor->name ?? 'Loops Finance';
 
         // Determine recipient relationship safely
-        $notifiableEmail = strtolower(
-            is_object($this->notifiable)
-                ? ($this->notifiable->email ?? (method_exists($this->notifiable, 'routeNotificationFor') ? $this->notifiable->routeNotificationFor('mail') : ($this->notifiable->routes['mail'] ?? '')))
-                : ''
-        );
-        $notifiableId = is_object($this->notifiable) ? ((method_exists($this->notifiable, 'getKey') ? $this->notifiable->getKey() : null) ?? ($this->notifiable->id ?? null)) : null;
+        $isAnonymousAdmin = $this->notifiable instanceof \Illuminate\Notifications\AnonymousNotifiable;
 
-        $requesterEmail = strtolower($this->pettyCash->user->email ?? '');
-        $hodEmail = strtolower($this->pettyCash->hod->email ?? '');
+        if ($isAnonymousAdmin) {
+            $isRequester = false;
+            $isHod = false;
+            $isSuperAdmin = true;
+        } else {
+            $notifiableId = is_object($this->notifiable) ? ((method_exists($this->notifiable, 'getKey') ? $this->notifiable->getKey() : null) ?? ($this->notifiable->id ?? null)) : null;
 
-        // Requester priority: If the notifiable is the user who requested the petty cash, treat as Requester
-        $isRequester = ($notifiableId && $notifiableId == $this->pettyCash->user_id) 
-            || ($notifiableEmail && $requesterEmail && $notifiableEmail === $requesterEmail);
+            if ($notifiableId) {
+                $isRequester = ($notifiableId == $this->pettyCash->user_id);
+                $isHod = (!$isRequester) && ($this->pettyCash->hod_id && $notifiableId == $this->pettyCash->hod_id);
+                $isSuperAdmin = (!$isRequester && !$isHod);
+            } else {
+                $notifiableEmail = strtolower(
+                    is_object($this->notifiable)
+                        ? ($this->notifiable->email ?? (method_exists($this->notifiable, 'routeNotificationFor') ? $this->notifiable->routeNotificationFor('mail') : ($this->notifiable->routes['mail'] ?? '')))
+                        : (is_string($this->notifiable) ? $this->notifiable : '')
+                );
+                $requesterEmail = strtolower($this->pettyCash->user->email ?? '');
+                $hodEmail = strtolower($this->pettyCash->hod->email ?? '');
 
-        $isHod = (!$isRequester) && (($notifiableId && $this->pettyCash->hod_id && $notifiableId == $this->pettyCash->hod_id) 
-            || ($notifiableEmail && $hodEmail && $notifiableEmail === $hodEmail));
-
-        $isSuperAdmin = (!$isRequester && !$isHod);
+                if ($notifiableEmail && $requesterEmail && $notifiableEmail === $requesterEmail) {
+                    $isRequester = true;
+                    $isHod = false;
+                    $isSuperAdmin = false;
+                } else if ($notifiableEmail && $hodEmail && $notifiableEmail === $hodEmail) {
+                    $isRequester = false;
+                    $isHod = true;
+                    $isSuperAdmin = false;
+                } else {
+                    $isRequester = false;
+                    $isHod = false;
+                    $isSuperAdmin = true;
+                }
+            }
+        }
 
         $subject = match ($this->action) {
             'submitted' => $isRequester 
