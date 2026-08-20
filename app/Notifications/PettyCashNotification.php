@@ -26,11 +26,17 @@ class PettyCashNotification extends Notification
     /**
      * Helper to retrieve all Super Admin notification targets (DB users + custom emails).
      */
-    public static function getSuperAdminRecipients()
+    public static function getSuperAdminRecipients($excludeUserId = null)
     {
-        $admins = User::where('role', 'Super Admin')
-            ->orWhere('role', 'super_admin')
-            ->get();
+        $adminsQuery = User::where(function($q) {
+            $q->where('role', 'Super Admin')->orWhere('role', 'super_admin');
+        });
+
+        if ($excludeUserId) {
+            $adminsQuery->where('id', '!=', $excludeUserId);
+        }
+
+        $admins = $adminsQuery->get();
 
         $existingEmails = $admins->pluck('email')->map(fn($e) => strtolower($e))->toArray();
 
@@ -38,11 +44,14 @@ class PettyCashNotification extends Notification
             if (!empty($email) && !in_array(strtolower($email), $existingEmails)) {
                 $user = User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
                 if ($user) {
-                    $admins->push($user);
+                    if (!$excludeUserId || $user->id != $excludeUserId) {
+                        $admins->push($user);
+                        $existingEmails[] = strtolower($email);
+                    }
                 } else {
                     $admins->push(NotificationFacade::route('mail', $email));
+                    $existingEmails[] = strtolower($email);
                 }
-                $existingEmails[] = strtolower($email);
             }
         }
 

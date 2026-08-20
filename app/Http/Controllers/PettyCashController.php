@@ -169,7 +169,7 @@ class PettyCashController extends Controller
         // Notify Super Admins (only if requester is NOT a Super Admin to prevent duplicate admin emails)
         $isRequesterSuperAdmin = $user && ($user->role === 'Super Admin' || $user->role === 'super_admin' || (method_exists($user, 'hasRole') && $user->hasRole('super_admin')));
         if (!$isRequesterSuperAdmin) {
-            $superAdmins = PettyCashNotification::getSuperAdminRecipients();
+            $superAdmins = PettyCashNotification::getSuperAdminRecipients($user ? $user->id : null);
             Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
         }
 
@@ -200,7 +200,7 @@ class PettyCashController extends Controller
         ]);
 
         // 2. Notify Staff & Super Admins upon HOD Approval
-        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'hod_approved', $user));
 
         if ($pettyCash->user) {
@@ -232,7 +232,7 @@ class PettyCashController extends Controller
         if ($requestedUser) {
             $requestedUser->notify(new PettyCashNotification($pettyCash, 'hod_rejected', $user, $request->hod_rejection_note));
         }
-        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'hod_rejected', $user, $request->hod_rejection_note));
 
         return redirect()->back()->with('success', 'Petty Cash request rejected. Staff has been notified.');
@@ -316,7 +316,7 @@ class PettyCashController extends Controller
         if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
             $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
         }
-        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'admin_approved', $user));
 
         $msg = $isIOU ? 'IOU Request APPROVED & Money Handed Over (Status: Unsettled IOU).' : 'Petty Cash request APPROVED successfully.';
@@ -373,7 +373,7 @@ class PettyCashController extends Controller
         if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
             $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
         }
-        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
 
         return redirect()->back()->with('success', 'Petty Cash request rejected by Super Admin. Staff and HOD have been notified.');
