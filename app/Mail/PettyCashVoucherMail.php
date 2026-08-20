@@ -86,14 +86,25 @@ class PettyCashVoucherMail extends Mailable
      */
     public function attachments(): array
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(120);
+
         try {
             $this->pettyCash->loadMissing('user', 'hod', 'items.category');
             $ref = $this->pettyCash->reference_number;
+
+            $tempDir = storage_path('app/temp');
+            if (!file_exists($tempDir)) {
+                @mkdir($tempDir, 0777, true);
+            }
+
             $pdf = Pdf::loadView('emails.petty_cash_voucher_pdf', [
                 'pettyCash' => $this->pettyCash,
             ])->setPaper('a4', 'portrait')
               ->setOption('isRemoteEnabled', true)
-              ->setOption('isHtml5ParserEnabled', true);
+              ->setOption('isHtml5ParserEnabled', true)
+              ->setOption('tempDir', $tempDir)
+              ->setOption('chroot', [public_path(), base_path(), storage_path()]);
 
             $pdfBytes = $pdf->output();
             if (!empty($pdfBytes)) {
