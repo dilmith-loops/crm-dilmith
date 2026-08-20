@@ -259,6 +259,11 @@
                         <span>Reports</span>
                     </a>
 
+                    <button type="button" onclick="triggerPwaInstall()" class="w-full text-left flex items-center px-4 py-3 rounded-lg hover:bg-gray-700 transition text-gray-200 font-semibold mt-2 border border-brand-pink/30 bg-gradient-to-r from-brand-pink/20 to-brand-purple/20 shadow-sm" title="Install App (PWA)">
+                        <i class="fas fa-download text-brand-pink w-6"></i>
+                        <span>Install App</span>
+                    </button>
+
                     @if(auth()->check() && auth()->user()->role === 'Super Admin')
                         <a href="{{ route('users.index') }}"
                             class="flex items-center px-4 py-3 rounded-lg hover:bg-gray-700 transition {{ request()->is('users*') ? 'bg-gray-700 text-brand-pink font-semibold' : '' }}">
