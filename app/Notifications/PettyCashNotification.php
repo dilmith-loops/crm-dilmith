@@ -67,9 +67,13 @@ class PettyCashNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
+        $channels = [];
 
-        if (!empty($notifiable->email)) {
+        if (method_exists($notifiable, 'getKey') && $notifiable->getKey()) {
+            $channels[] = 'database';
+        }
+
+        if (!empty($notifiable->email) || (method_exists($notifiable, 'routeNotificationFor') && $notifiable->routeNotificationFor('mail'))) {
             $channels[] = 'mail';
         }
 
@@ -81,8 +85,14 @@ class PettyCashNotification extends Notification
      */
     public function toMail(object $notifiable): PettyCashVoucherMail
     {
-        return (new PettyCashVoucherMail($this->pettyCash, $this->action, $this->actor, $this->note, $notifiable))
-            ->to($notifiable->email);
+        $mailable = new PettyCashVoucherMail($this->pettyCash, $this->action, $this->actor, $this->note, $notifiable);
+
+        $email = $notifiable->email ?? (method_exists($notifiable, 'routeNotificationFor') ? $notifiable->routeNotificationFor('mail') : null);
+        if ($email) {
+            $mailable->to($email);
+        }
+
+        return $mailable;
     }
 
     /**

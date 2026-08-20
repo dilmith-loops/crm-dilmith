@@ -48,7 +48,11 @@ class PettyCashVoucherMail extends Mailable
         $approverName = $this->actor->name ?? 'Loops Finance';
 
         // Determine recipient relationship safely
-        $notifiableEmail = is_object($this->notifiable) ? strtolower($this->notifiable->email ?? '') : '';
+        $notifiableEmail = strtolower(
+            is_object($this->notifiable)
+                ? ($this->notifiable->email ?? (method_exists($this->notifiable, 'routeNotificationFor') ? $this->notifiable->routeNotificationFor('mail') : ($this->notifiable->routes['mail'] ?? '')))
+                : ''
+        );
         $notifiableId = is_object($this->notifiable) ? ((method_exists($this->notifiable, 'getKey') ? $this->notifiable->getKey() : null) ?? ($this->notifiable->id ?? null)) : null;
 
         $requesterEmail = strtolower($this->pettyCash->user->email ?? '');
