@@ -228,8 +228,9 @@ class PettyCashController extends Controller
         ]);
 
         // 4a. Notify Requested User and Super Admins upon HOD Rejection
-        if ($pettyCash->user) {
-            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'hod_rejected', $user, $request->hod_rejection_note));
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'hod_rejected', $user, $request->hod_rejection_note));
         }
         $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'hod_rejected', $user, $request->hod_rejection_note));
@@ -365,8 +366,9 @@ class PettyCashController extends Controller
         ]);
 
         // 4b. Notify Staff, HOD, and Super Admins upon Super Admin Rejection
-        if ($pettyCash->user) {
-            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
         }
         if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
             $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
