@@ -84,7 +84,7 @@
     @php
         $unsettledIou = \App\Models\PettyCashRequest::where('user_id', auth()->id())
             ->where('is_iou', true)
-            ->whereNotIn('status', ['settled', 'rejected_by_hod', 'rejected_by_super_admin'])
+            ->whereIn('status', ['approved', 'iou_issued', 'pending_settlement'])
             ->orderBy('created_at', 'desc')
             ->first();
     @endphp
@@ -94,7 +94,6 @@
             $startDate = $unsettledIou->issued_at ?? $unsettledIou->updated_at ?? $unsettledIou->created_at;
             $deadline = $startDate ? $startDate->copy()->addHours(72) : now()->addHours(72);
             $isOverdue = now()->greaterThan($deadline);
-            $hoursLeft = max(0, now()->diffInHours($deadline, false));
         @endphp
 
         <div class="mb-6 p-4 rounded-xl border {{ $isOverdue ? 'bg-rose-50 border-rose-300 text-rose-900' : 'bg-amber-50 border-amber-300 text-amber-900' }} shadow-sm">
@@ -113,12 +112,12 @@
                             @endif
                         </h4>
                         <p class="text-xs mt-1 leading-relaxed">
-                            You have an active IOU for <strong>LKR {{ number_format($unsettledIou->total_amount, 2) }}</strong> approved on {{ $startDate ? $startDate->format('d M Y, h:i A') : 'N/A' }}.
+                            You have an active approved IOU for <strong>LKR {{ number_format($unsettledIou->total_amount, 2) }}</strong> approved on {{ $startDate ? $startDate->format('d M Y, h:i A') : 'N/A' }}.
                             <br>
                             @if($isOverdue)
                                 <span class="font-bold text-rose-700">Settlement deadline was {{ $deadline->format('d M Y, h:i A') }} (Passed 72 hours). Please submit expenditure bills immediately!</span>
                             @else
-                                <span>Settlement Deadline: <strong class="font-semibold">{{ $deadline->format('d M Y, h:i A') }}</strong> ({{ $hoursLeft }} hours remaining).</span>
+                                <span>Settlement Deadline: <strong class="font-semibold">{{ $deadline->format('d M Y, h:i A') }}</strong>.</span>
                             @endif
                         </p>
                     </div>

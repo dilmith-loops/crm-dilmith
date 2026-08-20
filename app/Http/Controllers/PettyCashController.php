@@ -90,10 +90,10 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        // Prevent new petty cash request if user has an active unsettled IOU
+        // Prevent new petty cash request if user has an active Super Admin approved unsettled IOU
         $activeUnsettledIou = PettyCashRequest::where('user_id', $user->id)
             ->where('is_iou', true)
-            ->whereNotIn('status', ['settled', 'rejected_by_hod', 'rejected_by_super_admin'])
+            ->whereIn('status', ['approved', 'iou_issued', 'pending_settlement'])
             ->first();
 
         if ($activeUnsettledIou) {
