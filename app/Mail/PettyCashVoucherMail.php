@@ -119,7 +119,9 @@ class PettyCashVoucherMail extends Mailable
                     ? "Your team member {$requesterName} " . ($isIou ? "IOU request" : "petty cash request") . " was approved by the Loops Finance."
                     : "Petty cash request {$ref} is approved by {$approverName}."),
 
-            'hod_rejected' => "Your {$typeStr} {$ref} was REJECTED by HOD. Reason: " . ($this->note ?: 'No reason provided'),
+            'hod_rejected' => $isRequester
+                ? "Your {$typeStr} {$ref} was REJECTED by HOD. Reason: " . ($this->note ?: 'No reason provided')
+                : "Petty cash request {$ref} requested by {$requesterName} was REJECTED by HOD. Reason: " . ($this->note ?: 'No reason provided'),
             'admin_rejected' => "Your {$typeStr} {$ref} was REJECTED by Finance. Reason: " . ($this->note ?: 'No reason provided'),
             'iou_settled' => "The settlement for IOU request {$ref} ({$amountStr}) has been APPROVED and officially marked as SETTLED by Finance.",
             'iou_reminder' => "This is an urgent reminder regarding your IOU request {$ref} for {$amountStr} issued on " . ($this->pettyCash->issued_at ? $this->pettyCash->issued_at->format('d M Y') : 'N/A') . ". Please submit your expenditure proofs and settlement promptly.",
