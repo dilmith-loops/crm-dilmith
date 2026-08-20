@@ -63,20 +63,24 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto my-6">
-    @unless(isset($hideButtons) && $hideButtons)
     <!-- Top Action Bar (hidden in PDF output & print) -->
     <div class="no-print mb-4 flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-gray-200">
-        <a href="{{ route('petty-cash.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold transition-colors inline-flex items-center">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Petty Cash
-        </a>
-        <div class="flex items-center gap-3">
-            <span class="text-xs font-bold text-gray-600 hidden sm:inline">Reference: <span class="font-mono text-gray-900">{{ $pettyCash->reference_number }}</span></span>
-            <button id="downloadPdfBtn" onclick="generateAndDownloadPDF()" class="bg-gradient-to-r from-brand-pink to-brand-purple text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all inline-flex items-center cursor-pointer">
-                <i class="fas fa-file-download mr-2"></i> Download PDF
+        @if(auth()->check())
+            <a href="{{ route('petty-cash.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold transition-colors inline-flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Petty Cash
+            </a>
+        @else
+            <span class="text-xs font-bold text-gray-600">Reference: <span class="font-mono text-gray-900">{{ $pettyCash->reference_number }}</span></span>
+        @endif
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="window.print()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3.5 py-2 rounded-lg text-xs font-bold transition-colors inline-flex items-center cursor-pointer">
+                <i class="fas fa-print mr-1.5"></i> Print
+            </button>
+            <button id="downloadPdfBtn" type="button" onclick="generateAndDownloadPDF()" class="bg-gradient-to-r from-brand-pink to-brand-purple text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all inline-flex items-center cursor-pointer">
+                <i class="fas fa-file-pdf mr-1.5"></i> Download PDF
             </button>
         </div>
     </div>
-    @endunless
 
     <!-- Voucher Document Container -->
     <div id="voucher-document" class="bg-white shadow-2xl rounded-2xl border border-gray-200 print-container overflow-hidden p-6 space-y-4 sm:p-8 sm:space-y-5">
