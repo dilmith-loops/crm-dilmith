@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -28,6 +29,24 @@ class AuthController extends Controller
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
+    }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'current_password.current_password' => 'The current password you entered is incorrect.',
+            'password.confirmed' => 'The new password and confirmation do not match.',
+            'password.min' => 'The new password must be at least 8 characters long.',
+        ]);
+
+        $user = Auth::user();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return redirect()->back()->with('success', 'Your password has been updated successfully!');
     }
 
     public function logout(Request $request)

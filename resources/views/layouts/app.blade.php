@@ -165,12 +165,17 @@
                         <p class="text-sm font-medium truncate">{{ Auth::user()->name ?? 'Admin User' }}</p>
                         <p class="text-xs text-gray-400 truncate">{{ Auth::user()->email ?? 'admin@example.com' }}</p>
                     </div>
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="text-gray-400 hover:text-white" title="Logout">
-                            <i class="fas fa-sign-out-alt"></i>
+                    <div class="flex items-center space-x-1">
+                        <button type="button" onclick="document.getElementById('changePasswordModal').classList.remove('hidden')" class="text-gray-400 hover:text-white p-1" title="Change Password">
+                            <i class="fas fa-key"></i>
                         </button>
-                    </form>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="text-gray-400 hover:text-white p-1" title="Logout">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -296,7 +301,11 @@
                         @endunless
                         <h2 class="text-lg sm:text-xl font-bold text-gray-800 truncate">@yield('header')</h2>
                     </div>
-                    <div>
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="document.getElementById('changePasswordModal').classList.remove('hidden')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm" title="Change Password">
+                            <i class="fas fa-key text-brand-purple"></i>
+                            <span class="hidden sm:inline">Change Password</span>
+                        </button>
                         <div x-data="{ 
                             open: false, 
                             unreadCount: {{ auth()->user()->unreadNotifications->count() }},
@@ -413,7 +422,103 @@
         // Clear dark mode preference if previously set
         localStorage.removeItem('staff_dark_mode');
         document.body.classList.remove('dark');
+
+        // Global handler to disable submit buttons and show loading spinner on form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form').forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    if (e.defaultPrevented) return;
+
+                    var submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                    submitBtns.forEach(function(btn) {
+                        if (btn.disabled) return;
+                        btn.disabled = true;
+                        btn.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+                        if (!btn.querySelector('.fa-spinner')) {
+                            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Processing...';
+                        }
+                    });
+                });
+            });
+        });
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
     </script>
+
+    <!-- Change Password Modal (Accessible to All Logged In Users) -->
+    <div id="changePasswordModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm {{ $errors->has('current_password') || $errors->has('password') ? '' : 'hidden' }} overflow-y-auto h-full w-full z-50 p-4 flex items-center justify-center">
+        <div class="relative my-auto p-6 border w-full max-w-md shadow-2xl rounded-2xl bg-white">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-key text-brand-purple mr-2"></i> Change Password
+                </h3>
+                <button onclick="document.getElementById('changePasswordModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 p-1">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <form action="{{ route('password.change') }}" method="POST" class="mt-4 space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Current Password *</label>
+                    <div class="relative">
+                        <input type="password" name="current_password" id="current_password_input" required class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-purple focus:ring-brand-purple pr-10">
+                        <button type="button" onclick="togglePasswordVisibility('current_password_input', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    @error('current_password')
+                        <p class="text-red-500 text-xs mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">New Password * (Min. 8 characters)</label>
+                    <div class="relative">
+                        <input type="password" name="password" id="new_password_input" minlength="8" required class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-purple focus:ring-brand-purple pr-10">
+                        <button type="button" onclick="togglePasswordVisibility('new_password_input', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    @error('password')
+                        <p class="text-red-500 text-xs mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Confirm New Password *</label>
+                    <div class="relative">
+                        <input type="password" name="password_confirmation" id="confirm_password_input" minlength="8" required class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-purple focus:ring-brand-purple pr-10">
+                        <button type="button" onclick="togglePasswordVisibility('confirm_password_input', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
+                    <button type="button" onclick="document.getElementById('changePasswordModal').classList.add('hidden')"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 text-xs font-semibold rounded-lg hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-gradient-to-r from-brand-purple to-brand-pink text-white text-xs font-bold rounded-lg hover:opacity-90 shadow-md flex items-center">
+                        <i class="fas fa-save mr-1.5"></i> Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 
 </html>

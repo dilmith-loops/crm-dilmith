@@ -29,6 +29,7 @@ Route::get('/petty-cash/{pettyCash}/download', [PettyCashController::class, 'dow
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/change-password', [AuthController::class, 'changePassword'])->name('password.change');
     Route::post('/notifications/mark-as-read', function () {
         auth()->user()->unreadNotifications->markAsRead();
         return response()->json(['success' => true]);
