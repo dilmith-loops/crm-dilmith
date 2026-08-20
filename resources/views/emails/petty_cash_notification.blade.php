@@ -172,16 +172,19 @@
                 </div>
                 @endif
 
-                <!-- CTA Button -->
+                <!-- CTA Buttons -->
                 <div style="text-align: center; margin: 24px 0 16px 0;">
-                    <a href="{{ route('petty-cash.index') }}" target="_blank" style="background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%); color: #ffffff; text-decoration: none; padding: 12px 28px; font-size: 13px; font-weight: bold; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.4);">
+                    <a href="{{ route('petty-cash.download', $pettyCash->id) }}" target="_blank" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; text-decoration: none; padding: 12px 22px; font-size: 13px; font-weight: bold; border-radius: 8px; display: inline-block; margin-right: 6px; margin-bottom: 8px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);">
+                        📄 View / Download Voucher PDF &rarr;
+                    </a>
+                    <a href="{{ route('petty-cash.index') }}" target="_blank" style="background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%); color: #ffffff; text-decoration: none; padding: 12px 22px; font-size: 13px; font-weight: bold; border-radius: 8px; display: inline-block; margin-bottom: 8px; box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.4);">
                         View Request Details in Portal &rarr;
                     </a>
                 </div>
 
-                <!-- Attachment Notice -->
+                <!-- Attachment & Download Notice -->
                 <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px 14px; text-align: center; font-size: 11px; color: #64748b;">
-                    📎 <strong>Attachment Notice:</strong> The official printable PDF voucher (<code>Petty_Cash_Voucher_{{ $pettyCash->reference_number }}.pdf</code>) is attached to this email.
+                    📎 <strong>Voucher Access:</strong> You can download or view the official PDF voucher directly by <a href="{{ route('petty-cash.download', $pettyCash->id) }}" target="_blank" style="color: #0284c7; font-weight: bold; text-decoration: underline;">clicking here</a> or via the attached file (<code>Petty_Cash_Voucher_{{ $pettyCash->reference_number }}.pdf</code>).
                 </div>
 
             </td>

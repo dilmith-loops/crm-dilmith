@@ -154,17 +154,22 @@ class PettyCashController extends Controller
             }
         }
 
-        // 1. Notify Super Admins, HOD, and Staff upon request submission
-        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
-        Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
-
+        // 1. Notify HOD, Staff, and Super Admins (only if requester is NOT a Super Admin)
         $hod = User::find($request->hod_id);
         if ($hod) {
             $hod->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
         }
 
-        if ($user) {
+        $isRequesterSuperAdmin = $user && ($user->role === 'Super Admin' || $user->role === 'super_admin' || (method_exists($user, 'hasRole') && $user->hasRole('super_admin')));
+
+        if ($user && !$isRequesterSuperAdmin) {
             $user->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
+        }
+
+        // Only send submission email to Super Admins if request was NOT created by a Super Admin
+        if (!$isRequesterSuperAdmin) {
+            $superAdmins = PettyCashNotification::getSuperAdminRecipients();
+            Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
         }
 
         return redirect()->back()->with('success', 'Petty Cash request submitted successfully and sent to HOD for approval.');
