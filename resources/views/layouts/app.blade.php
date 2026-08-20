@@ -534,7 +534,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('{{ asset("serviceworker.js") }}').then(function(reg) {
+                navigator.serviceWorker.register('{{ asset("serviceworker.js") }}', { scope: '{{ asset("") }}' }).then(function(reg) {
                     console.log('PWA ServiceWorker registered with scope:', reg.scope);
                 }).catch(function(err) {
                     console.error('PWA ServiceWorker registration failed:', err);
