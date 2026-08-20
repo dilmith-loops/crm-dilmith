@@ -9,13 +9,13 @@
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     
     <!-- PWA Web App Meta Tags -->
-    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <link rel="manifest" href="{{ url('manifest.json') }}">
     <meta name="theme-color" content="#8035ca">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Loops CRM">
-    <link rel="apple-touch-icon" href="{{ asset('images/pwa-icon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ url('images/pwa-icon-192.png') }}">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -570,7 +570,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
+                navigator.serviceWorker.register('{{ url("serviceworker.js") }}').then(function(registration) {
                     console.log('PWA ServiceWorker registered: ', registration.scope);
                 }).catch(function(err) {
                     console.log('PWA ServiceWorker registration failed: ', err);
