@@ -203,8 +203,9 @@ class PettyCashController extends Controller
         $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'hod_approved', $user));
 
-        if ($pettyCash->user) {
-            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'hod_approved', $user));
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'hod_approved', $user));
         }
 
         return redirect()->back()->with('success', 'Petty Cash request approved and forwarded to Super Admin.');
@@ -310,8 +311,9 @@ class PettyCashController extends Controller
         $pettyCash->update($updateData);
 
         // 3. Notify Staff, HOD, and Super Admins upon Super Admin Approval (with PDF Voucher)
-        if ($pettyCash->user) {
-            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
         }
         if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
             $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
@@ -338,8 +340,9 @@ class PettyCashController extends Controller
             return redirect()->back()->with('error', 'This request is not an active unsettled IOU.');
         }
 
-        if ($pettyCash->user) {
-            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $user));
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $user));
         }
         if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
             $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $user));
@@ -452,8 +455,9 @@ class PettyCashController extends Controller
         $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
 
-        if ($pettyCash->user && $pettyCash->user->id !== $user->id) {
-            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser && $requestedUser->id !== $user->id) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
         }
 
         return redirect()->back()->with('success', 'IOU Settlement details and proofs submitted successfully. Pending Super Admin final approval.');
@@ -553,8 +557,9 @@ class PettyCashController extends Controller
             }
         }
 
-        if ($pettyCash->user && $pettyCash->user->id !== $user->id) {
-            $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'reappealed', $user));
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser && $requestedUser->id !== $user->id) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'reappealed', $user));
         }
 
         return redirect()->back()->with('success', 'Petty Cash request re-appealed and resubmitted successfully.');
