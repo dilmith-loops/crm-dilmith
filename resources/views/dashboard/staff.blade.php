@@ -470,7 +470,7 @@
                 <i class="fas fa-clock text-brand-purple text-lg mt-0.5 flex-shrink-0"></i>
                 <div>
                     <strong class="text-purple-950 font-extrabold block mb-0.5">IOU 72-Hour Settlement Requirement:</strong>
-                    All IOUs must be settled with expenditure proofs (receipts, bills, or invoices) <strong>within 72 hours of approval</strong>. Once submitted, Super Admin will review and approve the settlement.
+                    All IOUs must be settled with expenditure proofs (receipts, bills, or invoices) <strong>within 72 hours of approval</strong>. Once submitted, Finance will review and approve the settlement.
                 </div>
             </div>
 
@@ -662,7 +662,7 @@
                         notesHtml += `<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 mb-2"><strong>HOD Rejection Note:</strong> ${pc.hod_rejection_note}</div>`;
                     }
                     if (pc.admin_rejection_note) {
-                        notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong>Super Admin Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
+                        notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong>Finance Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
                     }
 
                     let sigUrl = pc.signature_path ? (pc.signature_path.startsWith('data:image/') ? pc.signature_path : `${baseUrl}/${pc.signature_path.replace(/^\/?(public\/)?/, '')}`) : '';

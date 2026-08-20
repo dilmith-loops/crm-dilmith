@@ -593,7 +593,7 @@
                 <i class="fas fa-clock text-brand-purple text-lg mt-0.5 flex-shrink-0"></i>
                 <div>
                     <strong class="text-purple-950 font-extrabold block mb-0.5">IOU 72-Hour Settlement Requirement:</strong>
-                    All IOUs must be settled with expenditure proofs (receipts, bills, or invoices) <strong>within 72 hours of approval</strong>. Once submitted, Super Admin will review and approve the settlement.
+                    All IOUs must be settled with expenditure proofs (receipts, bills, or invoices) <strong>within 72 hours of approval</strong>. Once submitted, Finance will review and approve the settlement.
                 </div>
             </div>
 
@@ -703,7 +703,7 @@
     <div class="relative top-20 mx-auto p-6 border w-full max-w-md shadow-2xl rounded-2xl bg-white">
         <div class="flex justify-between items-center pb-3 border-b border-gray-200">
             <h3 class="text-lg font-bold text-rose-600">
-                <i class="fas fa-ban mr-2"></i> Reject Petty Cash Request (Super Admin)
+                <i class="fas fa-ban mr-2"></i> Reject Petty Cash Request (Finance)
             </h3>
             <button onclick="document.getElementById('adminRejectModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
                 <i class="fas fa-times"></i>
@@ -712,7 +712,7 @@
         <form id="adminRejectForm" action="" method="POST" class="mt-4 space-y-4">
             @csrf
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Super Admin Rejection Reason *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Finance Rejection Reason *</label>
                 <textarea name="admin_rejection_note" required rows="4" placeholder="State reason for rejection (Will notify both Staff & HOD)..." class="w-full rounded-lg border-gray-300 focus:border-rose-500 focus:ring-rose-500 text-sm"></textarea>
             </div>
             <div class="flex justify-end gap-2 pt-2">
@@ -1391,7 +1391,7 @@
                         notesHtml += `<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 mb-2"><strong>HOD Rejection Note:</strong> ${pc.hod_rejection_note}</div>`;
                     }
                     if (pc.admin_rejection_note) {
-                        notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong>Super Admin Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
+                        notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong>Finance Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
                     }
                     if (pc.settlement_note) {
                         notesHtml += `<div class="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-900 mb-2"><strong><i class="fas fa-sticky-note text-brand-purple mr-1"></i> IOU Settlement Note:</strong> ${pc.settlement_note}</div>`;

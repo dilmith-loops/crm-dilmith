@@ -226,7 +226,7 @@ class PettyCashController extends Controller
             $requestedUser->notify(new PettyCashNotification($pettyCash, 'hod_approved', $user));
         }
 
-        return redirect()->back()->with('success', 'Petty Cash request approved and forwarded to Super Admin.');
+        return redirect()->back()->with('success', 'Petty Cash request approved and forwarded to Finance.');
     }
 
     public function hodReject(Request $request, PettyCashRequest $pettyCash)
@@ -397,7 +397,7 @@ class PettyCashController extends Controller
         $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
 
-        return redirect()->back()->with('success', 'Petty Cash request rejected by Super Admin. Staff and HOD have been notified.');
+        return redirect()->back()->with('success', 'Petty Cash request rejected by Finance. Staff and HOD have been notified.');
     }
 
     public function settleIOU(Request $request, PettyCashRequest $pettyCash)
@@ -483,7 +483,7 @@ class PettyCashController extends Controller
             $requestedUser->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
         }
 
-        return redirect()->back()->with('success', 'IOU Settlement details and proofs submitted successfully. Pending Super Admin final approval.');
+        return redirect()->back()->with('success', 'IOU Settlement details and proofs submitted successfully. Pending Finance final approval.');
     }
 
     public function reappeal(Request $request, PettyCashRequest $pettyCash)
