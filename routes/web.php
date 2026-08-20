@@ -24,6 +24,49 @@ Route::post('forgot-password', [AuthController::class, 'sendOtp'])->name('passwo
 Route::get('reset-password/otp', [AuthController::class, 'showOtpForm'])->name('password.otp');
 Route::post('reset-password/otp', [AuthController::class, 'resetPasswordWithOtp'])->name('password.update-otp');
 
+// Dynamic PWA Manifest Route for Chrome URL Bar Install Pill
+Route::get('manifest.json', function () {
+    return response()->json([
+        'name' => 'Loops Integrated System',
+        'short_name' => 'Loops CRM',
+        'description' => 'Loops Integrated CRM, Petty Cash & Invoicing Management System',
+        'id' => url('/'),
+        'start_url' => url('/login'),
+        'scope' => url('/'),
+        'display' => 'standalone',
+        'orientation' => 'any',
+        'background_color' => '#ffffff',
+        'theme_color' => '#8035ca',
+        'prefer_related_applications' => false,
+        'icons' => [
+            [
+                'src' => url('images/pwa-icon-192.png'),
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any'
+            ],
+            [
+                'src' => url('images/pwa-icon-512.png'),
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any'
+            ],
+            [
+                'src' => url('images/pwa-icon-192.png'),
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'maskable'
+            ],
+            [
+                'src' => url('images/pwa-icon-512.png'),
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'maskable'
+            ]
+        ]
+    ]);
+})->name('manifest');
+
 Route::get('maintenance', function () {
     if (\App\Models\Setting::get('maintenance_mode') != 1) {
         return redirect()->route('login');

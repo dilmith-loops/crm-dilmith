@@ -9,6 +9,7 @@
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#8035ca",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "images/pwa-icon-192.png",
