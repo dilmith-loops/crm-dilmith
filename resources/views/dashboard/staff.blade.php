@@ -489,12 +489,12 @@
     }
 
     function openSettleIouModal(id) {
-        fetch(`{{ url('/petty-cash') }}/${id}`)
+        fetch(`{{ route('petty-cash.index') }}/${id}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     const pc = data.pettyCash;
-                    document.getElementById('settleIouForm').action = `{{ url('/petty-cash') }}/${id}/settle`;
+                    document.getElementById('settleIouForm').action = `{{ route('petty-cash.index') }}/${id}/settle`;
                     document.getElementById('settleIouModalRef').innerHTML = `<i class="fas fa-file-signature text-brand-purple mr-2"></i> Settle IOU Request: ${pc.reference_number}`;
                     
                     const container = document.getElementById('settleItemsContainer');
@@ -528,8 +528,11 @@
     }
 
     function viewPettyCashDetails(id) {
-        fetch(`{{ url('/petty-cash') }}/${id}`)
-            .then(res => res.json())
+        fetch(`{{ route('petty-cash.index') }}/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
             .then(data => {
                 if (data.success) {
                     const pc = data.pettyCash;
@@ -645,12 +648,12 @@
     }
 
     function openReappealModal(id) {
-        fetch(`{{ url('/petty-cash') }}/${id}`)
+        fetch(`{{ route('petty-cash.index') }}/${id}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     const pc = data.pettyCash;
-                    document.getElementById('reappealForm').action = `{{ url('/petty-cash') }}/${id}/reappeal`;
+                    document.getElementById('reappealForm').action = `{{ route('petty-cash.index') }}/${id}/reappeal`;
                     if (pc.hod_id) document.getElementById('reappeal_hod_id').value = pc.hod_id;
                     if (pc.job_number) document.getElementById('reappeal_job_number').value = pc.job_number;
                     const reappealNotesInput = document.getElementById('reappealExtraNotes');
