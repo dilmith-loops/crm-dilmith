@@ -21,6 +21,12 @@ class PettyCashNotification extends Notification
     public const ENABLE_SUPER_ADMIN_EMAILS = true;
 
     /**
+     * Master toggle for HOD emails.
+     * Set to true to enable emails to HODs.
+     */
+    public const ENABLE_HOD_EMAILS = false;
+
+    /**
      * Target Super Admin email addresses.
      */
     public const SUPER_ADMIN_EMAILS = [
@@ -54,14 +60,18 @@ class PettyCashNotification extends Notification
 
         if (!empty($notifiable->email)) {
             $isSuperAdmin = in_array(strtolower($notifiable->email), array_map('strtolower', self::SUPER_ADMIN_EMAILS));
+            $isHod = ($notifiable->role === 'HOD');
 
-            // If recipient is one of the Super Admins, check if Super Admin emails are enabled
             if ($isSuperAdmin) {
                 if (self::ENABLE_SUPER_ADMIN_EMAILS) {
                     $channels[] = 'mail';
                 }
+            } elseif ($isHod) {
+                if (self::ENABLE_HOD_EMAILS) {
+                    $channels[] = 'mail';
+                }
             } else {
-                // Requested Staff and Associated HOD always receive emails
+                // Requested Staff always receives emails
                 $channels[] = 'mail';
             }
         }
