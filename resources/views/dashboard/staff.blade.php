@@ -143,14 +143,99 @@
                 <i class="fas fa-plus mr-1.5"></i> New Request
             </button>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 sm:p-6 bg-gray-50/50">
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
+                        <th class="py-3.5 px-6">Ref #</th>
+                        <th class="py-3.5 px-6">HOD Name</th>
+                        <th class="py-3.5 px-6">Job Number</th>
+                        <th class="py-3.5 px-6">Total Amount</th>
+                        <th class="py-3.5 px-6">Status</th>
+                        <th class="py-3.5 px-6 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 text-sm">
+                    @forelse($pettyCashes as $pc)
+                        <tr class="hover:bg-gray-50/50 transition-colors whitespace-nowrap">
+                            <td class="py-3.5 px-6 font-mono font-bold text-gray-900">{{ $pc->reference_number }}</td>
+                            <td class="py-3.5 px-6 font-medium text-gray-800">{{ $pc->hod->name ?? 'Not Assigned' }}</td>
+                            <td class="py-3.5 px-6 font-mono text-xs text-gray-600">{{ $pc->job_number ?: '-' }}</td>
+                            <td class="py-3.5 px-6 font-bold text-gray-900">LKR {{ number_format($pc->total_amount, 2) }}</td>
+                            <td class="py-3.5 px-6 whitespace-nowrap">
+                                @if($pc->status === 'pending_hod')
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 inline-flex items-center whitespace-nowrap">
+                                        Pending HOD
+                                    </span>
+                                @elseif($pc->status === 'pending_super_admin')
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center whitespace-nowrap">
+                                        Pending Finance Approval
+                                    </span>
+                                @elseif($pc->status === 'approved')
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 inline-flex items-center whitespace-nowrap">
+                                        Approved
+                                    </span>
+                                @elseif($pc->status === 'iou_issued')
+                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300 inline-flex items-center whitespace-nowrap" title="Money Handed Over - IOU Unsettled">
+                                        <i class="fas fa-hand-holding-usd mr-1"></i> Approved (IOU Unsettled)
+                                    </span>
+                                @elseif($pc->status === 'pending_settlement')
+                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-300 inline-flex items-center whitespace-nowrap">
+                                        <i class="fas fa-file-invoice-dollar mr-1"></i> Settlement Pending
+                                    </span>
+                                @elseif($pc->status === 'settled')
+                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center whitespace-nowrap">
+                                        <i class="fas fa-check-double mr-1"></i> IOU Settled
+                                    </span>
+                                @elseif($pc->status === 'rejected_by_hod')
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 inline-flex items-center whitespace-nowrap" title="{{ $pc->hod_rejection_note }}">
+                                        Rejected by HOD
+                                    </span>
+                                @elseif($pc->status === 'rejected_by_super_admin')
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 inline-flex items-center whitespace-nowrap" title="{{ $pc->admin_rejection_note }}">
+                                        Rejected by Finance
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="py-3.5 px-6 text-right whitespace-nowrap space-x-2">
+                                <button onclick="viewPettyCashDetails({{ $pc->id }})"
+                                    class="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors">
+                                    Details
+                                </button>
+                                @if($pc->status === 'iou_issued')
+                                    <button onclick="openSettleIouModal({{ $pc->id }})"
+                                        class="px-3 py-1.5 bg-brand-purple text-white text-xs font-bold rounded-lg hover:bg-brand-pink transition-colors inline-flex items-center shadow-sm">
+                                        <i class="fas fa-file-signature mr-1"></i> Settle IOU
+                                    </button>
+                                @endif
+                                @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin']))
+                                    <button onclick="openReappealModal({{ $pc->id }})"
+                                        class="px-3 py-1.5 bg-brand-blue text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors">
+                                        Re-appeal
+                                    </button>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-gray-400">
+                                No Petty Cash requests submitted yet. Click "Petty Cash Request" to create one.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Cards View -->
+        <div class="block md:hidden space-y-3 p-4 bg-gray-50/50">
             @forelse($pettyCashes as $pc)
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all p-5 flex flex-col justify-between space-y-4">
-                    <!-- Card Top Bar: Reference & Status -->
-                    <div class="flex items-center justify-between gap-2 pb-3 border-b border-gray-100">
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
+                    <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-gray-100">
                         <div>
                             <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">Ref Number</span>
-                            <span class="font-mono text-xs font-bold text-gray-900 bg-gray-100 px-2.5 py-1 rounded-md border border-gray-200/60 inline-block">
+                            <span class="font-mono text-xs font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200/60 inline-block">
                                 {{ $pc->reference_number }}
                             </span>
                         </div>
@@ -191,16 +276,15 @@
                         </div>
                     </div>
 
-                    <!-- Card Body -->
-                    <div class="space-y-3">
+                    <div class="space-y-2">
                         <div class="flex items-baseline justify-between">
                             <span class="text-xs text-gray-500 font-medium">Total Amount</span>
-                            <span class="text-lg font-black text-brand-purple">
+                            <span class="text-base font-black text-brand-purple">
                                 LKR {{ number_format($pc->total_amount, 2) }}
                             </span>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2 text-xs bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <div class="grid grid-cols-2 gap-2 text-xs bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                             <div>
                                 <span class="text-gray-400 font-medium block text-[10px] uppercase">HOD Name</span>
                                 <span class="font-semibold text-gray-800 truncate block mt-0.5" title="{{ $pc->hod->name ?? 'Not Assigned' }}">
@@ -216,8 +300,7 @@
                         </div>
                     </div>
 
-                    <!-- Card Footer Actions -->
-                    <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2 flex-wrap">
+                    <div class="pt-2.5 border-t border-gray-100 flex items-center justify-end gap-2 flex-wrap">
                         <button onclick="viewPettyCashDetails({{ $pc->id }})"
                             class="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors">
                             <i class="fas fa-eye mr-1"></i> Details
@@ -237,9 +320,9 @@
                     </div>
                 </div>
             @empty
-                <div class="col-span-full py-12 text-center text-gray-400 bg-white rounded-2xl border border-gray-100">
+                <div class="py-8 text-center text-gray-400 bg-white rounded-2xl border border-gray-100">
                     <i class="fas fa-receipt text-3xl text-gray-300 mb-2 block"></i>
-                    No Petty Cash requests submitted yet. Click "New Request" to create one.
+                    No Petty Cash requests submitted yet.
                 </div>
             @endforelse
         </div>
