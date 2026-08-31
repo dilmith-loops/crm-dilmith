@@ -123,7 +123,7 @@
                     </div>
                 </div>
                 <div class="flex-shrink-0 w-full sm:w-auto">
-                    <button type="button" onclick="openSettleIouModal({{ json_encode($unsettledIou) }})" class="w-full sm:w-auto px-4 py-2.5 text-xs font-bold rounded-lg shadow-sm {{ $isOverdue ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-amber-600 text-white hover:bg-amber-700' }} transition-all flex items-center justify-center gap-1.5">
+                    <button type="button" onclick="openSettleIouModal({{ $unsettledIou->id }})" class="w-full sm:w-auto px-4 py-2.5 text-xs font-bold rounded-lg shadow-sm {{ $isOverdue ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-amber-600 text-white hover:bg-amber-700' }} transition-all flex items-center justify-center gap-1.5">
                         <i class="fas fa-receipt"></i> Settle IOU Now
                     </button>
                 </div>
@@ -583,7 +583,9 @@
         container.appendChild(row);
     }
 
-    function openSettleIouModal(id) {
+    function openSettleIouModal(idParam) {
+        const id = (typeof idParam === 'object' && idParam !== null) ? idParam.id : idParam;
+        if (!id) return;
         fetch(`{{ route('petty-cash.index') }}/${id}`)
             .then(res => res.json())
             .then(data => {
@@ -896,7 +898,7 @@
                     cancelButtonText: 'Close'
                 }).then((result) => {
                     if (result.isConfirmed && activeIouData) {
-                        openSettleIouModal(activeIouData);
+                        openSettleIouModal(activeIouData.id || activeIouData);
                     }
                 });
             } else {
