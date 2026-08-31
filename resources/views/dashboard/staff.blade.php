@@ -255,10 +255,10 @@
                 </div>
                 <div>
                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Job Number</label>
-                    <select name="job_number" class="w-full rounded-lg border-gray-300 text-base sm:text-sm focus:border-brand-blue focus:ring-brand-blue">
+                    <select name="job_number" id="staff_create_job_number" class="w-full rounded-lg border-gray-300 text-base sm:text-sm focus:border-brand-blue focus:ring-brand-blue">
                         <option value="">-- Select Job Number (Optional) --</option>
-                        @foreach($jobs as $jobNo)
-                            <option value="{{ $jobNo }}">{{ $jobNo }}</option>
+                        @foreach($jobs as $jobNo => $display)
+                            <option value="{{ $jobNo }}">{{ $display }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -398,8 +398,8 @@
                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Job Number</label>
                     <select name="job_number" id="reappeal_job_number" class="w-full rounded-lg border-gray-300 text-base sm:text-sm focus:border-brand-blue focus:ring-brand-blue">
                         <option value="">-- Select Job Number (Optional) --</option>
-                        @foreach($jobs as $jobNo)
-                            <option value="{{ $jobNo }}">{{ $jobNo }}</option>
+                        @foreach($jobs as $jobNo => $display)
+                            <option value="{{ $jobNo }}">{{ $display }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -759,7 +759,13 @@
                     const pc = data.pettyCash;
                     document.getElementById('reappealForm').action = `{{ route('petty-cash.index') }}/${id}/reappeal`;
                     if (pc.hod_id) document.getElementById('reappeal_hod_id').value = pc.hod_id;
-                    if (pc.job_number) document.getElementById('reappeal_job_number').value = pc.job_number;
+                    if (pc.job_number) {
+                        if (typeof reappealJobTs !== 'undefined' && reappealJobTs) reappealJobTs.setValue(pc.job_number);
+                        else document.getElementById('reappeal_job_number').value = pc.job_number;
+                    } else {
+                        if (typeof reappealJobTs !== 'undefined' && reappealJobTs) reappealJobTs.setValue('');
+                        else document.getElementById('reappeal_job_number').value = '';
+                    }
                     const reappealNotesInput = document.getElementById('reappealExtraNotes');
                     if (reappealNotesInput) reappealNotesInput.value = pc.extra_notes || '';
 
@@ -900,7 +906,24 @@
         }
 
         document.getElementById('newPettyCashModal').classList.remove('hidden');
+        if (typeof staffCreateJobTs !== 'undefined' && staffCreateJobTs) staffCreateJobTs.setValue('');
     }
+
+    let staffCreateJobTs, reappealJobTs;
+    document.addEventListener('DOMContentLoaded', function() {
+        const tsConfig = {
+            create: false,
+            placeholder: '-- Select Job Number (Optional) --',
+            allowEmptyOption: true,
+            plugins: ['dropdown_input']
+        };
+        if (document.getElementById('staff_create_job_number')) {
+            staffCreateJobTs = new TomSelect('#staff_create_job_number', tsConfig);
+        }
+        if (document.getElementById('reappeal_job_number')) {
+            reappealJobTs = new TomSelect('#reappeal_job_number', tsConfig);
+        }
+    });
 </script>
 @endpush
 @endsection

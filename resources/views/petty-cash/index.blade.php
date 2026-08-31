@@ -307,10 +307,10 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
-                    <select name="job_number" class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
+                    <select name="job_number" id="create_job_number" class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
                         <option value="">-- Select Job Number (Optional) --</option>
-                        @foreach($jobs as $jobNo)
-                            <option value="{{ $jobNo }}">{{ $jobNo }}</option>
+                        @foreach($jobs as $jobNo => $display)
+                            <option value="{{ $jobNo }}">{{ $display }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -755,8 +755,8 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
                     <select name="job_number" id="reappeal_job_number" class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
                         <option value="">-- Select Job Number (Optional) --</option>
-                        @foreach($jobs as $jobNo)
-                            <option value="{{ $jobNo }}">{{ $jobNo }}</option>
+                        @foreach($jobs as $jobNo => $display)
+                            <option value="{{ $jobNo }}">{{ $display }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -844,8 +844,8 @@
                     <label class="block text-xs font-bold text-gray-700 mb-1">Job Number</label>
                     <select name="job_number" id="editJobNumber" class="w-full rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500">
                         <option value="">-- Select Job Number (Optional) --</option>
-                        @foreach($jobs as $jobNo)
-                            <option value="{{ $jobNo }}">{{ $jobNo }}</option>
+                        @foreach($jobs as $jobNo => $display)
+                            <option value="{{ $jobNo }}">{{ $display }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -1483,7 +1483,13 @@
                     const pc = data.pettyCash;
                     document.getElementById('reappealForm').action = "{{ route('petty-cash.index') }}/" + id + "/reappeal";
                     if (pc.hod_id) document.getElementById('reappeal_hod_id').value = pc.hod_id;
-                    if (pc.job_number) document.getElementById('reappeal_job_number').value = pc.job_number;
+                    if (pc.job_number) {
+                        if (typeof reappealJobTs !== 'undefined' && reappealJobTs) reappealJobTs.setValue(pc.job_number);
+                        else document.getElementById('reappeal_job_number').value = pc.job_number;
+                    } else {
+                        if (typeof reappealJobTs !== 'undefined' && reappealJobTs) reappealJobTs.setValue('');
+                        else document.getElementById('reappeal_job_number').value = '';
+                    }
                     const reappealNotesInput = document.getElementById('reappealExtraNotes');
                     if (reappealNotesInput) reappealNotesInput.value = pc.extra_notes || '';
 
@@ -1680,7 +1686,10 @@
                     if (hodSelect) hodSelect.value = pc.hod_id;
 
                     const jobSelect = document.getElementById('editJobNumber');
-                    if (jobSelect) jobSelect.value = pc.job_number || '';
+                    if (jobSelect) {
+                        jobSelect.value = pc.job_number || '';
+                        if (typeof editJobTs !== 'undefined' && editJobTs) editJobTs.setValue(pc.job_number || '');
+                    }
 
                     const statusSelect = document.getElementById('editStatus');
                     if (statusSelect) statusSelect.value = pc.status;
@@ -1839,7 +1848,27 @@
         }
 
         document.getElementById('newPettyCashModal').classList.remove('hidden');
+        if (typeof createJobTs !== 'undefined' && createJobTs) createJobTs.setValue('');
     }
+
+    let createJobTs, reappealJobTs, editJobTs;
+    document.addEventListener('DOMContentLoaded', function() {
+        const tsConfig = {
+            create: false,
+            placeholder: '-- Select Job Number (Optional) --',
+            allowEmptyOption: true,
+            plugins: ['dropdown_input']
+        };
+        if (document.getElementById('create_job_number')) {
+            createJobTs = new TomSelect('#create_job_number', tsConfig);
+        }
+        if (document.getElementById('reappeal_job_number')) {
+            reappealJobTs = new TomSelect('#reappeal_job_number', tsConfig);
+        }
+        if (document.getElementById('editJobNumber')) {
+            editJobTs = new TomSelect('#editJobNumber', tsConfig);
+        }
+    });
 </script>
 @endpush
 @endsection

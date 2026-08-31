@@ -56,16 +56,20 @@ class DashboardController extends Controller
                 $hods = \App\Models\User::where('role', 'HOD')->get();
             }
 
-            $jobQuery = \App\Models\Deal::whereNotNull('job_number');
-            if ($userDept) {
-                $jobQuery->where(function ($q) use ($userDept) {
-                    $q->whereJsonContains('department_split', [['department' => $userDept]])
-                      ->orWhereHas('owner', function ($oq) use ($userDept) {
-                          $oq->where('department', $userDept);
-                      });
+            $jobs = \App\Models\Deal::whereNotNull('job_number')
+                ->where('job_number', '!=', '')
+                ->orderBy('job_number', 'desc')
+                ->get(['job_number', 'title', 'customer_name'])
+                ->mapWithKeys(function ($deal) {
+                    $label = $deal->job_number;
+                    if (!empty($deal->title)) {
+                        $label .= ' - ' . $deal->title;
+                        if (!empty($deal->customer_name)) {
+                            $label .= ' (' . $deal->customer_name . ')';
+                        }
+                    }
+                    return [$deal->job_number => $label];
                 });
-            }
-            $jobs = $jobQuery->orderBy('job_number', 'desc')->pluck('job_number', 'job_number');
 
             return view('dashboard.staff', [
                 'user' => $user,

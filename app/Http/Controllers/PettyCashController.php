@@ -71,17 +71,21 @@ class PettyCashController extends Controller
             $hods = User::where('role', 'HOD')->get();
         }
 
-        // Job Numbers for user's department
-        $jobQuery = Deal::whereNotNull('job_number');
-        if ($user->department) {
-            $jobQuery->where(function ($q) use ($user) {
-                $q->whereJsonContains('department_split', [['department' => $user->department]])
-                  ->orWhereHas('owner', function ($oq) use ($user) {
-                      $oq->where('department', $user->department);
-                  });
+        // Show all Job Numbers with basic description (Title & Customer)
+        $jobs = Deal::whereNotNull('job_number')
+            ->where('job_number', '!=', '')
+            ->orderBy('job_number', 'desc')
+            ->get(['job_number', 'title', 'customer_name'])
+            ->mapWithKeys(function ($deal) {
+                $label = $deal->job_number;
+                if (!empty($deal->title)) {
+                    $label .= ' - ' . $deal->title;
+                    if (!empty($deal->customer_name)) {
+                        $label .= ' (' . $deal->customer_name . ')';
+                    }
+                }
+                return [$deal->job_number => $label];
             });
-        }
-        $jobs = $jobQuery->orderBy('job_number', 'desc')->pluck('job_number', 'job_number');
 
         return view('petty-cash.index', compact('pettyCashes', 'expenseCategories', 'hods', 'jobs', 'scope', 'myRequestsCount', 'pendingApprovalsCount'));
     }
