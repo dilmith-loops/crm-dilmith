@@ -20,7 +20,9 @@ class PettyCashNotification extends Notification
      * Target Super Admin email addresses.
      */
     public const SUPER_ADMIN_EMAILS = [
-        'dilmithsenupa2@gmail.com'
+        'dilmithsenupa2@gmail.com',
+        'rifky@loopsintegrated.com',
+        'logini@loopsintegrated.com'
     ];
 
     /**
@@ -28,7 +30,7 @@ class PettyCashNotification extends Notification
      */
     public static function getSuperAdminRecipients($excludeUserId = null)
     {
-        $adminsQuery = User::where(function($q) {
+        $adminsQuery = User::where(function ($q) {
             $q->where('role', 'Super Admin')->orWhere('role', 'super_admin');
         });
 
