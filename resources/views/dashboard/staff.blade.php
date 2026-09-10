@@ -226,6 +226,10 @@
                                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center whitespace-nowrap">
                                         Pending Finance Approval
                                     </span>
+                                @elseif($pc->status === 'pending_management')
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center whitespace-nowrap">
+                                        <i class="fas fa-user-tie mr-1"></i> Pending Management
+                                    </span>
                                 @elseif($pc->status === 'approved')
                                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 inline-flex items-center whitespace-nowrap">
                                         Approved
@@ -301,6 +305,10 @@
                             @elseif($pc->status === 'pending_super_admin')
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center">
                                     <i class="fas fa-user-shield mr-1 text-[10px]"></i> Pending Finance
+                                </span>
+                            @elseif($pc->status === 'pending_management')
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center">
+                                    <i class="fas fa-user-tie mr-1 text-[10px]"></i> Pending Mgmt
                                 </span>
                             @elseif($pc->status === 'approved')
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 inline-flex items-center">
@@ -826,6 +834,9 @@
                     }
                     if (pc.admin_rejection_note) {
                         notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong>Finance Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
+                    }
+                    if (pc.management_notes) {
+                        notesHtml += `<div class="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-900 mb-2"><strong><i class="fas fa-user-tie mr-1 text-purple-700"></i> Notes to Management:</strong> ${pc.management_notes}</div>`;
                     }
 
                     let sigUrl = pc.signature_path ? (pc.signature_path.startsWith('data:image/') ? pc.signature_path : `${baseUrl}/${pc.signature_path.replace(/^\/?(public\/)?/, '')}`) : '';

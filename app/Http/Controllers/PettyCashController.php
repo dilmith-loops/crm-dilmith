@@ -25,7 +25,7 @@ class PettyCashController extends Controller
             $query->where('user_id', $user->id);
         } elseif ($scope === 'approvals') {
             if ($user->hasAdminPrivileges()) {
-                $query->whereIn('status', ['pending_hod', 'pending_super_admin']);
+                $query->whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management']);
             } elseif ($user->role === 'HOD') {
                 $query->where('hod_id', $user->id)->where('status', 'pending_hod');
             } else {
@@ -55,7 +55,7 @@ class PettyCashController extends Controller
         $myRequestsCount = PettyCashRequest::where('user_id', $user->id)->count();
         $pendingApprovalsCount = 0;
         if ($user->hasAdminPrivileges()) {
-            $pendingApprovalsCount = PettyCashRequest::whereIn('status', ['pending_hod', 'pending_super_admin'])->count();
+            $pendingApprovalsCount = PettyCashRequest::whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management'])->count();
         } elseif ($user->role === 'HOD') {
             $pendingApprovalsCount = PettyCashRequest::where('hod_id', $user->id)->where('status', 'pending_hod')->count();
         }
@@ -433,6 +433,54 @@ class PettyCashController extends Controller
         return redirect()->back()->with('success', 'Petty Cash request rejected by Finance. Staff and HOD have been notified.');
     }
 
+    public function sendToManagement(Request $request, PettyCashRequest $pettyCash)
+    {
+        $user = auth()->user();
+
+        if (!$user->hasAdminPrivileges()) {
+            return redirect()->back()->with('error', 'Unauthorized action. Only Finance Admin or Management can perform this action.');
+        }
+
+        $request->validate([
+            'management_notes' => 'nullable|string|max:2000',
+        ]);
+
+        $pettyCash->update([
+            'status' => 'pending_management',
+            'management_notes' => $request->management_notes,
+            'sent_to_management_at' => now(),
+            'sent_to_management_by' => $user->id,
+        ]);
+
+        // Dispatch notification and email to Management
+        $managementRecipients = PettyCashNotification::getManagementRecipients($user->id);
+        if ($managementRecipients->isNotEmpty()) {
+            Notification::send($managementRecipients, new PettyCashNotification($pettyCash, 'sent_to_management', $user, $request->management_notes));
+        }
+
+        // Also notify the requesting staff member so they are aware their request was escalated to Management
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser && $requestedUser->id !== $user->id) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'sent_to_management', $user, $request->management_notes));
+        }
+
+        // Notify HOD if different
+        $associatedHod = $pettyCash->associated_hod;
+        if ($associatedHod && $associatedHod->id !== $user->id && $associatedHod->id !== $pettyCash->user_id) {
+            $associatedHod->notify(new PettyCashNotification($pettyCash, 'sent_to_management', $user, $request->management_notes));
+        }
+
+        $recipientCount = $managementRecipients->count();
+        $msg = "Petty Cash request #{$pettyCash->reference_number} was successfully forwarded to Management for approval.";
+        if ($recipientCount > 0) {
+            $msg .= " Notification email sent to {$recipientCount} Management recipient(s).";
+        } else {
+            $msg .= " (Note: No Management notification emails are configured in Settings).";
+        }
+
+        return redirect()->back()->with('success', $msg);
+    }
+
     public function settleIOU(Request $request, PettyCashRequest $pettyCash)
     {
         $user = auth()->user();
@@ -674,7 +722,8 @@ class PettyCashController extends Controller
             'job_numbers' => 'nullable|array',
             'job_numbers.*' => 'nullable|string|max:100',
             'extra_notes' => 'nullable|string',
-            'status' => 'required|string|in:pending_hod,pending_super_admin,approved,rejected_by_hod,rejected_by_super_admin,iou_issued,pending_settlement,settled',
+            'status' => 'required|string|in:pending_hod,pending_super_admin,pending_management,approved,rejected_by_hod,rejected_by_super_admin,iou_issued,pending_settlement,settled',
+            'management_notes' => 'nullable|string',
             'created_at' => 'nullable|date',
             'issued_at' => 'nullable|date',
             'settled_at' => 'nullable|date',
@@ -705,6 +754,7 @@ class PettyCashController extends Controller
             'job_number' => $jobNumberString,
             'extra_notes' => $request->extra_notes,
             'status' => $request->status,
+            'management_notes' => $request->management_notes,
             'total_amount' => $totalAmount,
             'is_iou' => $isIou,
         ];

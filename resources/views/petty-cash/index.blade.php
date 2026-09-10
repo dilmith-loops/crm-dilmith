@@ -162,6 +162,10 @@
            class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'pending_super_admin' ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-50 text-blue-800 hover:bg-blue-100' }}">
             Pending Finance Approval
         </a>
+        <a href="{{ route('petty-cash.index', ['scope' => $scope, 'status' => 'pending_management']) }}" 
+           class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'pending_management' ? 'bg-purple-600 text-white shadow-sm' : 'bg-purple-50 text-purple-800 hover:bg-purple-100' }}">
+            Pending Management
+        </a>
         <a href="{{ route('petty-cash.index', ['scope' => $scope, 'status' => 'approved']) }}" 
            class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'approved' ? 'bg-green-600 text-white shadow-sm' : 'bg-green-50 text-green-800 hover:bg-green-100' }}">
             Approved
@@ -220,6 +224,10 @@
                                 @elseif($pc->status === 'pending_super_admin')
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center whitespace-nowrap">
                                         <i class="fas fa-user-shield mr-1"></i> Pending Finance Approval
+                                    </span>
+                                @elseif($pc->status === 'pending_management')
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center whitespace-nowrap">
+                                        <i class="fas fa-user-tie mr-1"></i> Pending Management
                                     </span>
                                 @elseif($pc->status === 'approved')
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 inline-flex items-center whitespace-nowrap">
@@ -284,6 +292,12 @@
                                                 class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center whitespace-nowrap">
                                                 <i class="fas fa-check-double mr-1"></i> {{ $pc->status === 'pending_settlement' ? 'Approve Settlement' : 'Approve' }}
                                             </button>
+                                            @if($pc->status !== 'pending_management')
+                                                <button onclick="openSendToManagementModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}')"
+                                                    class="px-2.5 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center whitespace-nowrap shadow-sm" title="Send Approval Request to Management">
+                                                    <i class="fas fa-paper-plane mr-1"></i> To Management
+                                                </button>
+                                            @endif
                                         @endif
                                         @if($pc->status !== 'rejected_by_super_admin' && $pc->status !== 'settled')
                                             <button onclick="openAdminRejectModal({{ $pc->id }})"
@@ -349,6 +363,10 @@
                             @elseif($pc->status === 'pending_super_admin')
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center">
                                     <i class="fas fa-user-shield mr-1 text-[10px]"></i> Pending Finance
+                                </span>
+                            @elseif($pc->status === 'pending_management')
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center">
+                                    <i class="fas fa-user-tie mr-1 text-[10px]"></i> Pending Mgmt
                                 </span>
                             @elseif($pc->status === 'approved')
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 inline-flex items-center">
@@ -453,6 +471,12 @@
                                     class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center">
                                     <i class="fas fa-check-double mr-1"></i> {{ $pc->status === 'pending_settlement' ? 'Approve Settlement' : 'Approve' }}
                                 </button>
+                                @if($pc->status !== 'pending_management')
+                                    <button onclick="openSendToManagementModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}')"
+                                        class="px-2.5 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center shadow-sm" title="Send Approval Request to Management">
+                                        <i class="fas fa-paper-plane mr-1"></i> To Management
+                                    </button>
+                                @endif
                             @endif
                             @if($pc->status !== 'rejected_by_super_admin' && $pc->status !== 'settled')
                                 <button onclick="openAdminRejectModal({{ $pc->id }})"
@@ -1025,6 +1049,90 @@
     </div>
 </div>
 
+<!-- Send to Management Approval Modal (Finance Admin & Management) -->
+<div id="sendToManagementModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 p-2 sm:p-4 md:p-6 flex items-center justify-center">
+    <div class="relative my-auto p-5 sm:p-6 border w-full max-w-lg shadow-2xl rounded-2xl bg-white max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+            <h3 class="text-base sm:text-lg font-bold text-gray-800 flex items-center">
+                <i class="fas fa-paper-plane text-purple-600 mr-2"></i> Send to Management for Approval
+            </h3>
+            <button onclick="closeSendToManagementModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="sendToManagementForm" action="" method="POST" class="mt-4 space-y-4">
+            @csrf
+
+            <!-- Summary Box -->
+            <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-xl p-3.5 text-xs space-y-1.5 text-gray-700">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Request Reference:</span>
+                    <strong class="font-mono text-purple-900 font-bold" id="mgmtRefDisplay">-</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Requester:</span>
+                    <strong class="text-gray-800" id="mgmtRequesterDisplay">-</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Total Amount:</span>
+                    <strong class="text-brand-purple font-bold text-sm" id="mgmtAmountDisplay">LKR 0.00</strong>
+                </div>
+            </div>
+
+            <!-- Management Notification Recipients Info -->
+            <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs text-slate-700 space-y-1.5">
+                <div class="flex items-center font-semibold text-slate-800">
+                    <i class="fas fa-envelope-open-text text-purple-600 mr-1.5"></i> Notification Email Recipients:
+                </div>
+                <p class="text-[11px] text-slate-500">
+                    An email notification will be immediately dispatched to the active Management recipients configured below:
+                </p>
+                <div class="flex flex-wrap gap-1.5 pt-1">
+                    @php
+                        $activeMgmtRecipients = \App\Notifications\PettyCashNotification::getConfiguredManagementEmails();
+                    @endphp
+                    @forelse($activeMgmtRecipients as $recipEmail)
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                            <i class="fas fa-user-tie mr-1 text-[10px] text-purple-600"></i>
+                            {{ $recipEmail }}
+                        </span>
+                    @empty
+                        <span class="text-amber-700 bg-amber-50 px-2 py-1 rounded text-[11px] border border-amber-200 block w-full">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> No Management emails configured yet. You can configure recipient emails under <a href="{{ route('settings.index') }}" target="_blank" class="underline font-bold text-amber-900">Settings &rarr; Notifications</a>.
+                        </span>
+                    @endforelse
+                </div>
+            </div>
+
+            <!-- Notes / Justification Textarea -->
+            <div>
+                <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1">
+                    Justification / Note for Management <span class="text-gray-400 font-normal text-xs">(Optional)</span>
+                </label>
+                <textarea name="management_notes" id="mgmtNotesInput" rows="3"
+                    placeholder="E.g., High-value item requiring management approval, or special budget allocation requested..."
+                    class="w-full rounded-lg border-gray-300 text-xs sm:text-sm focus:border-purple-600 focus:ring-purple-600 shadow-sm p-2.5"></textarea>
+                <p class="text-[11px] text-gray-500 mt-1">
+                    This note will be included in the notification email sent to Management and displayed in the audit trail.
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
+                <button type="button" onclick="closeSendToManagementModal()"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center shadow-md">
+                    <i class="fas fa-paper-plane mr-1.5"></i> Send to Management
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Edit Petty Cash Request Modal (Finance Admin & Management) -->
 <div id="editPettyCashModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 p-2 sm:p-4 md:p-6 flex items-center justify-center">
     <div class="relative my-auto p-5 sm:p-6 border w-full max-w-3xl shadow-2xl rounded-2xl bg-white max-h-[92vh] overflow-y-auto">
@@ -1068,6 +1176,7 @@
                     <select name="status" id="editStatus" required class="w-full rounded-lg border-gray-300 text-xs font-semibold focus:border-amber-500 focus:ring-amber-500" onchange="toggleEditDateFields()">
                         <option value="pending_hod">Pending HOD</option>
                         <option value="pending_super_admin">Pending Finance Approval</option>
+                        <option value="pending_management">Pending Management Approval</option>
                         <option value="approved">Approved</option>
                         <option value="iou_issued">Approved (IOU Unsettled)</option>
                         <option value="pending_settlement">Settlement Pending</option>
@@ -1116,6 +1225,11 @@
             <div>
                 <label class="block text-xs font-bold text-gray-800 mb-1">Extra Notes / Remarks</label>
                 <textarea name="extra_notes" id="editExtraNotes" rows="2" placeholder="Optional extra notes, remarks, or justification..." class="w-full rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-800 mb-1">Notes / Justification for Management</label>
+                <textarea name="management_notes" id="editManagementNotes" rows="2" placeholder="Optional notes or justification sent to Management..." class="w-full rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500"></textarea>
             </div>
 
             <!-- Proof Attachments Section -->
@@ -1286,6 +1400,19 @@
     }
 
     let currentApproveIsIou = false;
+
+    function openSendToManagementModal(id, ref, requester, amount) {
+        document.getElementById('sendToManagementForm').action = "{{ route('petty-cash.index') }}/" + id + "/send-to-management";
+        document.getElementById('mgmtRefDisplay').textContent = ref;
+        document.getElementById('mgmtRequesterDisplay').textContent = requester;
+        document.getElementById('mgmtAmountDisplay').textContent = 'LKR ' + amount;
+        document.getElementById('mgmtNotesInput').value = '';
+        document.getElementById('sendToManagementModal').classList.remove('hidden');
+    }
+
+    function closeSendToManagementModal() {
+        document.getElementById('sendToManagementModal').classList.add('hidden');
+    }
 
     function calculateApproveNotesTotal() {
         let total = 0;
@@ -1648,6 +1775,21 @@
                         }
                     }
 
+                    let mgmtNotesHtml = '';
+                    if (pc.management_notes || pc.sent_to_management_at) {
+                        mgmtNotesHtml = `
+                            <div class="mt-4 bg-purple-50/80 border border-purple-200 rounded-xl p-3.5 text-xs text-purple-950 space-y-1">
+                                <div class="flex justify-between items-center">
+                                    <strong class="text-purple-900 font-bold flex items-center">
+                                        <i class="fas fa-user-tie text-purple-700 mr-1.5"></i> Management Approval Escalation
+                                    </strong>
+                                    ${pc.sent_to_management_at ? `<span class="text-[11px] text-purple-700 font-mono">${pc.sent_to_management_at.substring(0, 16).replace('T', ' ')}</span>` : ''}
+                                </div>
+                                ${pc.management_notes ? `<p class="text-gray-700 mt-1"><strong class="text-purple-900">Notes to Management:</strong> ${pc.management_notes}</p>` : ''}
+                            </div>
+                        `;
+                    }
+
                     document.getElementById('modalBody').innerHTML = `
                         ${iouPolicyBannerHtml}
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl text-xs">
@@ -1661,6 +1803,7 @@
                         </div>
 
                         ${notesHtml}
+                        ${mgmtNotesHtml}
 
                         <div>
                             <h4 class="text-sm font-bold text-gray-800 mb-2">Expense Line Items</h4>
@@ -1940,6 +2083,9 @@
 
                     const extraNotesInput = document.getElementById('editExtraNotes');
                     if (extraNotesInput) extraNotesInput.value = pc.extra_notes || '';
+
+                    const mgmtNotesInput = document.getElementById('editManagementNotes');
+                    if (mgmtNotesInput) mgmtNotesInput.value = pc.management_notes || '';
 
                     const createdAtInput = document.getElementById('editCreatedAt');
                     if (createdAtInput) createdAtInput.value = pc.created_at ? pc.created_at.substring(0, 10) : '';

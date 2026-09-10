@@ -514,6 +514,7 @@
                                                 <ul class="list-disc list-inside space-y-1 text-xs text-blue-800">
                                                     <li><strong>Associated HOD:</strong> Requests and status updates automatically go to the requesting staff member's associated HOD (based on department or direct reporting structure).</li>
                                                     <li><strong>Finance Admin Recipients:</strong> Email notifications for Finance Admins are sent to the addresses configured below.</li>
+                                                    <li><strong>Management Recipients:</strong> Notifications sent when Finance Admin forwards approval requests to Management (includes all registered Management role users plus addresses configured below).</li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -529,14 +530,14 @@
                                         @php
                                             $currentEmails = \App\Models\Setting::get('super_admin_notification_emails', '');
                                         @endphp
-                                        <textarea name="super_admin_notification_emails" rows="4"
+                                        <textarea name="super_admin_notification_emails" rows="3"
                                             placeholder="e.g. finance@loopsintegrated.com, admin@loopsintegrated.com"
                                             class="w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-blue focus:ring-brand-blue sm:text-sm font-mono text-xs sm:text-sm p-3">{{ old('super_admin_notification_emails', $currentEmails) }}</textarea>
                                     </div>
 
-                                    <!-- Quick Preview of Currently Configured Emails -->
+                                    <!-- Quick Preview of Currently Configured Finance Admin Emails -->
                                     <div>
-                                        <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Currently Active Notification Recipients</h4>
+                                        <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Active Finance Admin Notification Recipients</h4>
                                         <div class="flex flex-wrap gap-2">
                                             @php
                                                 $activeList = \App\Notifications\PettyCashNotification::getConfiguredSuperAdminEmails();
@@ -547,7 +548,40 @@
                                                     {{ $email }}
                                                 </span>
                                             @empty
-                                                <span class="text-xs text-gray-400 italic">No custom emails configured.</span>
+                                                <span class="text-xs text-gray-400 italic">No Finance Admin emails configured.</span>
+                                            @endforelse
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-4 border-t border-gray-200">
+                                        <label class="block text-sm font-semibold text-gray-800 mb-1">
+                                            Management Notification Recipient Emails
+                                        </label>
+                                        <p class="text-xs text-gray-500 mb-2">
+                                            Enter email addresses that should receive notifications when Finance Admin sends a Petty Cash approval request to Management. Users with the <strong class="text-purple-700">Management</strong> role in the system are automatically included. Separate multiple emails with commas or line breaks.
+                                        </p>
+                                        @php
+                                            $currentManagementEmails = \App\Models\Setting::get('management_notification_emails', '');
+                                        @endphp
+                                        <textarea name="management_notification_emails" rows="3"
+                                            placeholder="e.g. management@loopsintegrated.com, director@loopsintegrated.com"
+                                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-blue focus:ring-brand-blue sm:text-sm font-mono text-xs sm:text-sm p-3">{{ old('management_notification_emails', $currentManagementEmails) }}</textarea>
+                                    </div>
+
+                                    <!-- Quick Preview of Currently Active Management Emails -->
+                                    <div>
+                                        <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Active Management Notification Recipients</h4>
+                                        <div class="flex flex-wrap gap-2">
+                                            @php
+                                                $activeManagementList = \App\Notifications\PettyCashNotification::getConfiguredManagementEmails();
+                                            @endphp
+                                            @forelse($activeManagementList as $mEmail)
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                    <i class="fas fa-user-tie mr-1.5 text-indigo-500"></i>
+                                                    {{ $mEmail }}
+                                                </span>
+                                            @empty
+                                                <span class="text-xs text-gray-400 italic">No Management emails configured or Management users registered.</span>
                                             @endforelse
                                         </div>
                                     </div>

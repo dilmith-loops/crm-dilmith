@@ -28,6 +28,9 @@ class PettyCashRequest extends Model
         'settled_at',
         'settlement_note',
         'settlement_money_notes',
+        'management_notes',
+        'sent_to_management_at',
+        'sent_to_management_by',
         'reappeal_count',
     ];
 
@@ -35,6 +38,7 @@ class PettyCashRequest extends Model
         'is_iou' => 'boolean',
         'issued_at' => 'datetime',
         'settled_at' => 'datetime',
+        'sent_to_management_at' => 'datetime',
         'issued_money_notes' => 'array',
         'settlement_money_notes' => 'array',
     ];
@@ -121,6 +125,11 @@ class PettyCashRequest extends Model
     public function proofs()
     {
         return $this->hasMany(PettyCashProof::class, 'petty_cash_request_id');
+    }
+
+    public function managementSender()
+    {
+        return $this->belongsTo(User::class, 'sent_to_management_by');
     }
 
     public static function generateReferenceNumber()

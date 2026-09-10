@@ -55,6 +55,10 @@
                                 <span style="background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                                     Rejected by HOD
                                 </span>
+                            @elseif($action === 'sent_to_management' || $pettyCash->status === 'pending_management')
+                                <span style="background-color: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                                    Pending Management
+                                </span>
                             @else
                                 <span style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                                     {{ strtoupper(str_replace('_', ' ', $action)) }}
@@ -180,6 +184,12 @@
                 <div style="background-color: #faf5ff; border: 1px solid #f3e8ff; border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 12px; color: #6b21a8;">
                     <strong>Settlement Description / Remarks:</strong><br>
                     <span style="color: #334155;">{{ $pettyCash->settlement_note }}</span>
+                </div>
+                @endif
+                @if($pettyCash->management_notes)
+                <div style="background-color: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 12px; color: #5b21b6;">
+                    <strong>Notes / Justification for Management:</strong><br>
+                    <span style="color: #334155;">{{ $pettyCash->management_notes }}</span>
                 </div>
                 @endif
 

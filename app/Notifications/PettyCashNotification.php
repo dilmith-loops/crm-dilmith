@@ -81,6 +81,66 @@ class PettyCashNotification extends Notification
     }
 
     /**
+     * Get configured Management notification recipient emails from Settings and registered Management users.
+     *
+     * @return array<int, string>
+     */
+    public static function getConfiguredManagementEmails(): array
+    {
+        $settingValue = \App\Models\Setting::get('management_notification_emails');
+        $cleanEmails = [];
+
+        if ($settingValue !== null && trim((string)$settingValue) !== '') {
+            $emails = preg_split('/[\r\n,;]+/', (string)$settingValue);
+            foreach ($emails as $email) {
+                $email = trim($email);
+                if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $cleanEmails[] = strtolower($email);
+                }
+            }
+        }
+
+        // Include any registered users with the 'Management' role
+        $managementUsers = User::where('role', 'Management')->get();
+        foreach ($managementUsers as $mUser) {
+            if (!empty($mUser->email) && filter_var($mUser->email, FILTER_VALIDATE_EMAIL)) {
+                $cleanEmails[] = strtolower(trim($mUser->email));
+            }
+        }
+
+        return !empty($cleanEmails) ? array_values(array_unique($cleanEmails)) : [];
+    }
+
+    /**
+     * Helper to retrieve all Management notification targets (DB users matching configured emails/role + external mail routes).
+     */
+    public static function getManagementRecipients($excludeUserId = null)
+    {
+        $recipients = collect();
+        $configuredEmails = self::getConfiguredManagementEmails();
+        $processedEmails = [];
+
+        foreach ($configuredEmails as $email) {
+            $email = strtolower(trim($email));
+            if (empty($email) || in_array($email, $processedEmails)) {
+                continue;
+            }
+            $processedEmails[] = $email;
+
+            $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+            if ($user) {
+                if (!$excludeUserId || $user->id != $excludeUserId) {
+                    $recipients->push($user);
+                }
+            } else {
+                $recipients->push(NotificationFacade::route('mail', $email));
+            }
+        }
+
+        return $recipients;
+    }
+
+    /**
      * Create a new notification instance.
      */
     public function __construct($pettyCash, $action, $actor, $note = null)
@@ -161,6 +221,9 @@ class PettyCashNotification extends Notification
                 break;
             case 'reappealed':
                 $message = "Petty Cash request {$ref} has been re-appealed.";
+                break;
+            case 'sent_to_management':
+                $message = "Petty Cash request {$ref} was forwarded to Management for approval." . ($this->note ? " Reason: {$this->note}" : "");
                 break;
             default:
                 $message = "Petty Cash request {$ref} was updated.";

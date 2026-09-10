@@ -112,6 +112,9 @@ class PettyCashVoucherMail extends Mailable
             'iou_settled' => "IOU Request Settled: {$ref}",
             'iou_reminder' => "URGENT REMINDER: Please Settle IOU {$ref}",
             'reappealed' => "Request Re-appealed: {$ref}",
+            'sent_to_management' => $isRequester
+                ? "Your {$typeStr} {$ref} Forwarded to Management for Approval"
+                : "Approval Request: {$typeStr} {$ref} ({$amountStr}) Sent to Management",
             default => "Update on {$typeStr} {$ref}",
         };
 
@@ -153,6 +156,9 @@ class PettyCashVoucherMail extends Mailable
             'iou_settled' => "The settlement for IOU request {$ref} ({$amountStr}) has been APPROVED and officially marked as SETTLED by Finance.",
             'iou_reminder' => "This is an urgent reminder regarding your IOU request {$ref} for {$amountStr} issued on " . ($this->pettyCash->issued_at ? $this->pettyCash->issued_at->format('d M Y') : 'N/A') . ". Please submit your expenditure proofs and settlement promptly.",
             'reappealed' => "Petty cash request {$ref} has been re-appealed by {$requesterName}.",
+            'sent_to_management' => $isRequester
+                ? "Your {$typeStr} {$ref} for {$amountStr} has been forwarded to Management for approval by Finance."
+                : "Finance Admin ({$approverName}) has submitted {$typeStr} {$ref} for {$amountStr} requested by {$requesterName} for Management approval." . ($this->note ? " Reason/Note: {$this->note}" : ""),
             default => "{$typeStr} {$ref} was updated.",
         };
 

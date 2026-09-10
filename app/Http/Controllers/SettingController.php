@@ -287,33 +287,38 @@ class SettingController extends Controller
 
         $request->validate([
             'super_admin_notification_emails' => 'nullable|string',
+            'management_notification_emails' => 'nullable|string',
         ]);
 
-        $rawEmails = $request->input('super_admin_notification_emails', '');
-        $parts = preg_split('/[\r\n,;]+/', (string)$rawEmails);
-        $validEmails = [];
         $invalidEmails = [];
+        $processEmails = function ($input) use (&$invalidEmails) {
+            $parts = preg_split('/[\r\n,;]+/', (string)$input);
+            $valid = [];
+            foreach ($parts as $part) {
+                $email = trim($part);
+                if (empty($email)) {
+                    continue;
+                }
+                if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $valid[] = strtolower($email);
+                } else {
+                    $invalidEmails[] = $email;
+                }
+            }
+            return implode(', ', array_unique($valid));
+        };
 
-        foreach ($parts as $part) {
-            $email = trim($part);
-            if (empty($email)) {
-                continue;
-            }
-            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $validEmails[] = strtolower($email);
-            } else {
-                $invalidEmails[] = $email;
-            }
-        }
+        $cleanSuperAdmin = $processEmails($request->input('super_admin_notification_emails', ''));
+        $cleanManagement = $processEmails($request->input('management_notification_emails', ''));
 
         if (!empty($invalidEmails)) {
             return redirect()->route('settings.index')
                 ->with('error', 'The following email addresses are invalid: ' . implode(', ', $invalidEmails));
         }
 
-        $cleanEmailsString = implode(', ', array_unique($validEmails));
-        Setting::set('super_admin_notification_emails', $cleanEmailsString, 'notifications');
+        Setting::set('super_admin_notification_emails', $cleanSuperAdmin, 'notifications');
+        Setting::set('management_notification_emails', $cleanManagement, 'notifications');
 
-        return redirect()->route('settings.index')->with('success', 'Finance Admin notification emails updated successfully.');
+        return redirect()->route('settings.index')->with('success', 'Notification recipient emails updated successfully.');
     }
 }
