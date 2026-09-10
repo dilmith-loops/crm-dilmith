@@ -48,16 +48,6 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto space-y-6 pb-12">
-    @if(session('success'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md shadow-sm">
-            {{ session('success') }}
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm">
-            {{ session('error') }}
-        </div>
-    @endif
 
     <!-- Header & Action Bar -->
     <div class="bg-white rounded-xl shadow-md p-6 flex flex-col md:flex-row justify-between items-center gap-4">

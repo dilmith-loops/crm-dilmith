@@ -4,16 +4,6 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto space-y-8 pb-12">
-        @if(session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
-                {{ session('success') }}
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
-                {{ session('error') }}
-            </div>
-        @endif
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             <!-- Sidebar Navigation for Settings -->

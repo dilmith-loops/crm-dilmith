@@ -18,17 +18,6 @@
             </div>
         </div>
 
-        @if(session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mx-4 sm:mx-6 mt-4" role="alert">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mx-4 sm:mx-6 mt-4" role="alert">
-                {{ session('error') }}
-            </div>
-        @endif
 
         @if(session('import_errors'))
             <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mx-4 sm:mx-6 mt-4" role="alert">

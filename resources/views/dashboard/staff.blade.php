@@ -48,16 +48,6 @@
 
 @section('content')
 <div class="max-w-5xl mx-auto py-4 sm:py-8 px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
-    @if(session('success'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md shadow-sm text-sm">
-            {{ session('success') }}
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm text-sm">
-            {{ session('error') }}
-        </div>
-    @endif
 
     <!-- Welcome Header Banner -->
     <div class="bg-gradient-to-r from-brand-pink via-brand-purple to-brand-blue rounded-2xl p-5 sm:p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-stretch md:items-center gap-5 sm:gap-6">
