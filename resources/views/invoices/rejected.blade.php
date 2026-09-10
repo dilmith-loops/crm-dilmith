@@ -24,7 +24,7 @@
                 to Invoice</a>
             <a href="{{ route('invoices.index') }}"
                 class="px-3 py-1 rounded-md {{ request()->routeIs('invoices.index') ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-200' }}">Invoices</a>
-            @if(auth()->user()->role === 'Super Admin')
+            @if(auth()->user()->hasAdminPrivileges())
                 <a href="{{ route('invoices.proforma') }}"
                     class="px-3 py-1 rounded-md {{ request()->routeIs('invoices.proforma') ? 'bg-purple-100 text-purple-700 font-semibold' : 'text-gray-600 hover:bg-gray-200' }}">Proforma
                     Invoices</a>

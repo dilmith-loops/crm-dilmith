@@ -148,7 +148,7 @@
                         <span>Reports</span>
                     </a>
 
-                    @if(auth()->check() && auth()->user()->role === 'Super Admin')
+                    @if(auth()->check() && auth()->user()->hasAdminPrivileges())
                         <a href="{{ route('users.index') }}"
                             class="flex items-center px-4 py-3 rounded-md hover:bg-gray-700 transition {{ request()->is('users*') ? 'bg-gray-700 text-brand-pink' : '' }}">
                             <i class="fas fa-users-cog mr-3 w-5"></i> Users
@@ -259,7 +259,7 @@
                         <span>Reports</span>
                     </a>
 
-                    @if(auth()->check() && auth()->user()->role === 'Super Admin')
+                    @if(auth()->check() && auth()->user()->hasAdminPrivileges())
                         <a href="{{ route('users.index') }}"
                             class="flex items-center px-4 py-3 rounded-lg hover:bg-gray-700 transition {{ request()->is('users*') ? 'bg-gray-700 text-brand-pink font-semibold' : '' }}">
                             <i class="fas fa-users-cog mr-3 w-5"></i> Users

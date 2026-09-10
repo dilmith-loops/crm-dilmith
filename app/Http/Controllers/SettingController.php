@@ -158,8 +158,8 @@ class SettingController extends Controller
     }
     public function storeCurrency(Request $request)
     {
-        // Role Check (Super Admin only)
-        if (!auth()->user()->hasRole('super_admin')) {
+        // Role Check (Finance Admin & Management)
+        if (!auth()->user()->hasAdminPrivileges()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -179,8 +179,8 @@ class SettingController extends Controller
         // Debugging
         // dd('Arrived at destroyCurrency', $currency);
 
-        // Role Check (Super Admin only)
-        if (!auth()->user()->hasRole('super_admin')) {
+        // Role Check (Finance Admin & Management)
+        if (!auth()->user()->hasAdminPrivileges()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -194,8 +194,8 @@ class SettingController extends Controller
 
     public function updateCurrency(Request $request, \App\Models\SystemCurrency $currency)
     {
-        // Role Check (Super Admin only)
-        if (!auth()->user()->hasRole('super_admin')) {
+        // Role Check (Finance Admin & Management)
+        if (!auth()->user()->hasAdminPrivileges()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -212,8 +212,8 @@ class SettingController extends Controller
 
     public function updateMaintenance(Request $request)
     {
-        // Role Check (Super Admin only)
-        if (!auth()->user()->hasRole('super_admin')) {
+        // Role Check (Finance Admin & Management)
+        if (!auth()->user()->hasAdminPrivileges()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -228,7 +228,7 @@ class SettingController extends Controller
 
     public function storeExpenseCategory(Request $request)
     {
-        if (!auth()->user()->hasRole('super_admin')) {
+        if (!auth()->user()->hasAdminPrivileges()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -249,7 +249,7 @@ class SettingController extends Controller
 
     public function updateExpenseCategory(Request $request, ExpenseCategory $expenseCategory)
     {
-        if (!auth()->user()->hasRole('super_admin')) {
+        if (!auth()->user()->hasAdminPrivileges()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -266,7 +266,7 @@ class SettingController extends Controller
 
     public function destroyExpenseCategory(ExpenseCategory $expenseCategory)
     {
-        if (!auth()->user()->hasRole('super_admin')) {
+        if (!auth()->user()->hasAdminPrivileges()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -280,8 +280,8 @@ class SettingController extends Controller
 
     public function updateNotifications(Request $request)
     {
-        // Role Check (Super Admin only)
-        if (!auth()->user()->hasRole('super_admin')) {
+        // Role Check (Finance Admin & Management)
+        if (!auth()->user()->hasAdminPrivileges()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -314,6 +314,6 @@ class SettingController extends Controller
         $cleanEmailsString = implode(', ', array_unique($validEmails));
         Setting::set('super_admin_notification_emails', $cleanEmailsString, 'notifications');
 
-        return redirect()->route('settings.index')->with('success', 'Super Admin notification emails updated successfully.');
+        return redirect()->route('settings.index')->with('success', 'Finance Admin notification emails updated successfully.');
     }
 }

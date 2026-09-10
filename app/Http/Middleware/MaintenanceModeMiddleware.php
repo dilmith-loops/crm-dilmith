@@ -27,8 +27,8 @@ class MaintenanceModeMiddleware
 
             // If user is logged in
             if (auth()->check()) {
-                // If they are a Super Admin, let them pass
-                if (auth()->user()->hasRole('super_admin')) {
+                // If they are a Finance Admin or Management, let them pass
+                if (auth()->user()->hasAdminPrivileges()) {
                     return $next($request);
                 }
 

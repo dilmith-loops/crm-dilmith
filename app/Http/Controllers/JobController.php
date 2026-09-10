@@ -13,7 +13,7 @@ class JobController extends Controller
 
         // Access Control
         $user = auth()->user();
-        if (!in_array($user->role, ['Super Admin', 'Management'])) {
+        if (!$user->hasAdminPrivileges()) {
             $query->where(function ($q) use ($user) {
                 // Own jobs
                 $q->where('user_id', $user->id)
@@ -69,7 +69,7 @@ class JobController extends Controller
         $jobs = $query->orderBy('job_number', 'desc')->get();
 
         // Data for dropdowns
-        if (in_array($user->role, ['Super Admin', 'Management'])) {
+        if ($user->hasAdminPrivileges()) {
             $users = \App\Models\User::all();
         } elseif ($user->role === 'HOD') {
             $users = \App\Models\User::where('id', $user->id)

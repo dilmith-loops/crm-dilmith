@@ -66,8 +66,8 @@ class CustomerController extends Controller
         $customer = Customer::create($validated);
         $this->logAction("Created customer: {$customer->name}", $customer);
 
-        // Notify Super Admin
-        $admins = \App\Models\User::where('role', 'Super Admin')->get();
+        // Notify Admins (Finance Admin & Management)
+        $admins = \App\Models\User::whereIn('role', ['Finance Admin', 'Super Admin', 'Management'])->get();
         foreach ($admins as $admin) {
             $admin->notify(new \App\Notifications\CustomerActionNotification($customer, 'added', auth()->user()));
         }
@@ -80,7 +80,7 @@ class CustomerController extends Controller
      */
     public function destroy(string $id)
     {
-        if (auth()->user()->role !== 'Super Admin') {
+        if (!auth()->user()->hasAdminPrivileges()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -198,9 +198,9 @@ class CustomerController extends Controller
         $customer->update($validated);
         $this->logAction("Updated customer: {$customer->name}", $customer);
 
-        // Notify Super Admin if done by a non-admin
-        if (auth()->user()->role !== 'Super Admin') {
-            $admins = \App\Models\User::where('role', 'Super Admin')->get();
+        // Notify Admins if done by a non-admin
+        if (!auth()->user()->hasAdminPrivileges()) {
+            $admins = \App\Models\User::whereIn('role', ['Finance Admin', 'Super Admin', 'Management'])->get();
             foreach ($admins as $admin) {
                 $admin->notify(new \App\Notifications\CustomerActionNotification($customer, 'edited', auth()->user()));
             }

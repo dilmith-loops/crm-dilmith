@@ -94,7 +94,7 @@ class Estimate extends Model
         }
 
         // Fallback for standalone estimates (if any)
-        return $this->user_id === $user->id || $user->hasRole('Super Admin') || $user->hasRole('Management');
+        return $this->user_id === $user->id || $user->hasAdminPrivileges();
     }
 
 

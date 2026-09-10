@@ -47,8 +47,8 @@ class CheckPendingInvoices extends Command
             // target Users
             $recipients = collect();
 
-            // 1. Super Admin
-            $superAdmins = User::where('role', 'Super Admin')->get();
+            // 1. Finance Admin & Super Admin
+            $superAdmins = User::whereIn('role', ['Finance Admin', 'Super Admin'])->get();
             $recipients = $recipients->merge($superAdmins);
 
             // 2. Management

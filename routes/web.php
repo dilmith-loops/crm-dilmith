@@ -171,7 +171,7 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('dashboard');
     });
 
-    // Petty Cash Routes (Accessible to Staff, HOD, Management, Super Admin)
+    // Petty Cash Routes (Accessible to Staff, HOD, Management, Finance Admin)
     Route::get('/petty-cash', [PettyCashController::class, 'index'])->name('petty-cash.index');
     Route::post('/petty-cash', [PettyCashController::class, 'store'])->name('petty-cash.store');
     Route::get('/petty-cash/{pettyCash}', [PettyCashController::class, 'show'])->name('petty-cash.show');
@@ -231,8 +231,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('temp-invoices/{tempInvoice}/revert', [InvoiceController::class, 'revertToPending'])->name('temp-invoices.revert');
 
 
-        // Super Admin Only Routes
-        Route::middleware(['role:Super Admin'])->group(function () {
+        // Finance Admin & Management Routes
+        Route::middleware(['role:Finance Admin,Management'])->group(function () {
             Route::get('activities', [ActivityController::class, 'index'])->name('activities.index');
             Route::get('users/download-sample', [UserController::class, 'downloadSample'])->name('users.download-sample');
             Route::post('users/import', [UserController::class, 'import'])->name('users.import');

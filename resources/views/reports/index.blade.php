@@ -41,8 +41,8 @@
                     </div>
                 </div>
 
-                <!-- Column 2: Department (Only for Admins/Management) -->
-                @if(auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Management'))
+                <!-- Column 2: Department (Only for Finance Admin / Management) -->
+                @if(auth()->user()->hasAdminPrivileges())
                 <div class="space-y-2">
                     <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Department / Category</label>
                     <select name="department" class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-purple outline-none bg-gray-50/30 h-[38px]">

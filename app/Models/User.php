@@ -13,7 +13,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     const ROLES = [
-        'Super Admin',
+        'Finance Admin',
         'Management',
         'HOD',
         'Manager',
@@ -127,19 +127,37 @@ class User extends Authenticatable
      */
     public function hasRole($role)
     {
-        // Normalize role strings for comparison (e.g., 'super_admin' -> 'Super Admin')
-        // This is a simple implementation. You might want to use a more robust role management system later.
-
         // Exact match
         if ($this->role === $role) {
             return true;
         }
 
         // Case-insensitive match normalization
-        $normalizedInput = str_replace('_', ' ', strtolower($role));
-        $normalizedStored = strtolower($this->role);
+        $normalizedInput = str_replace('_', ' ', strtolower(trim($role)));
+        $normalizedStored = str_replace('_', ' ', strtolower(trim($this->role)));
 
-        return $normalizedInput === $normalizedStored;
+        if ($normalizedInput === $normalizedStored) {
+            return true;
+        }
+
+        // Equate Super Admin and Finance Admin
+        if (in_array($normalizedInput, ['super admin', 'finance admin']) && in_array($normalizedStored, ['super admin', 'finance admin'])) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user has administrative privileges (Finance Admin, Management, or legacy Super Admin).
+     *
+     * @return bool
+     */
+    public function hasAdminPrivileges(): bool
+    {
+        return in_array($this->role, ['Finance Admin', 'Super Admin', 'Management']) ||
+               $this->hasRole('finance_admin') ||
+               $this->hasRole('management');
     }
 
     public function deals()

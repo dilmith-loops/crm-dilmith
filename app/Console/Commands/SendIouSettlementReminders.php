@@ -28,7 +28,7 @@ class SendIouSettlementReminders extends Command
      */
     public function handle()
     {
-        $systemUser = User::where('role', 'Super Admin')->first() ?? new User(['name' => 'Loops Finance System']);
+        $systemUser = User::whereIn('role', ['Finance Admin', 'Super Admin'])->first() ?? new User(['name' => 'Loops Finance System']);
 
         // Find active unsettled IOUs
         $unsettledIous = PettyCashRequest::where('is_iou', true)

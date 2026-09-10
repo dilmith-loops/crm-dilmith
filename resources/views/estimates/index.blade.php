@@ -102,7 +102,7 @@
                     @forelse($estimates as $estimate)
                         @php
                             $user = auth()->user();
-                            $isRestricted = !in_array($user->role, ['Super Admin', 'Management']);
+                            $isRestricted = !$user->hasAdminPrivileges();
                         @endphp
                         <tr>
                             <td x-show="isColumnVisible('reference')" class="px-6 py-4 white-space-nowrap text-sm font-medium text-gray-900">
@@ -126,7 +126,7 @@
                             <td x-show="isColumnVisible('amount')" class="px-6 py-4 white-space-nowrap text-sm text-gray-900 font-bold">
                                 {{ $estimate->currency ?? 'LKR' }} {{ number_format($estimate->total_amount, 2) }}</td>
                             <td x-show="isColumnVisible('status')" class="px-6 py-4 white-space-nowrap">
-                                @if(auth()->user()->role !== 'Super Admin' && (!$estimate->canEdit($user) || ($isRestricted && !in_array($estimate->status, ['draft', 'approved'])) || $estimate->status == 'invoiced'))
+                                @if(!auth()->user()->hasAdminPrivileges() && (!$estimate->canEdit($user) || ($isRestricted && !in_array($estimate->status, ['draft', 'approved'])) || $estimate->status == 'invoiced'))
                                     <span class="text-xs font-semibold rounded-full px-2 py-1 inline-block
                                                                                         @if($estimate->status == 'draft') bg-gray-100 text-gray-800
                                                                                         @elseif($estimate->status == 'approved') bg-yellow-100 text-yellow-800
@@ -161,7 +161,7 @@
                                                 <option value="approved" {{ $estimate->status == 'approved' ? 'selected' : '' }}>Approved</option>
                                                 <option value="rejected" {{ $estimate->status == 'rejected' ? 'selected' : '' }}>Rejected</option>
                                                 <option value="ready_to_invoice" {{ $estimate->status == 'ready_to_invoice' ? 'selected' : '' }}>Ready to Invoice</option>
-                                                @if(auth()->user()->role === 'Super Admin')
+                                                @if(auth()->user()->hasAdminPrivileges())
                                                     <option value="invoiced" {{ $estimate->status == 'invoiced' ? 'selected' : '' }}>Invoiced</option>
                                                 @endif
                                             @endif
@@ -194,10 +194,8 @@
 
                                 @php
                                     $canEditOrDelete = false;
-                                    if ($user->role === 'Super Admin') {
+                                    if ($user->hasAdminPrivileges()) {
                                         $canEditOrDelete = true;
-                                    } elseif ($user->role === 'Management') {
-                                        $canEditOrDelete = !in_array($estimate->status, ['invoiced', 'approved']);
                                     } else {
                                         $canEditOrDelete = $estimate->status === 'draft';
                                     }

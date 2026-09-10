@@ -26,7 +26,7 @@
                 to Invoice</a>
             <a href="{{ route('invoices.index') }}"
                 class="px-3 py-1 rounded-md {{ request()->routeIs('invoices.index') ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-200' }}">Invoices</a>
-            @if(auth()->user()->role === 'Super Admin')
+            @if(auth()->user()->hasAdminPrivileges())
                 <a href="{{ route('invoices.proforma') }}"
                     class="px-3 py-1 rounded-md {{ request()->routeIs('invoices.proforma') ? 'bg-purple-100 text-purple-700 font-semibold' : 'text-gray-600 hover:bg-gray-200' }}">Proforma
                     Invoices</a>
@@ -148,7 +148,7 @@
                                     </button>
                                 @endif
 
-                                @if(in_array(auth()->user()->role, ['Super Admin', 'Management']))
+                                @if(auth()->user()->hasAdminPrivileges())
                                     <a href="{{ route('temp-invoices.edit', $estimate->id) }}"
                                         class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs shadow-sm font-semibold inline-flex items-center">
                                         <i class="fas fa-cog mr-1"></i> Process Invoice

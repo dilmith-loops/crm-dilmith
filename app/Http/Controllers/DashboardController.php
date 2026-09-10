@@ -110,7 +110,7 @@ class DashboardController extends Controller
         }]);
 
         // Role-based filtering
-        if (!in_array($userRole, ['Super Admin', 'Management'])) {
+        if (!$user->hasAdminPrivileges()) {
             $query->where(function ($q) use ($user, $userDept) {
                 // Own deals
                 $q->where('user_id', $user->id)
@@ -212,7 +212,7 @@ class DashboardController extends Controller
 
         // Determine active department/category filter depts
         $targetDepts = null;
-        if (!in_array($userRole, ['Super Admin', 'Management']) && $userDept) {
+        if (!$user->hasAdminPrivileges() && $userDept) {
             $targetDepts = [$userDept];
         } elseif ($departmentFilter === 'SBU') {
             $targetDepts = $sbuDepts;

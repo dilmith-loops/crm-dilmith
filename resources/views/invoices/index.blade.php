@@ -68,7 +68,7 @@
                 to Invoice</a>
             <a href="{{ route('invoices.index') }}"
                 class="px-3 py-1 rounded-md {{ request()->routeIs('invoices.index') ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-200' }}">Invoices</a>
-            @if(auth()->user()->role === 'Super Admin')
+            @if(auth()->user()->hasAdminPrivileges())
                 <a href="{{ route('invoices.proforma') }}"
                     class="px-3 py-1 rounded-md {{ request()->routeIs('invoices.proforma') ? 'bg-purple-100 text-purple-700 font-semibold' : 'text-gray-600 hover:bg-gray-200' }}">Proforma
                     Invoices</a>
@@ -161,7 +161,7 @@
                             <td x-show="isColumnVisible('amount')" class="px-6 py-4 white-space-nowrap text-sm text-gray-900 font-bold">
                                 {{ $invoice->currency ?: ($invoice->estimate->deal->currency ?? ($invoice->estimate->currency ?? 'LKR')) }} {{ number_format($invoice->total_amount, 2) }}</td>
                             <td x-show="isColumnVisible('status')" class="px-6 py-4 white-space-nowrap">
-                                @if(auth()->user()->role === 'Super Admin')
+                                @if(auth()->user()->hasAdminPrivileges())
                                     <form action="{{ route('invoices.updateStatus', $invoice) }}" method="POST">
                                         @csrf
                                         <select name="status" onchange="this.form.submit()"
@@ -203,12 +203,12 @@
                                     title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                @if(auth()->user()->role === 'Super Admin')
+                                @if(auth()->user()->hasAdminPrivileges())
                                     <a href="{{ route('invoices.edit', $invoice) }}" class="text-gray-600 hover:text-brand-blue" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                 @endif
-                                @if(auth()->user()->role === 'Super Admin')
+                                @if(auth()->user()->hasAdminPrivileges())
                                     <form action="{{ route('invoices.duplicate', $invoice) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit" class="text-brand-purple hover:text-brand-pink"

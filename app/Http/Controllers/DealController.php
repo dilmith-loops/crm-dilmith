@@ -53,8 +53,8 @@ class DealController extends Controller
         $currentSupervisor = $user->supervisor ? $user->supervisor->name : null;
 
         // Build filterable users list based on role
-        if (in_array($userRole, ['Super Admin', 'Management'])) {
-            // Super Admin & Management can see all users
+        if ($user->hasAdminPrivileges()) {
+            // Finance Admin & Management can see all users
             $filterableUsers = \App\Models\User::orderBy('name')->get();
         } elseif ($userRole === 'HOD') {
             // HOD can see themselves + their subordinates (managers under them)
@@ -66,8 +66,8 @@ class DealController extends Controller
         }
 
         // Build filterable departments based on role
-        if (in_array($userRole, ['Super Admin', 'Management'])) {
-            // Super Admin & Management can see all departments
+        if ($user->hasAdminPrivileges()) {
+            // Finance Admin & Management can see all departments
             $filterableDepartments = \App\Models\User::distinct()->pluck('department')->filter()->sort()->values();
         } else {
             // HOD & Manager can only see their own department
@@ -192,7 +192,7 @@ class DealController extends Controller
         }
 
         // RBAC Filtering
-        if (!in_array($userRole, ['Super Admin', 'Management'])) {
+        if (!$user->hasAdminPrivileges()) {
             $query->where(function ($q) use ($user, $userDept) {
                 // Own deals
                 $q->where('user_id', $user->id)
@@ -302,7 +302,7 @@ class DealController extends Controller
 
             if (!$isOwnerCircle) {
                 // For those outside the owner's immediate team, show the department's share if a filter is active
-                if ($activeDeptForMetrics || !in_array($user->role, ['Super Admin', 'Management'])) {
+                if ($activeDeptForMetrics || !$user->hasAdminPrivileges()) {
                     $deal->dept_share_revenue = $deptRevenue;
                     $deal->dept_share_contribution = $deptContribution;
                     $deal->dept_share_invoiced = $deptInvoiced;

@@ -300,7 +300,7 @@
             @endif
             @if($pettyCash->admin_rejection_note)
                 <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900">
-                    <strong>Super Admin Rejection Reason:</strong> {{ $pettyCash->admin_rejection_note }}
+                    <strong>Finance Admin Rejection Reason:</strong> {{ $pettyCash->admin_rejection_note }}
                 </div>
             @endif
         </div>

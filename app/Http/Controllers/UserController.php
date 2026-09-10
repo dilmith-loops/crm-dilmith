@@ -30,7 +30,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|in:Super Admin,Management,HOD,Manager,Staff',
+            'role' => 'required|string|in:Finance Admin,Management,HOD,Manager,Staff,Super Admin',
             'supervisor_id' => 'nullable|exists:users,id',
             'department' => 'nullable|string|in:Creative,Digital,Tech,AM,BD,PM,Corporate',
         ]);
@@ -62,7 +62,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|string|in:Super Admin,Management,HOD,Manager,Staff',
+            'role' => 'required|string|in:Finance Admin,Management,HOD,Manager,Staff,Super Admin',
             'supervisor_id' => 'nullable|exists:users,id',
             'department' => 'nullable|string|in:Creative,Digital,Tech,AM,BD,PM,Corporate',
         ]);
@@ -108,7 +108,7 @@ class UserController extends Controller
             $file = fopen('php://output', 'w');
             fputcsv($file, ['Name', 'Email', 'Role', 'Supervisor Email', 'Department', 'Password']);
             fputcsv($file, ['John Doe', 'john@example.com', 'Manager', 'jane@example.com', 'creative', 'password123']);
-            fputcsv($file, ['Jane Smith', 'jane@example.com', 'Super Admin', '', '', 'secret']);
+            fputcsv($file, ['Jane Smith', 'jane@example.com', 'Finance Admin', '', '', 'secret']);
             fclose($file);
         };
 

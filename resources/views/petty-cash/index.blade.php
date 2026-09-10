@@ -87,7 +87,7 @@
            class="flex-1 text-center py-2.5 px-4 rounded-lg font-bold text-sm transition-all {{ $scope === 'my_requests' ? 'bg-brand-pink text-white shadow-md' : 'text-gray-600 hover:bg-gray-50' }}">
             <i class="fas fa-user-circle mr-1.5"></i> My Requests ({{ $myRequestsCount }})
         </a>
-        @if(auth()->user()->hasRole('super_admin') || auth()->user()->role === 'Management' || auth()->user()->role === 'HOD')
+        @if(auth()->user()->hasAdminPrivileges() || auth()->user()->role === 'HOD')
             <a href="{{ route('petty-cash.index', ['scope' => 'approvals']) }}"
                class="flex-1 text-center py-2.5 px-4 rounded-lg font-bold text-sm transition-all relative {{ $scope === 'approvals' ? 'bg-brand-purple text-white shadow-md' : 'text-gray-600 hover:bg-gray-50' }}">
                 <i class="fas fa-check-double mr-1.5"></i> Pending Approvals
@@ -204,14 +204,14 @@
                                         <i class="fas fa-file-pdf mr-1"></i> Voucher
                                     </a>
 
-                                    @if($pc->status === 'iou_issued' && (auth()->id() === $pc->user_id || auth()->user()->hasRole('super_admin')))
+                                    @if($pc->status === 'iou_issued' && (auth()->id() === $pc->user_id || auth()->user()->hasAdminPrivileges()))
                                         <button onclick="openSettleIouModal({{ $pc->id }})"
                                             class="px-2.5 py-1.5 bg-brand-purple text-white text-xs font-semibold rounded-lg hover:bg-brand-pink transition-colors inline-flex items-center whitespace-nowrap shadow-sm">
                                             <i class="fas fa-file-signature mr-1"></i> Settle IOU
                                         </button>
                                     @endif
 
-                                    @if($pc->status === 'pending_hod' && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasRole('super_admin')))
+                                    @if($pc->status === 'pending_hod' && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasAdminPrivileges()))
                                         <form action="{{ route('petty-cash.hodApprove', $pc) }}" method="POST" class="inline-block">
                                             @csrf
                                             <button type="submit" class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center whitespace-nowrap">
@@ -224,7 +224,7 @@
                                         </button>
                                     @endif
 
-                                    @if(auth()->user()->hasRole('super_admin') || auth()->user()->role === 'Management')
+                                    @if(auth()->user()->hasAdminPrivileges())
                                         @if(!in_array($pc->status, ['approved', 'settled']))
                                             <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}', {{ $pc->total_amount }})"
                                                 class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center whitespace-nowrap">
@@ -239,7 +239,7 @@
                                         @endif
                                     @endif
 
-                                    @if(auth()->user()->hasRole('super_admin'))
+                                    @if(auth()->user()->hasAdminPrivileges())
                                         <button onclick="openEditPettyCashModal({{ $pc->id }})"
                                             class="px-2.5 py-1.5 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-700 transition-colors inline-flex items-center shadow-sm" title="Edit Request">
                                             <i class="fas fa-edit mr-1"></i> Edit
@@ -254,7 +254,7 @@
                                         </form>
                                     @endif
 
-                                    @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin']) && (auth()->id() === $pc->user_id || auth()->id() === $pc->hod_id || auth()->user()->hasRole('super_admin')))
+                                    @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin']) && (auth()->id() === $pc->user_id || auth()->id() === $pc->hod_id || auth()->user()->hasAdminPrivileges()))
                                         <button onclick="openReappealModal({{ $pc->id }})"
                                             class="px-2.5 py-1.5 bg-brand-blue text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center whitespace-nowrap">
                                             <i class="fas fa-redo mr-1"></i> Re-appeal
@@ -366,14 +366,14 @@
                             <i class="fas fa-file-pdf mr-1"></i> Voucher
                         </a>
 
-                        @if($pc->status === 'iou_issued' && (auth()->id() === $pc->user_id || auth()->user()->hasRole('super_admin')))
+                        @if($pc->status === 'iou_issued' && (auth()->id() === $pc->user_id || auth()->user()->hasAdminPrivileges()))
                             <button onclick="openSettleIouModal({{ $pc->id }})"
                                 class="px-2.5 py-1.5 bg-brand-purple text-white text-xs font-semibold rounded-lg hover:bg-brand-pink transition-colors inline-flex items-center shadow-sm">
                                 <i class="fas fa-file-signature mr-1"></i> Settle IOU
                             </button>
                         @endif
 
-                        @if($pc->status === 'pending_hod' && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasRole('super_admin')))
+                        @if($pc->status === 'pending_hod' && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasAdminPrivileges()))
                             <form action="{{ route('petty-cash.hodApprove', $pc) }}" method="POST" class="inline-block">
                                 @csrf
                                 <button type="submit" class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center">
@@ -386,7 +386,7 @@
                             </button>
                         @endif
 
-                        @if(auth()->user()->hasRole('super_admin') || auth()->user()->role === 'Management')
+                        @if(auth()->user()->hasAdminPrivileges())
                             @if(!in_array($pc->status, ['approved', 'settled']))
                                 <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}', {{ $pc->total_amount }})"
                                     class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center">
@@ -401,7 +401,7 @@
                             @endif
                         @endif
 
-                        @if(auth()->user()->hasRole('super_admin'))
+                        @if(auth()->user()->hasAdminPrivileges())
                             <button onclick="openEditPettyCashModal({{ $pc->id }})"
                                 class="px-2.5 py-1.5 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-700 transition-colors inline-flex items-center shadow-sm" title="Edit Request">
                                 <i class="fas fa-edit mr-1"></i> Edit
@@ -416,7 +416,7 @@
                             </form>
                         @endif
 
-                        @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin']) && (auth()->id() === $pc->user_id || auth()->id() === $pc->hod_id || auth()->user()->hasRole('super_admin')))
+                        @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin']) && (auth()->id() === $pc->user_id || auth()->id() === $pc->hod_id || auth()->user()->hasAdminPrivileges()))
                             <button onclick="openReappealModal({{ $pc->id }})"
                                 class="px-2.5 py-1.5 bg-brand-blue text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors">
                                 <i class="fas fa-redo mr-1"></i> Re-appeal
@@ -777,8 +777,8 @@
                 </div>
             </div>
 
-            @if(auth()->user()->hasRole('super_admin'))
-            <!-- Money Notes Breakdown for Settlement (Optional - Super Admin Only) -->
+            @if(auth()->user()->hasAdminPrivileges())
+            <!-- Money Notes Breakdown for Settlement (Optional - Finance Admin & Management) -->
             <div class="bg-gradient-to-r from-purple-50/50 to-pink-50/30 border border-purple-100 rounded-xl p-3.5 space-y-2.5">
                 <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('settleMoneyBreakdownBody').classList.toggle('hidden')">
                     <label class="text-xs font-bold text-purple-900 flex items-center cursor-pointer">
@@ -966,7 +966,7 @@
     </div>
 </div>
 
-<!-- Edit Petty Cash Request Modal (Super Admin Only) -->
+<!-- Edit Petty Cash Request Modal (Finance Admin & Management) -->
 <div id="editPettyCashModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 p-2 sm:p-4 md:p-6 flex items-center justify-center">
     <div class="relative my-auto p-5 sm:p-6 border w-full max-w-3xl shadow-2xl rounded-2xl bg-white max-h-[92vh] overflow-y-auto">
         <div class="flex justify-between items-center pb-3 border-b border-gray-200">

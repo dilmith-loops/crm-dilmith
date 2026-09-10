@@ -24,7 +24,7 @@ class PettyCashController extends Controller
             // Show only the logged-in user's own requested petty cash requests
             $query->where('user_id', $user->id);
         } elseif ($scope === 'approvals') {
-            if ($user->hasRole('super_admin') || $user->role === 'Management') {
+            if ($user->hasAdminPrivileges()) {
                 $query->whereIn('status', ['pending_hod', 'pending_super_admin']);
             } elseif ($user->role === 'HOD') {
                 $query->where('hod_id', $user->id)->where('status', 'pending_hod');
@@ -54,7 +54,7 @@ class PettyCashController extends Controller
         // Calculate counts for tabs
         $myRequestsCount = PettyCashRequest::where('user_id', $user->id)->count();
         $pendingApprovalsCount = 0;
-        if ($user->hasRole('super_admin') || $user->role === 'Management') {
+        if ($user->hasAdminPrivileges()) {
             $pendingApprovalsCount = PettyCashRequest::whereIn('status', ['pending_hod', 'pending_super_admin'])->count();
         } elseif ($user->role === 'HOD') {
             $pendingApprovalsCount = PettyCashRequest::where('hod_id', $user->id)->where('status', 'pending_hod')->count();
@@ -202,9 +202,9 @@ class PettyCashController extends Controller
             $user->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
         }
 
-        // Notify Super Admins (only if requester is NOT a Super Admin to prevent duplicate admin emails)
-        $isRequesterSuperAdmin = $user && ($user->role === 'Super Admin' || $user->role === 'super_admin' || (method_exists($user, 'hasRole') && $user->hasRole('super_admin')));
-        if (!$isRequesterSuperAdmin) {
+        // Notify Finance Admins (only if requester is NOT an admin to prevent duplicate emails)
+        $isRequesterAdmin = $user && $user->hasAdminPrivileges();
+        if (!$isRequesterAdmin) {
             $superAdmins = PettyCashNotification::getSuperAdminRecipients($user ? $user->id : null);
             Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
         }
@@ -226,8 +226,8 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        // Ensure user is assigned HOD or Super Admin
-        if ($user->id !== $pettyCash->hod_id && !$user->hasRole('super_admin') && $user->role !== 'HOD') {
+        // Ensure user is assigned HOD or Admin (Finance Admin / Management)
+        if ($user->id !== $pettyCash->hod_id && !$user->hasAdminPrivileges() && $user->role !== 'HOD') {
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
@@ -256,7 +256,7 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->id !== $pettyCash->hod_id && !$user->hasRole('super_admin') && $user->role !== 'HOD') {
+        if ($user->id !== $pettyCash->hod_id && !$user->hasAdminPrivileges() && $user->role !== 'HOD') {
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
@@ -284,8 +284,8 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        if (!in_array($user->role, ['Super Admin', 'Management'])) {
-            return redirect()->back()->with('error', 'Unauthorized action. Only Super Admin or Management can perform this action.');
+        if (!$user->hasAdminPrivileges()) {
+            return redirect()->back()->with('error', 'Unauthorized action. Only Finance Admin or Management can perform this action.');
         }
 
         $isIOU = $pettyCash->isIOU();
@@ -377,7 +377,7 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->hasRole('super_admin') && $user->id !== $pettyCash->hod_id) {
+        if (!$user->hasAdminPrivileges() && $user->id !== $pettyCash->hod_id) {
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
@@ -401,8 +401,8 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        if (!in_array($user->role, ['Super Admin', 'Management'])) {
-            return redirect()->back()->with('error', 'Unauthorized action.');
+        if (!$user->hasAdminPrivileges()) {
+            return redirect()->back()->with('error', 'Unauthorized action. Only Finance Admin or Management can perform this action.');
         }
 
         $request->validate([
@@ -433,7 +433,7 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->id !== $pettyCash->user_id && !$user->hasRole('super_admin')) {
+        if ($user->id !== $pettyCash->user_id && !$user->hasAdminPrivileges()) {
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
@@ -524,8 +524,8 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        // Staff or HOD can re-appeal
-        if ($user->id !== $pettyCash->user_id && $user->id !== $pettyCash->hod_id && !$user->hasRole('super_admin')) {
+        // Staff or HOD or Admin can re-appeal
+        if ($user->id !== $pettyCash->user_id && $user->id !== $pettyCash->hod_id && !$user->hasAdminPrivileges()) {
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
@@ -656,8 +656,8 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->hasRole('super_admin')) {
-            return redirect()->back()->with('error', 'Unauthorized action. Only Super Admin can edit petty cash requests.');
+        if (!$user->hasAdminPrivileges()) {
+            return redirect()->back()->with('error', 'Unauthorized action. Only Finance Admin or Management can edit petty cash requests.');
         }
 
         $request->validate([
@@ -761,8 +761,8 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->hasRole('super_admin')) {
-            return redirect()->back()->with('error', 'Unauthorized action. Only Super Admin can delete petty cash requests.');
+        if (!$user->hasAdminPrivileges()) {
+            return redirect()->back()->with('error', 'Unauthorized action. Only Finance Admin or Management can delete petty cash requests.');
         }
 
         // Clean up proof files

@@ -260,7 +260,7 @@
 
     <div class="dashboard-tabs">
         <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
-        @if(auth()->user()->role === 'Super Admin')
+        @if(auth()->user()->hasAdminPrivileges())
             <button class="tab-btn" onclick="switchTab('target-type')">Target Type</button>
         @endif
     </div>

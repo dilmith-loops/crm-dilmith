@@ -64,8 +64,8 @@ class Deal extends Model
         $user = $user ?? auth()->user();
         if (!$user) return false;
 
-        // 1. Super Admin or Management override
-        if ($user->hasRole('Super Admin') || $user->hasRole('Management')) {
+        // 1. Finance Admin or Management override
+        if ($user->hasAdminPrivileges()) {
             return true;
         }
 

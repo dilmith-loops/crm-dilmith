@@ -40,7 +40,7 @@
                         id="btn-targets">
                         <i class="fas fa-bullseye mr-2 text-red-500"></i> Targets
                     </button>
-                    @if(auth()->user()->hasRole('super_admin'))
+                    @if(auth()->user()->hasAdminPrivileges())
                         <button onclick="showSection('notifications')"
                             class="section-btn text-left px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-lg bg-white shadow-sm border border-gray-100 hover:border-brand-blue transition-all shrink-0 text-xs sm:text-sm"
                             id="btn-notifications">
@@ -357,8 +357,8 @@
                     </div>
                 </section>
 
-                <!-- Currency Management Section (Super Admin Only) -->
-                @if(auth()->user()->hasRole('super_admin'))
+                <!-- Currency Management Section (Finance Admin / Management) -->
+                @if(auth()->user()->hasAdminPrivileges())
                     <section id="section-currencies" class="settings-section hidden space-y-6">
                         <div class="bg-white rounded-xl shadow-md overflow-hidden">
                             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
@@ -496,7 +496,7 @@
                                     <div>
                                         <div class="flex items-center space-x-2">
                                             <h3 class="text-lg font-bold text-gray-800">Notification Emails</h3>
-                                            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-700">Super Admin Only</span>
+                                            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-700">Finance Admin & Management</span>
                                         </div>
                                         <p class="text-xs text-gray-500 mt-0.5">Configure recipient email addresses for system notifications and alerts.</p>
                                     </div>
@@ -513,7 +513,7 @@
                                                 <p class="font-semibold mb-1">Notification Routing Rules:</p>
                                                 <ul class="list-disc list-inside space-y-1 text-xs text-blue-800">
                                                     <li><strong>Associated HOD:</strong> Requests and status updates automatically go to the requesting staff member's associated HOD (based on department or direct reporting structure).</li>
-                                                    <li><strong>Super Admin Recipients:</strong> Email notifications for Super Admins (Finance) are sent to the addresses configured below.</li>
+                                                    <li><strong>Finance Admin Recipients:</strong> Email notifications for Finance Admins are sent to the addresses configured below.</li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -521,10 +521,10 @@
 
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-800 mb-1">
-                                            Super Admin Notification Recipient Emails
+                                            Finance Admin Notification Recipient Emails
                                         </label>
                                         <p class="text-xs text-gray-500 mb-2">
-                                            Enter email addresses that should receive Super Admin notifications (e.g. Petty Cash submissions, HOD approvals, settlement requests). Separate multiple emails with commas or line breaks.
+                                            Enter email addresses that should receive Finance Admin notifications (e.g. Petty Cash submissions, HOD approvals, settlement requests). Separate multiple emails with commas or line breaks.
                                         </p>
                                         @php
                                             $currentEmails = \App\Models\Setting::get('super_admin_notification_emails', '');
@@ -573,9 +573,9 @@
                                         <label class="block text-sm font-medium text-gray-700 mb-2">System Status</label>
                                         <select name="maintenance_mode" class="w-full rounded-md border-gray-300 focus:border-brand-blue focus:ring-brand-blue sm:text-sm">
                                             <option value="0" {{ \App\Models\Setting::get('maintenance_mode') != 1 ? 'selected' : '' }}>Active (Normal Operation)</option>
-                                            <option value="1" {{ \App\Models\Setting::get('maintenance_mode') == 1 ? 'selected' : '' }}>Maintenance Mode (Block non-Super Admins)</option>
+                                            <option value="1" {{ \App\Models\Setting::get('maintenance_mode') == 1 ? 'selected' : '' }}>Maintenance Mode (Block non-Admins)</option>
                                         </select>
-                                        <p class="text-xs text-gray-500 mt-2">When Maintenance Mode is active, all active non-Super Admin users will be logged out immediately and prevented from accessing any part of the system.</p>
+                                        <p class="text-xs text-gray-500 mt-2">When Maintenance Mode is active, all active non-admin users will be logged out immediately and prevented from accessing any part of the system.</p>
                                     </div>
                                 </div>
                             </div>

@@ -67,7 +67,7 @@ class EstimateController extends Controller
                       $dq->where('user_id', $user->id);
                   });
             });
-        } elseif (!in_array($user->role, ['Super Admin', 'Management'])) {
+        } elseif (!$user->hasAdminPrivileges()) {
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
                   ->orWhereHas('deal', function ($dq) use ($user) {
@@ -114,7 +114,7 @@ class EstimateController extends Controller
         $customerBrands = Customer::whereNotNull('brand')->distinct()->pluck('brand');
         $brands = $estimateBrands->concat($customerBrands)->unique()->sort()->values();
         $nextReferenceNumber = Estimate::generateReferenceNumber();
-        $users = \App\Models\User::whereIn('role', ['HOD', 'Management'])->get();
+        $users = \App\Models\User::whereIn('role', ['HOD', 'Management', 'Finance Admin'])->get();
 
         $deal = null;
         if ($request->has('deal_id')) {
@@ -351,7 +351,7 @@ class EstimateController extends Controller
             return back()->with('error', 'You do not have permission to change the status of this estimate.');
         }
 
-        $isRestricted = !in_array($user->role, ['Super Admin', 'Management']);
+        $isRestricted = !$user->hasAdminPrivileges();
 
         // Define allowed statuses
         $allowedStatuses = 'draft,approved,accepted,rejected,invoiced,ready_to_invoice';
@@ -369,7 +369,7 @@ class EstimateController extends Controller
         $reversionRestricted = ['ready_to_invoice', 'invoiced', 'accepted'];
         $earlierStages = ['draft', 'approved'];
 
-        if ($user->role !== 'Super Admin' && in_array($estimate->status, $reversionRestricted) && in_array($request->status, $earlierStages)) {
+        if (!$user->hasAdminPrivileges() && in_array($estimate->status, $reversionRestricted) && in_array($request->status, $earlierStages)) {
             return back()->with('error', 'Estimate status cannot be reverted once it is ' . ucfirst(str_replace('_', ' ', $estimate->status)) . '.');
         }
 
@@ -544,12 +544,8 @@ class EstimateController extends Controller
         $canEditDeal = $estimate->deal ? $estimate->deal->canEdit($user) : true;
         $readonly = !$canEditDeal;
 
-        if (!$readonly && $user->role !== 'Super Admin') {
-            if ($estimate->status === 'ready_to_invoice' || $estimate->status === 'invoiced' || $estimate->status === 'approved') {
-                $readonly = true;
-            } elseif ($user->role === 'Management' && ($estimate->status === 'invoiced' || $estimate->status === 'approved')) {
-                $readonly = true;
-            } elseif ($user->role !== 'Management' && $estimate->status !== 'draft') {
+        if (!$readonly && !$user->hasAdminPrivileges()) {
+            if ($estimate->status !== 'draft') {
                 $readonly = true;
             }
         }
@@ -562,7 +558,7 @@ class EstimateController extends Controller
         $estimateBrands = Estimate::whereNotNull('brand_name')->distinct()->pluck('brand_name');
         $customerBrands = Customer::whereNotNull('brand')->distinct()->pluck('brand');
         $brands = $estimateBrands->concat($customerBrands)->unique()->sort()->values();
-        $users = \App\Models\User::whereIn('role', ['HOD', 'Management'])->get();
+        $users = \App\Models\User::whereIn('role', ['HOD', 'Management', 'Finance Admin'])->get();
         return view('estimates.edit', compact('estimate', 'customers', 'standardTerms', 'currencies', 'ssclRate', 'vatRate', 'brands', 'users', 'readonly'));
     }
 
@@ -575,17 +571,12 @@ class EstimateController extends Controller
 
         $user = auth()->user();
         $canEditDeal = $estimate->deal ? $estimate->deal->canEdit($user) : true;
-        if (!$canEditDeal && $user->role !== 'Super Admin' && $user->role !== 'Management') {
+        if (!$canEditDeal && !$user->hasAdminPrivileges()) {
              abort(403, 'You do not have permission to edit this estimate.');
         }
 
-        if ($user->role !== 'Super Admin') {
-            if ($estimate->status === 'ready_to_invoice' || $estimate->status === 'invoiced' || $estimate->status === 'approved') {
-                abort(403, 'This estimate is locked because it is ready to invoice, approved, or already invoiced.');
-            }
-            if ($user->role === 'Management' && ($estimate->status === 'invoiced' || $estimate->status === 'approved')) {
-                abort(403, 'Management cannot edit Invoiced or Approved estimates.');
-            } elseif ($user->role !== 'Management' && $estimate->status !== 'draft') {
+        if (!$user->hasAdminPrivileges()) {
+            if ($estimate->status !== 'draft') {
                 abort(403, 'You can only edit Draft estimates.');
             }
         }
