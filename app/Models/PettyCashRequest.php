@@ -71,6 +71,14 @@ class PettyCashRequest extends Model
                (float)($n['coins'] ?? 0);
     }
 
+    public function getJobNumbersAttribute(): array
+    {
+        if (empty($this->job_number)) {
+            return [];
+        }
+        return array_values(array_filter(array_map('trim', explode(',', $this->job_number))));
+    }
+
     public function isIOU()
     {
         if ($this->is_iou) {

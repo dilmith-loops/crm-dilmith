@@ -2,6 +2,50 @@
 
 @section('header', 'Petty Cash Requests')
 
+@push('styles')
+<style>
+    .ts-wrapper.multi .ts-control {
+        border-radius: 0.5rem;
+        border-color: #d1d5db;
+        padding: 0.25rem 0.5rem;
+        min-height: 42px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .ts-wrapper.multi .ts-control > div {
+        background-color: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.375rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.15rem 0.4rem;
+        display: inline-flex;
+        align-items: center;
+    }
+    .ts-wrapper.multi .ts-control > div .remove {
+        border-left: 1px solid #cbd5e1;
+        margin-left: 0.35rem;
+        padding-left: 0.35rem;
+        color: #64748b;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+    .ts-wrapper.multi .ts-control > div .remove:hover {
+        color: #ef4444;
+    }
+    .ts-dropdown {
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        z-index: 9999;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-7xl mx-auto space-y-6 pb-12">
     @if(session('success'))
@@ -156,7 +200,17 @@
                             <td class="py-4 px-6 font-medium text-gray-800">{{ $pc->user->name ?? '-' }}</td>
                             <td class="py-4 px-6 text-gray-600">{{ $pc->department ?: '-' }}</td>
                             <td class="py-4 px-6 text-gray-600">{{ $pc->hod->name ?? 'Not Assigned' }}</td>
-                            <td class="py-4 px-6 font-mono text-xs text-gray-600">{{ $pc->job_number ?: '-' }}</td>
+                            <td class="py-4 px-6">
+                                @if(count($pc->job_numbers))
+                                    <div class="flex flex-wrap gap-1 max-w-[200px]">
+                                        @foreach($pc->job_numbers as $jn)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 text-slate-700 border border-slate-200">{{ $jn }}</span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-gray-400 font-mono text-xs">-</span>
+                                @endif
+                            </td>
                             <td class="py-4 px-6 font-bold text-gray-900">LKR {{ number_format($pc->total_amount, 2) }}</td>
                             <td class="py-4 px-6 whitespace-nowrap">
                                 @if($pc->status === 'pending_hod')
@@ -348,9 +402,16 @@
                                 <span class="font-semibold text-gray-800 truncate block mt-0.5" title="{{ $pc->hod->name ?? 'Not Assigned' }}">
                                     {{ $pc->hod->name ?? 'Not Assigned' }}
                                 </span>
-                                <span class="font-mono text-gray-600 text-[10px] block truncate" title="Job: {{ $pc->job_number ?: '-' }}">
-                                    Job: {{ $pc->job_number ?: '-' }}
-                                </span>
+                                <span class="text-gray-400 font-medium block text-[10px] uppercase">Job Number(s)</span>
+                                @if(count($pc->job_numbers))
+                                    <div class="flex flex-wrap gap-1 mt-0.5">
+                                        @foreach($pc->job_numbers as $jn)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-700 border border-slate-200">{{ $jn }}</span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="font-mono text-gray-400 text-xs block mt-0.5">-</span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -462,9 +523,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
-                    <select name="job_number" id="create_job_number" class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
-                        <option value="">-- Select Job Number (Optional) --</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Job Number(s)</label>
+                    <select name="job_numbers[]" id="create_job_number" multiple placeholder="-- Select Job Number(s) (Optional) --" class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
                         @foreach($jobs as $jobNo => $display)
                             <option value="{{ $jobNo }}">{{ $display }}</option>
                         @endforeach
@@ -908,9 +968,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
-                    <select name="job_number" id="reappeal_job_number" class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
-                        <option value="">-- Select Job Number (Optional) --</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Job Number(s)</label>
+                    <select name="job_numbers[]" id="reappeal_job_number" multiple placeholder="-- Select Job Number(s) (Optional) --" class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
                         @foreach($jobs as $jobNo => $display)
                             <option value="{{ $jobNo }}">{{ $display }}</option>
                         @endforeach
@@ -997,9 +1056,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Job Number</label>
-                    <select name="job_number" id="editJobNumber" class="w-full rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500">
-                        <option value="">-- Select Job Number (Optional) --</option>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Job Number(s)</label>
+                    <select name="job_numbers[]" id="editJobNumber" multiple placeholder="-- Select Job Number(s) (Optional) --" class="w-full rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500">
                         @foreach($jobs as $jobNo => $display)
                             <option value="{{ $jobNo }}">{{ $display }}</option>
                         @endforeach
@@ -1580,13 +1638,23 @@
                         `;
                     }
 
+                    let jobsHtml = '<strong class="text-gray-400 text-sm font-mono">-</strong>';
+                    if (pc.job_number) {
+                        const jobsArr = pc.job_number.split(',').map(s => s.trim()).filter(Boolean);
+                        if (jobsArr.length > 0) {
+                            jobsHtml = `<div class="flex flex-wrap gap-1 mt-1">` + 
+                                jobsArr.map(j => `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono font-medium bg-white text-gray-800 border border-gray-300 shadow-sm">${j}</span>`).join('') +
+                                `</div>`;
+                        }
+                    }
+
                     document.getElementById('modalBody').innerHTML = `
                         ${iouPolicyBannerHtml}
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl text-xs">
                             <div><span class="text-gray-500 block">Requested By:</span><strong class="text-gray-800 text-sm">${pc.user ? pc.user.name : '-'}</strong></div>
                             <div><span class="text-gray-500 block">Department:</span><strong class="text-gray-800 text-sm">${pc.department || '-'}</strong></div>
                             <div><span class="text-gray-500 block">HOD:</span><strong class="text-gray-800 text-sm">${pc.hod ? pc.hod.name : 'Not Assigned'}</strong></div>
-                            <div><span class="text-gray-500 block">Job Number:</span><strong class="text-gray-800 text-sm font-mono">${pc.job_number || '-'}</strong></div>
+                            <div><span class="text-gray-500 block">Job Number(s):</span>${jobsHtml}</div>
                             
                             <div><span class="text-gray-500 block">${pc.is_iou ? 'IOU Created Date:' : 'Approval Date:'}</span><strong class="text-gray-800 text-sm font-semibold text-brand-purple">${createdOrIssuedDate}</strong></div>
                             ${pc.is_iou ? `<div><span class="text-gray-500 block">IOU Settled Date:</span><strong class="text-gray-800 text-sm font-semibold text-emerald-700">${settledDateDisplay}</strong></div>` : ''}
@@ -1642,10 +1710,19 @@
                     document.getElementById('reappealForm').action = "{{ route('petty-cash.index') }}/" + id + "/reappeal";
                     if (pc.hod_id) document.getElementById('reappeal_hod_id').value = pc.hod_id;
                     if (pc.job_number) {
-                        if (typeof reappealJobTs !== 'undefined' && reappealJobTs) reappealJobTs.setValue(pc.job_number);
-                        else document.getElementById('reappeal_job_number').value = pc.job_number;
+                        const jobList = pc.job_number.split(',').map(s => s.trim()).filter(Boolean);
+                        if (typeof reappealJobTs !== 'undefined' && reappealJobTs) {
+                            jobList.forEach(job => {
+                                if (!reappealJobTs.options[job]) {
+                                    reappealJobTs.addOption({ value: job, text: job });
+                                }
+                            });
+                            reappealJobTs.setValue(jobList);
+                        } else {
+                            document.getElementById('reappeal_job_number').value = pc.job_number;
+                        }
                     } else {
-                        if (typeof reappealJobTs !== 'undefined' && reappealJobTs) reappealJobTs.setValue('');
+                        if (typeof reappealJobTs !== 'undefined' && reappealJobTs) reappealJobTs.setValue([]);
                         else document.getElementById('reappeal_job_number').value = '';
                     }
                     const reappealNotesInput = document.getElementById('reappealExtraNotes');
@@ -1845,8 +1922,17 @@
 
                     const jobSelect = document.getElementById('editJobNumber');
                     if (jobSelect) {
-                        jobSelect.value = pc.job_number || '';
-                        if (typeof editJobTs !== 'undefined' && editJobTs) editJobTs.setValue(pc.job_number || '');
+                        const jobList = pc.job_number ? pc.job_number.split(',').map(s => s.trim()).filter(Boolean) : [];
+                        if (typeof editJobTs !== 'undefined' && editJobTs) {
+                            jobList.forEach(job => {
+                                if (!editJobTs.options[job]) {
+                                    editJobTs.addOption({ value: job, text: job });
+                                }
+                            });
+                            editJobTs.setValue(jobList);
+                        } else {
+                            jobSelect.value = pc.job_number || '';
+                        }
                     }
 
                     const statusSelect = document.getElementById('editStatus');
@@ -2006,16 +2092,18 @@
         }
 
         document.getElementById('newPettyCashModal').classList.remove('hidden');
-        if (typeof createJobTs !== 'undefined' && createJobTs) createJobTs.setValue('');
+        if (typeof createJobTs !== 'undefined' && createJobTs) createJobTs.clear();
     }
 
     let createJobTs, reappealJobTs, editJobTs;
     document.addEventListener('DOMContentLoaded', function() {
         const tsConfig = {
+            plugins: ['remove_button'],
             create: false,
-            placeholder: '-- Select Job Number (Optional) --',
-            allowEmptyOption: true,
-            plugins: ['dropdown_input']
+            persist: false,
+            closeAfterSelect: false,
+            placeholder: '-- Select Job Number(s) (Optional) --',
+            allowEmptyOption: true
         };
         if (document.getElementById('create_job_number')) {
             createJobTs = new TomSelect('#create_job_number', tsConfig);

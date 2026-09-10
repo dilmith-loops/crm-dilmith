@@ -109,7 +109,9 @@ class PettyCashController extends Controller
 
         $request->validate([
             'hod_id' => 'nullable|exists:users,id',
-            'job_number' => 'nullable|string|max:255',
+            'job_number' => 'nullable',
+            'job_numbers' => 'nullable|array',
+            'job_numbers.*' => 'nullable|string|max:100',
             'extra_notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.expense_category_id' => 'required|exists:expense_categories,id',
@@ -142,12 +144,14 @@ class PettyCashController extends Controller
             }
         }
 
+        $jobNumberString = $this->parseJobNumbers($request);
+
         $pettyCash = PettyCashRequest::create([
             'reference_number' => PettyCashRequest::generateReferenceNumber(),
             'user_id' => $user->id,
             'hod_id' => $resolvedHod ? $resolvedHod->id : $request->hod_id,
             'department' => $user->department ?: 'General',
-            'job_number' => $request->job_number,
+            'job_number' => $jobNumberString,
             'extra_notes' => $request->extra_notes,
             'total_amount' => $totalAmount,
             'is_iou' => $isIou,
@@ -531,7 +535,9 @@ class PettyCashController extends Controller
 
         $request->validate([
             'hod_id' => 'required|exists:users,id',
-            'job_number' => 'nullable|string|max:255',
+            'job_number' => 'nullable',
+            'job_numbers' => 'nullable|array',
+            'job_numbers.*' => 'nullable|string|max:100',
             'extra_notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.expense_category_id' => 'required|exists:expense_categories,id',
@@ -559,9 +565,11 @@ class PettyCashController extends Controller
                      ? 'pending_super_admin' 
                      : 'pending_hod';
 
+        $jobNumberString = $this->parseJobNumbers($request);
+
         $pettyCash->update([
             'hod_id' => $request->hod_id,
-            'job_number' => $request->job_number,
+            'job_number' => $jobNumberString,
             'extra_notes' => $request->extra_notes,
             'total_amount' => $totalAmount,
             'is_iou' => $isIou,
@@ -662,7 +670,9 @@ class PettyCashController extends Controller
 
         $request->validate([
             'hod_id' => 'required|exists:users,id',
-            'job_number' => 'nullable|string|max:255',
+            'job_number' => 'nullable',
+            'job_numbers' => 'nullable|array',
+            'job_numbers.*' => 'nullable|string|max:100',
             'extra_notes' => 'nullable|string',
             'status' => 'required|string|in:pending_hod,pending_super_admin,approved,rejected_by_hod,rejected_by_super_admin,iou_issued,pending_settlement,settled',
             'created_at' => 'nullable|date',
@@ -688,9 +698,11 @@ class PettyCashController extends Controller
             }
         }
 
+        $jobNumberString = $this->parseJobNumbers($request);
+
         $updateData = [
             'hod_id' => $request->hod_id,
-            'job_number' => $request->job_number,
+            'job_number' => $jobNumberString,
             'extra_notes' => $request->extra_notes,
             'status' => $request->status,
             'total_amount' => $totalAmount,
@@ -791,6 +803,22 @@ class PettyCashController extends Controller
         $pettyCash->proofs()->delete();
         $pettyCash->delete();
 
-        return redirect()->back()->with('success', 'Petty Cash request deleted successfully.');
+        return back()->with('success', 'Petty cash request deleted successfully.');
+    }
+
+    /**
+     * Parse and normalize single or multiple job numbers into a comma-separated string.
+     */
+    protected function parseJobNumbers(Request $request): ?string
+    {
+        $input = $request->input('job_numbers', $request->input('job_number'));
+        if (is_array($input)) {
+            $clean = array_values(array_unique(array_filter(array_map('trim', $input))));
+            return !empty($clean) ? implode(', ', $clean) : null;
+        } elseif (is_string($input)) {
+            $clean = array_values(array_unique(array_filter(array_map('trim', explode(',', $input)))));
+            return !empty($clean) ? implode(', ', $clean) : null;
+        }
+        return null;
     }
 }
