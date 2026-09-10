@@ -273,3 +273,24 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 });
+
+// Direct route to serve uploads in shared-hosting / subfolder deployments (e.g. Hostinger LiteSpeed where /pc/uploads rewrites to index.php)
+Route::get('uploads/{path}', function ($path) {
+    $cleanPath = ltrim($path, '/');
+    $possiblePaths = [
+        public_path('uploads/' . $cleanPath),
+        base_path('public/uploads/' . $cleanPath),
+        base_path('uploads/' . $cleanPath),
+        storage_path('app/public/' . $cleanPath),
+    ];
+    foreach ($possiblePaths as $file) {
+        if (file_exists($file) && is_file($file)) {
+            $mime = mime_content_type($file) ?: 'application/octet-stream';
+            return response()->file($file, [
+                'Content-Type' => $mime,
+                'Cache-Control' => 'public, max-age=604800',
+            ]);
+        }
+    }
+    abort(404);
+})->where('path', '.*');

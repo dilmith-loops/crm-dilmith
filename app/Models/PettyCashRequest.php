@@ -94,7 +94,7 @@ class PettyCashRequest extends Model
         if (str_starts_with($clean, 'public/')) {
             $clean = substr($clean, 7);
         }
-        return '/' . $clean;
+        return url($clean);
     }
 
     public function getSettlementSignatureUrlAttribute()
@@ -109,7 +109,7 @@ class PettyCashRequest extends Model
         if (str_starts_with($clean, 'public/')) {
             $clean = substr($clean, 7);
         }
-        return '/' . $clean;
+        return url($clean);
     }
 
     public function getJobNumbersAttribute(): array

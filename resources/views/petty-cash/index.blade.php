@@ -1692,26 +1692,30 @@
                         </a>`;
                     }).join('') : '<p class="text-xs text-gray-400">No proof attachments uploaded.</p>';
 
-                    let sigUrl = pc.signature_url || (pc.signature_path ? (pc.signature_path.startsWith('data:image/') || pc.signature_path.startsWith('http') ? pc.signature_path : `/${pc.signature_path.replace(/^\/?(public\/)?/, '')}`) : '');
+                    let cleanSig = pc.signature_path ? pc.signature_path.replace(/^\/?(public\/)?/, '') : '';
+                    let sigUrl = pc.signature_url || (cleanSig ? (cleanSig.startsWith('data:image/') || cleanSig.startsWith('http') ? cleanSig : `${baseUrl}/${cleanSig}`) : '');
+                    let altSigUrl = cleanSig && !cleanSig.startsWith('data:image/') && !cleanSig.startsWith('http') ? `${baseUrl}/public/${cleanSig}` : '';
                     let signatureHtml = pc.signature_path ? `
                         <div class="mt-4 pt-3 border-t border-gray-200">
                             <h4 class="text-xs sm:text-sm font-bold text-gray-800 mb-2 flex items-center">
                                 <i class="fas fa-signature text-brand-purple mr-1.5"></i> ${pc.is_iou ? 'IOU Issued Signature (Money Handed Over)' : 'Approved Signature'}
                             </h4>
                             <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 inline-block">
-                                <img src="${sigUrl}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-xs text-amber-700 italic flex items-center gap-1.5 p-1\\'><i class=\\'fas fa-exclamation-triangle text-amber-500\\'></i> Signature image file not found on server</span>';">
+                                <img src="${sigUrl}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded" onerror="if(!this.dataset.triedAlt && '${altSigUrl}' && this.src !== '${altSigUrl}'){this.dataset.triedAlt='1'; this.src='${altSigUrl}';}else{this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-xs text-amber-700 italic flex items-center gap-1.5 p-1\\'><i class=\\'fas fa-exclamation-triangle text-amber-500\\'></i> Signature image file not found on server</span>';}">
                             </div>
                         </div>
                     ` : '';
 
-                    let settleSigUrl = (pc.is_iou && pc.settlement_signature_path) ? (pc.settlement_signature_url || (pc.settlement_signature_path.startsWith('data:image/') || pc.settlement_signature_path.startsWith('http') ? pc.settlement_signature_path : `/${pc.settlement_signature_path.replace(/^\/?(public\/)?/, '')}`)) : '';
+                    let cleanSettleSig = (pc.is_iou && pc.settlement_signature_path) ? pc.settlement_signature_path.replace(/^\/?(public\/)?/, '') : '';
+                    let settleSigUrl = pc.settlement_signature_url || (cleanSettleSig ? (cleanSettleSig.startsWith('data:image/') || cleanSettleSig.startsWith('http') ? cleanSettleSig : `${baseUrl}/${cleanSettleSig}`) : '');
+                    let altSettleSigUrl = cleanSettleSig && !cleanSettleSig.startsWith('data:image/') && !cleanSettleSig.startsWith('http') ? `${baseUrl}/public/${cleanSettleSig}` : '';
                     let settlementSignatureHtml = (pc.is_iou && pc.settlement_signature_path) ? `
                         <div class="mt-4 pt-3 border-t border-gray-200">
                             <h4 class="text-xs sm:text-sm font-bold text-emerald-800 mb-2 flex items-center">
                                 <i class="fas fa-signature text-emerald-600 mr-1.5"></i> Settlement Approved Signature (IOU Settled)
                             </h4>
                             <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 inline-block">
-                                <img src="${settleSigUrl}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-xs text-amber-700 italic flex items-center gap-1.5 p-1\\'><i class=\\'fas fa-exclamation-triangle text-amber-500\\'></i> Settlement signature file not found on server</span>';">
+                                <img src="${settleSigUrl}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded" onerror="if(!this.dataset.triedAlt && '${altSettleSigUrl}' && this.src !== '${altSettleSigUrl}'){this.dataset.triedAlt='1'; this.src='${altSettleSigUrl}';}else{this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-xs text-amber-700 italic flex items-center gap-1.5 p-1\\'><i class=\\'fas fa-exclamation-triangle text-amber-500\\'></i> Settlement signature file not found on server</span>';}">
                             </div>
                         </div>
                     ` : '';
