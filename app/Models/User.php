@@ -120,6 +120,29 @@ class User extends Authenticatable
     }
 
     /**
+     * Automatically present legacy 'Super Admin' as 'Finance Admin'.
+     */
+    public function getRoleAttribute($value)
+    {
+        if ($value === 'Super Admin' || $value === 'super_admin') {
+            return 'Finance Admin';
+        }
+        return $value;
+    }
+
+    /**
+     * Automatically store 'Super Admin' input as 'Finance Admin'.
+     */
+    public function setRoleAttribute($value)
+    {
+        if ($value === 'Super Admin' || $value === 'super_admin') {
+            $this->attributes['role'] = 'Finance Admin';
+        } else {
+            $this->attributes['role'] = $value;
+        }
+    }
+
+    /**
      * Check if user has a specific role
      * 
      * @param string $role

@@ -75,7 +75,7 @@
                                                                     {{ $user->role === 'HOD' ? 'bg-green-100 text-green-800' : '' }}
                                                                     {{ $user->role === 'Manager' ? 'bg-gray-100 text-gray-800' : '' }}
                                                                     {{ $user->role === 'Staff' ? 'bg-amber-100 text-amber-800' : '' }}">
-                                    {{ $user->role }}
+                                    {{ in_array($user->role, ['Finance Admin', 'Super Admin']) ? 'Finance Admin' : $user->role }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
