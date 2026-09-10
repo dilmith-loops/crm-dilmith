@@ -43,6 +43,13 @@ class PettyCashRequest extends Model
         'settlement_money_notes' => 'array',
     ];
 
+    protected $appends = [
+        'issued_notes_total',
+        'settlement_notes_total',
+        'signature_url',
+        'settlement_signature_url',
+    ];
+
     public function getIssuedNotesTotalAttribute()
     {
         if (!$this->issued_money_notes || !is_array($this->issued_money_notes)) {
@@ -73,6 +80,36 @@ class PettyCashRequest extends Model
                ((int)($n['50'] ?? 0)) * 50 +
                ((int)($n['20'] ?? 0)) * 20 +
                (float)($n['coins'] ?? 0);
+    }
+
+    public function getSignatureUrlAttribute()
+    {
+        if (empty($this->signature_path)) {
+            return null;
+        }
+        if (str_starts_with($this->signature_path, 'data:image/') || str_starts_with($this->signature_path, 'http://') || str_starts_with($this->signature_path, 'https://')) {
+            return $this->signature_path;
+        }
+        $clean = ltrim($this->signature_path, '/');
+        if (str_starts_with($clean, 'public/')) {
+            $clean = substr($clean, 7);
+        }
+        return '/' . $clean;
+    }
+
+    public function getSettlementSignatureUrlAttribute()
+    {
+        if (empty($this->settlement_signature_path)) {
+            return null;
+        }
+        if (str_starts_with($this->settlement_signature_path, 'data:image/') || str_starts_with($this->settlement_signature_path, 'http://') || str_starts_with($this->settlement_signature_path, 'https://')) {
+            return $this->settlement_signature_path;
+        }
+        $clean = ltrim($this->settlement_signature_path, '/');
+        if (str_starts_with($clean, 'public/')) {
+            $clean = substr($clean, 7);
+        }
+        return '/' . $clean;
     }
 
     public function getJobNumbersAttribute(): array

@@ -1692,26 +1692,26 @@
                         </a>`;
                     }).join('') : '<p class="text-xs text-gray-400">No proof attachments uploaded.</p>';
 
-                    let sigUrl = pc.signature_path ? (pc.signature_path.startsWith('data:image/') ? pc.signature_path : `${baseUrl}/${pc.signature_path.replace(/^\/?(public\/)?/, '')}`) : '';
+                    let sigUrl = pc.signature_url || (pc.signature_path ? (pc.signature_path.startsWith('data:image/') || pc.signature_path.startsWith('http') ? pc.signature_path : `/${pc.signature_path.replace(/^\/?(public\/)?/, '')}`) : '');
                     let signatureHtml = pc.signature_path ? `
                         <div class="mt-4 pt-3 border-t border-gray-200">
                             <h4 class="text-xs sm:text-sm font-bold text-gray-800 mb-2 flex items-center">
                                 <i class="fas fa-signature text-brand-purple mr-1.5"></i> ${pc.is_iou ? 'IOU Issued Signature (Money Handed Over)' : 'Approved Signature'}
                             </h4>
                             <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 inline-block">
-                                <img src="${sigUrl}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded">
+                                <img src="${sigUrl}" alt="Approved Signature" class="max-h-24 max-w-full object-contain rounded" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-xs text-amber-700 italic flex items-center gap-1.5 p-1\\'><i class=\\'fas fa-exclamation-triangle text-amber-500\\'></i> Signature image file not found on server</span>';">
                             </div>
                         </div>
                     ` : '';
 
-                    let settleSigUrl = (pc.is_iou && pc.settlement_signature_path) ? (pc.settlement_signature_path.startsWith('data:image/') ? pc.settlement_signature_path : `${baseUrl}/${pc.settlement_signature_path.replace(/^\/?(public\/)?/, '')}`) : '';
+                    let settleSigUrl = (pc.is_iou && pc.settlement_signature_path) ? (pc.settlement_signature_url || (pc.settlement_signature_path.startsWith('data:image/') || pc.settlement_signature_path.startsWith('http') ? pc.settlement_signature_path : `/${pc.settlement_signature_path.replace(/^\/?(public\/)?/, '')}`)) : '';
                     let settlementSignatureHtml = (pc.is_iou && pc.settlement_signature_path) ? `
                         <div class="mt-4 pt-3 border-t border-gray-200">
                             <h4 class="text-xs sm:text-sm font-bold text-emerald-800 mb-2 flex items-center">
                                 <i class="fas fa-signature text-emerald-600 mr-1.5"></i> Settlement Approved Signature (IOU Settled)
                             </h4>
                             <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 inline-block">
-                                <img src="${settleSigUrl}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded">
+                                <img src="${settleSigUrl}" alt="Settlement Signature" class="max-h-24 max-w-full object-contain rounded" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-xs text-amber-700 italic flex items-center gap-1.5 p-1\\'><i class=\\'fas fa-exclamation-triangle text-amber-500\\'></i> Settlement signature file not found on server</span>';">
                             </div>
                         </div>
                     ` : '';
