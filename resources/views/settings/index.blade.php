@@ -9,6 +9,11 @@
                 {{ session('success') }}
             </div>
         @endif
+        @if(session('error'))
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             <!-- Sidebar Navigation for Settings -->
@@ -36,6 +41,11 @@
                         <i class="fas fa-bullseye mr-2 text-red-500"></i> Targets
                     </button>
                     @if(auth()->user()->hasRole('super_admin'))
+                        <button onclick="showSection('notifications')"
+                            class="section-btn text-left px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-lg bg-white shadow-sm border border-gray-100 hover:border-brand-blue transition-all shrink-0 text-xs sm:text-sm"
+                            id="btn-notifications">
+                            <i class="fas fa-envelope mr-2 text-purple-600"></i> Notification Emails
+                        </button>
                         <button onclick="showSection('currencies')"
                             class="section-btn text-left px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-lg bg-white shadow-sm border border-gray-100 hover:border-brand-blue transition-all shrink-0 text-xs sm:text-sm"
                             id="btn-currencies">
@@ -475,6 +485,75 @@
                                 </div>
                             </div>
                         </div>
+                    </section>
+                    
+                    <!-- Notification Emails Section -->
+                    <section id="section-notifications" class="settings-section hidden space-y-6">
+                        <form action="{{ route('settings.updateNotifications') }}" method="POST">
+                            @csrf
+                            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <h3 class="text-lg font-bold text-gray-800">Notification Emails</h3>
+                                            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-700">Super Admin Only</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-0.5">Configure recipient email addresses for system notifications and alerts.</p>
+                                    </div>
+                                    <button type="submit"
+                                        class="px-4 py-2 bg-brand-pink text-white rounded-md hover:bg-brand-purple text-sm font-medium transition-all shadow-sm">
+                                        Save Changes
+                                    </button>
+                                </div>
+                                <div class="p-6 space-y-6">
+                                    <div class="bg-blue-50/70 border border-blue-100 rounded-lg p-4 text-xs sm:text-sm text-blue-900 space-y-2">
+                                        <div class="flex items-start">
+                                            <i class="fas fa-info-circle text-brand-blue mt-0.5 mr-2.5 text-base"></i>
+                                            <div>
+                                                <p class="font-semibold mb-1">Notification Routing Rules:</p>
+                                                <ul class="list-disc list-inside space-y-1 text-xs text-blue-800">
+                                                    <li><strong>Associated HOD:</strong> Requests and status updates automatically go to the requesting staff member's associated HOD (based on department or direct reporting structure).</li>
+                                                    <li><strong>Super Admin Recipients:</strong> Email notifications for Super Admins (Finance) are sent to the addresses configured below.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-800 mb-1">
+                                            Super Admin Notification Recipient Emails
+                                        </label>
+                                        <p class="text-xs text-gray-500 mb-2">
+                                            Enter email addresses that should receive Super Admin notifications (e.g. Petty Cash submissions, HOD approvals, settlement requests). Separate multiple emails with commas or line breaks.
+                                        </p>
+                                        @php
+                                            $currentEmails = \App\Models\Setting::get('super_admin_notification_emails', '');
+                                        @endphp
+                                        <textarea name="super_admin_notification_emails" rows="4"
+                                            placeholder="e.g. finance@loopsintegrated.com, admin@loopsintegrated.com"
+                                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-blue focus:ring-brand-blue sm:text-sm font-mono text-xs sm:text-sm p-3">{{ old('super_admin_notification_emails', $currentEmails) }}</textarea>
+                                    </div>
+
+                                    <!-- Quick Preview of Currently Configured Emails -->
+                                    <div>
+                                        <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Currently Active Notification Recipients</h4>
+                                        <div class="flex flex-wrap gap-2">
+                                            @php
+                                                $activeList = \App\Notifications\PettyCashNotification::getConfiguredSuperAdminEmails();
+                                            @endphp
+                                            @forelse($activeList as $email)
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                                                    <i class="fas fa-envelope mr-1.5 text-purple-500"></i>
+                                                    {{ $email }}
+                                                </span>
+                                            @empty
+                                                <span class="text-xs text-gray-400 italic">No custom emails configured.</span>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </section>
                     
                     <!-- Maintenance Mode Section -->

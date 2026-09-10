@@ -55,6 +55,9 @@ class DashboardController extends Controller
             if ($hods->isEmpty()) {
                 $hods = \App\Models\User::where('role', 'HOD')->get();
             }
+            if ($user->associated_hod && !$hods->contains('id', $user->associated_hod->id)) {
+                $hods->prepend($user->associated_hod);
+            }
 
             $jobs = \App\Models\Deal::whereNotNull('job_number')
                 ->where('job_number', '!=', '')

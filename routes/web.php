@@ -250,6 +250,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('settings/department-targets', [SettingController::class, 'updateDepartmentTargets'])->name('settings.updateDepartmentTargets');
             Route::post('settings/user-targets', [SettingController::class, 'updateUserTargets'])->name('settings.updateUserTargets');
             Route::post('settings/maintenance', [SettingController::class, 'updateMaintenance'])->name('settings.updateMaintenance');
+            Route::post('settings/notifications', [SettingController::class, 'updateNotifications'])->name('settings.updateNotifications');
             
             Route::post('settings/managers', [SettingController::class, 'storeManager'])->name('settings.storeManager');
             Route::get('settings/managers/{manager}/delete', [SettingController::class, 'destroyManager'])->name('settings.destroyManager.get');

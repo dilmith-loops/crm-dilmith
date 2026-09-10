@@ -277,4 +277,43 @@ class SettingController extends Controller
             return redirect()->route('settings.index')->with('error', 'Cannot delete expense category.');
         }
     }
+
+    public function updateNotifications(Request $request)
+    {
+        // Role Check (Super Admin only)
+        if (!auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $request->validate([
+            'super_admin_notification_emails' => 'nullable|string',
+        ]);
+
+        $rawEmails = $request->input('super_admin_notification_emails', '');
+        $parts = preg_split('/[\r\n,;]+/', (string)$rawEmails);
+        $validEmails = [];
+        $invalidEmails = [];
+
+        foreach ($parts as $part) {
+            $email = trim($part);
+            if (empty($email)) {
+                continue;
+            }
+            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $validEmails[] = strtolower($email);
+            } else {
+                $invalidEmails[] = $email;
+            }
+        }
+
+        if (!empty($invalidEmails)) {
+            return redirect()->route('settings.index')
+                ->with('error', 'The following email addresses are invalid: ' . implode(', ', $invalidEmails));
+        }
+
+        $cleanEmailsString = implode(', ', array_unique($validEmails));
+        Setting::set('super_admin_notification_emails', $cleanEmailsString, 'notifications');
+
+        return redirect()->route('settings.index')->with('success', 'Super Admin notification emails updated successfully.');
+    }
 }

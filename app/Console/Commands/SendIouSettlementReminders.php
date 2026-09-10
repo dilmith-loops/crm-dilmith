@@ -42,8 +42,9 @@ class SendIouSettlementReminders extends Command
                 $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $systemUser));
                 $count++;
             }
-            if ($pettyCash->hod && $pettyCash->hod->id !== ($pettyCash->user->id ?? 0)) {
-                $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $systemUser));
+            $associatedHod = $pettyCash->associated_hod;
+            if ($associatedHod && $associatedHod->id !== ($pettyCash->user->id ?? 0)) {
+                $associatedHod->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $systemUser));
             }
         }
 

@@ -345,9 +345,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">HOD Associated With *</label>
+                    @php
+                        $defaultHodId = old('hod_id', $user->associated_hod ? $user->associated_hod->id : $user->supervisor_id);
+                    @endphp
                     <select name="hod_id" required class="w-full rounded-lg border-gray-300 text-base sm:text-sm focus:border-brand-blue focus:ring-brand-blue">
                         @foreach($hods as $h)
-                            <option value="{{ $h->id }}" {{ $user->supervisor_id == $h->id ? 'selected' : '' }}>
+                            <option value="{{ $h->id }}" {{ $defaultHodId == $h->id ? 'selected' : '' }}>
                                 {{ $h->name }} ({{ $h->department ?: 'HOD' }})
                             </option>
                         @endforeach

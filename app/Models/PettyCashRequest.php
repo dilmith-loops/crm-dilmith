@@ -91,6 +91,20 @@ class PettyCashRequest extends Model
         return $this->belongsTo(User::class, 'hod_id');
     }
 
+    /**
+     * Get the associated HOD, with fallback to requester's associated HOD.
+     */
+    public function getAssociatedHodAttribute()
+    {
+        if ($this->hod) {
+            return $this->hod;
+        }
+        if ($this->user && $this->user->associated_hod) {
+            return $this->user->associated_hod;
+        }
+        return null;
+    }
+
     public function items()
     {
         return $this->hasMany(PettyCashItem::class, 'petty_cash_request_id');

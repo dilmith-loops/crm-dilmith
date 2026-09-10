@@ -82,31 +82,41 @@ class User extends Authenticatable
     }
 
     /**
-     * Resolve the HOD Name for this user.
+     * Resolve the Associated HOD User instance for this user.
      * 
-     * @return string
+     * @return \App\Models\User|null
      */
-    public function getHodNameAttribute()
+    public function getAssociatedHodAttribute()
     {
         // 1. Direct supervisor check if supervisor is an HOD
         if ($this->supervisor && $this->supervisor->hasRole('HOD')) {
-            return $this->supervisor->name;
+            return $this->supervisor;
         }
 
         // 2. Department HOD lookup
         if ($this->department) {
             $hod = User::where('department', $this->department)->where('role', 'HOD')->first();
             if ($hod) {
-                return $hod->name;
+                return $hod;
             }
         }
 
-        // 3. Fallback to supervisor name if available, else 'Not Assigned'
+        // 3. Fallback to supervisor if supervisor has role HOD or Manager
         if ($this->supervisor) {
-            return $this->supervisor->name;
+            return $this->supervisor;
         }
 
-        return 'Not Assigned';
+        return null;
+    }
+
+    /**
+     * Resolve the HOD Name for this user.
+     * 
+     * @return string
+     */
+    public function getHodNameAttribute()
+    {
+        return $this->associated_hod ? $this->associated_hod->name : 'Not Assigned';
     }
 
     /**

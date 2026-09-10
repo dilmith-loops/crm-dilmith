@@ -17,47 +17,67 @@ class PettyCashNotification extends Notification
     public $actor;
 
     /**
-     * Target Super Admin email addresses.
+     * Default Super Admin fallback email addresses.
      */
-    public const SUPER_ADMIN_EMAILS = [
-        'dilmithsenupa2@gmail.com',
-        'rifky@loopsintegrated.com',
-        'logini@loopsintegrated.com'
-    ];
+    public const DEFAULT_SUPER_ADMIN_EMAILS = [];
 
     /**
-     * Helper to retrieve all Super Admin notification targets (DB users + custom emails).
+     * Backwards-compatible alias.
      */
-    public static function getSuperAdminRecipients($excludeUserId = null)
-    {
-        $adminsQuery = User::where(function ($q) {
-            $q->where('role', 'Super Admin')->orWhere('role', 'super_admin');
-        });
+    public const SUPER_ADMIN_EMAILS = [];
 
-        if ($excludeUserId) {
-            $adminsQuery->where('id', '!=', $excludeUserId);
+    /**
+     * Get configured Super Admin notification recipient emails from Settings.
+     *
+     * @return array<int, string>
+     */
+    public static function getConfiguredSuperAdminEmails(): array
+    {
+        $settingValue = \App\Models\Setting::get('super_admin_notification_emails');
+
+        if ($settingValue === null || trim((string)$settingValue) === '') {
+            return [];
         }
 
-        $admins = $adminsQuery->get();
-
-        $existingEmails = $admins->pluck('email')->map(fn($e) => strtolower($e))->toArray();
-
-        foreach (self::SUPER_ADMIN_EMAILS as $email) {
-            if (!empty($email) && !in_array(strtolower($email), $existingEmails)) {
-                $user = User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
-                if ($user) {
-                    if (!$excludeUserId || $user->id != $excludeUserId) {
-                        $admins->push($user);
-                        $existingEmails[] = strtolower($email);
-                    }
-                } else {
-                    $admins->push(NotificationFacade::route('mail', $email));
-                    $existingEmails[] = strtolower($email);
-                }
+        $emails = preg_split('/[\r\n,;]+/', (string)$settingValue);
+        $cleanEmails = [];
+        foreach ($emails as $email) {
+            $email = trim($email);
+            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $cleanEmails[] = strtolower($email);
             }
         }
 
-        return $admins;
+        return !empty($cleanEmails) ? array_values(array_unique($cleanEmails)) : [];
+    }
+
+    /**
+     * Helper to retrieve all Super Admin notification targets (DB users matching configured emails + external mail routes).
+     */
+    public static function getSuperAdminRecipients($excludeUserId = null)
+    {
+        $recipients = collect();
+        $configuredEmails = self::getConfiguredSuperAdminEmails();
+        $processedEmails = [];
+
+        foreach ($configuredEmails as $email) {
+            $email = strtolower(trim($email));
+            if (empty($email) || in_array($email, $processedEmails)) {
+                continue;
+            }
+            $processedEmails[] = $email;
+
+            $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+            if ($user) {
+                if (!$excludeUserId || $user->id != $excludeUserId) {
+                    $recipients->push($user);
+                }
+            } else {
+                $recipients->push(NotificationFacade::route('mail', $email));
+            }
+        }
+
+        return $recipients;
     }
 
     /**

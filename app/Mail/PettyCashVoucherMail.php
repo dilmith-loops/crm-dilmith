@@ -49,6 +49,9 @@ class PettyCashVoucherMail extends Mailable
 
         // Determine recipient relationship safely
         $isAnonymousAdmin = $this->notifiable instanceof \Illuminate\Notifications\AnonymousNotifiable;
+        $associatedHod = $this->pettyCash->associated_hod;
+        $associatedHodId = $associatedHod ? $associatedHod->id : $this->pettyCash->hod_id;
+        $associatedHodEmail = strtolower($associatedHod ? ($associatedHod->email ?? '') : ($this->pettyCash->hod->email ?? ''));
 
         if ($isAnonymousAdmin) {
             $isRequester = false;
@@ -59,7 +62,7 @@ class PettyCashVoucherMail extends Mailable
 
             if ($notifiableId) {
                 $isRequester = ($notifiableId == $this->pettyCash->user_id);
-                $isHod = (!$isRequester) && ($this->pettyCash->hod_id && $notifiableId == $this->pettyCash->hod_id);
+                $isHod = (!$isRequester) && ($associatedHodId && $notifiableId == $associatedHodId);
                 $isSuperAdmin = (!$isRequester && !$isHod);
             } else {
                 $notifiableEmail = strtolower(
@@ -68,13 +71,12 @@ class PettyCashVoucherMail extends Mailable
                         : (is_string($this->notifiable) ? $this->notifiable : '')
                 );
                 $requesterEmail = strtolower($this->pettyCash->user->email ?? '');
-                $hodEmail = strtolower($this->pettyCash->hod->email ?? '');
 
                 if ($notifiableEmail && $requesterEmail && $notifiableEmail === $requesterEmail) {
                     $isRequester = true;
                     $isHod = false;
                     $isSuperAdmin = false;
-                } else if ($notifiableEmail && $hodEmail && $notifiableEmail === $hodEmail) {
+                } else if ($notifiableEmail && $associatedHodEmail && $notifiableEmail === $associatedHodEmail) {
                     $isRequester = false;
                     $isHod = true;
                     $isSuperAdmin = false;

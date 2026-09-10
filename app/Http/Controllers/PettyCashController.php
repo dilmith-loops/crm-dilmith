@@ -70,6 +70,9 @@ class PettyCashController extends Controller
         if ($hods->isEmpty()) {
             $hods = User::where('role', 'HOD')->get();
         }
+        if ($user->associated_hod && !$hods->contains('id', $user->associated_hod->id)) {
+            $hods->prepend($user->associated_hod);
+        }
 
         // Show all Job Numbers with basic description (Title & Customer)
         $jobs = Deal::whereNotNull('job_number')
@@ -105,7 +108,7 @@ class PettyCashController extends Controller
         }
 
         $request->validate([
-            'hod_id' => 'required|exists:users,id',
+            'hod_id' => 'nullable|exists:users,id',
             'job_number' => 'nullable|string|max:255',
             'extra_notes' => 'nullable|string',
             'items' => 'required|array|min:1',
@@ -117,6 +120,17 @@ class PettyCashController extends Controller
             'proofs' => 'nullable|array',
             'proofs.*' => 'file|mimes:jpeg,png,jpg,pdf,doc,docx|max:10240',
         ]);
+
+        $resolvedHod = null;
+        if ($request->filled('hod_id')) {
+            $resolvedHod = User::find($request->hod_id);
+        }
+        if (!$resolvedHod && $user->associated_hod) {
+            $resolvedHod = $user->associated_hod;
+        }
+        if (!$resolvedHod) {
+            $resolvedHod = User::where('role', 'HOD')->first();
+        }
 
         $totalAmount = 0;
         $isIou = false;
@@ -131,7 +145,7 @@ class PettyCashController extends Controller
         $pettyCash = PettyCashRequest::create([
             'reference_number' => PettyCashRequest::generateReferenceNumber(),
             'user_id' => $user->id,
-            'hod_id' => $request->hod_id,
+            'hod_id' => $resolvedHod ? $resolvedHod->id : $request->hod_id,
             'department' => $user->department ?: 'General',
             'job_number' => $request->job_number,
             'extra_notes' => $request->extra_notes,
@@ -176,9 +190,9 @@ class PettyCashController extends Controller
             }
         }
 
-        // 1. Notify HOD, Staff, and Super Admins
-        $hod = User::find($request->hod_id);
-        if ($hod) {
+        // 1. Notify Associated HOD, Staff, and Super Admins
+        $hod = $resolvedHod ?? ($pettyCash->associated_hod ?? User::find($request->hod_id));
+        if ($hod && $hod->id !== $user->id) {
             $hod->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
         }
 
@@ -228,6 +242,11 @@ class PettyCashController extends Controller
         $requestedUser = User::find($pettyCash->user_id);
         if ($requestedUser) {
             $requestedUser->notify(new PettyCashNotification($pettyCash, 'hod_approved', $user));
+        }
+
+        $associatedHod = $pettyCash->associated_hod;
+        if ($associatedHod && $associatedHod->id !== $user->id && $associatedHod->id !== $pettyCash->user_id) {
+            $associatedHod->notify(new PettyCashNotification($pettyCash, 'hod_approved', $user));
         }
 
         return redirect()->back()->with('success', 'Petty Cash request approved and forwarded to Finance.');
@@ -311,9 +330,12 @@ class PettyCashController extends Controller
             if ($pettyCash->user) {
                 $pettyCash->user->notify(new PettyCashNotification($pettyCash, 'iou_settled', $user));
             }
-            if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
-                $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'iou_settled', $user));
+            $associatedHod = $pettyCash->associated_hod;
+            if ($associatedHod && $associatedHod->id !== $user->id) {
+                $associatedHod->notify(new PettyCashNotification($pettyCash, 'iou_settled', $user));
             }
+            $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
+            Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'iou_settled', $user));
             return redirect()->back()->with('success', 'IOU Settlement has been APPROVED and marked as SETTLED.');
         }
 
@@ -332,13 +354,14 @@ class PettyCashController extends Controller
 
         $pettyCash->update($updateData);
 
-        // 3. Notify Staff, HOD, and Super Admins upon Super Admin Approval (with PDF Voucher)
+        // 3. Notify Staff, Associated HOD, and Super Admins upon Super Admin Approval (with PDF Voucher)
         $requestedUser = User::find($pettyCash->user_id);
         if ($requestedUser) {
             $requestedUser->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
         }
-        if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
-            $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
+        $associatedHod = $pettyCash->associated_hod;
+        if ($associatedHod && $associatedHod->id !== $user->id) {
+            $associatedHod->notify(new PettyCashNotification($pettyCash, 'admin_approved', $user));
         }
         $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'admin_approved', $user));
@@ -366,8 +389,9 @@ class PettyCashController extends Controller
         if ($requestedUser) {
             $requestedUser->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $user));
         }
-        if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
-            $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $user));
+        $associatedHod = $pettyCash->associated_hod;
+        if ($associatedHod && $associatedHod->id !== $user->id) {
+            $associatedHod->notify(new PettyCashNotification($pettyCash, 'iou_reminder', $user));
         }
 
         return redirect()->back()->with('success', 'Reminder email to settle the IOU has been sent to ' . ($pettyCash->user->name ?? 'Staff') . ' and HOD.');
@@ -390,13 +414,14 @@ class PettyCashController extends Controller
             'admin_rejection_note' => $request->admin_rejection_note,
         ]);
 
-        // 4b. Notify Staff, HOD, and Super Admins upon Super Admin Rejection
+        // 4b. Notify Staff, Associated HOD, and Super Admins upon Super Admin Rejection
         $requestedUser = User::find($pettyCash->user_id);
         if ($requestedUser) {
             $requestedUser->notify(new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
         }
-        if ($pettyCash->hod && $pettyCash->hod->id !== $user->id) {
-            $pettyCash->hod->notify(new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
+        $associatedHod = $pettyCash->associated_hod;
+        if ($associatedHod && $associatedHod->id !== $user->id) {
+            $associatedHod->notify(new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
         }
         $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'admin_rejected', $user, $request->admin_rejection_note));
@@ -478,9 +503,14 @@ class PettyCashController extends Controller
             'settlement_money_notes' => $request->input('settlement_money_notes'),
         ]);
 
-        // Notify Super Admins & Requested Staff User
+        // Notify Super Admins, Associated HOD & Requested Staff User
         $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
+
+        $associatedHod = $pettyCash->associated_hod;
+        if ($associatedHod && $associatedHod->id !== $user->id) {
+            $associatedHod->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
+        }
 
         $requestedUser = User::find($pettyCash->user_id);
         if ($requestedUser && $requestedUser->id !== $user->id) {
@@ -578,14 +608,11 @@ class PettyCashController extends Controller
 
         // Notify HOD or Super Admin based on new status
         if ($newStatus === 'pending_super_admin') {
-            $superAdmins = User::whereIn('email', PettyCashNotification::SUPER_ADMIN_EMAILS)->get();
-            if ($superAdmins->isEmpty()) {
-                $superAdmins = User::where('role', 'Super Admin')->get();
-            }
+            $superAdmins = PettyCashNotification::getSuperAdminRecipients($user ? $user->id : null);
             Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'reappealed', $user));
         } else {
-            $hod = User::find($request->hod_id);
-            if ($hod) {
+            $hod = User::find($request->hod_id) ?? $pettyCash->associated_hod;
+            if ($hod && $hod->id !== $user->id) {
                 $hod->notify(new PettyCashNotification($pettyCash, 'reappealed', $user));
             }
         }
