@@ -306,7 +306,7 @@
                             @elseif($pc->status === 'pending_super_admin')
                                 <div class="flex flex-col gap-1 items-start">
                                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center">
-                                        <i class="fas fa-user-shield mr-1 text-[10px]"></i> Pending Finance
+                                        <i class="fas fa-user-shield mr-1 text-[10px]"></i> Pending Finance Approval
                                     </span>
                                     @if($pc->management_approved_at)
                                         <span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center" title="Approved by Management at {{ $pc->management_approved_at->format('Y-m-d H:i') }}">

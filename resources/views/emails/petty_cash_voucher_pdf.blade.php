@@ -210,8 +210,16 @@
                         <span class="status-badge status-iou">Status: IOU Issued (Unsettled)</span>
                     @elseif($pettyCash->status === 'settled')
                         <span class="status-badge status-settled">Status: Settled</span>
+                    @elseif($pettyCash->status === 'pending_super_admin')
+                        <span class="status-badge status-default" style="background-color: #dbeafe; color: #1e40af; border-color: #bfdbfe;">Status: Pending Finance Approval</span>
+                    @elseif($pettyCash->status === 'pending_hod')
+                        <span class="status-badge status-default" style="background-color: #fef3c7; color: #92400e; border-color: #fde68a;">Status: Pending HOD Approval</span>
+                    @elseif($pettyCash->status === 'pending_management')
+                        <span class="status-badge status-default" style="background-color: #f3e8ff; color: #6b21a8; border-color: #d8b4fe;">Status: Pending Management Approval</span>
                     @elseif($pettyCash->status === 'rejected_by_super_admin')
                         <span class="status-badge status-default">Status: Rejected by Finance</span>
+                    @elseif($pettyCash->status === 'rejected_by_management')
+                        <span class="status-badge status-default">Status: Rejected by Management</span>
                     @elseif($pettyCash->status === 'rejected_by_hod')
                         <span class="status-badge status-default">Status: Rejected by HOD</span>
                     @else

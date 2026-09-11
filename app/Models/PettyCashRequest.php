@@ -52,6 +52,7 @@ class PettyCashRequest extends Model
         'settlement_notes_total',
         'signature_url',
         'settlement_signature_url',
+        'status_label',
     ];
 
     public function getIssuedNotesTotalAttribute()
@@ -218,5 +219,25 @@ class PettyCashRequest extends Model
             return null;
         }
         return null;
+    }
+
+    /**
+     * Human-readable label for petty cash status.
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'approved' => 'Approved',
+            'iou_issued' => 'IOU Issued (Unsettled)',
+            'settled' => 'Settled',
+            'pending_settlement' => 'Pending Settlement',
+            'pending_super_admin' => 'Pending Finance Approval',
+            'pending_hod' => 'Pending HOD Approval',
+            'pending_management' => 'Pending Management Approval',
+            'rejected_by_super_admin' => 'Rejected by Finance',
+            'rejected_by_management' => 'Rejected by Management',
+            'rejected_by_hod' => 'Rejected by HOD',
+            default => ucwords(str_replace('_', ' ', $this->status ?? '')),
+        };
     }
 }
