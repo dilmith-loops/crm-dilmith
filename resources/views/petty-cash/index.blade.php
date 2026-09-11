@@ -557,7 +557,7 @@
                             <span id="iouCardTitle" class="text-xs font-bold text-gray-800">Standard Petty Cash Request</span>
                             <span id="iouStatusBadge" class="hidden text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-sm">IOU Mode Active</span>
                         </div>
-                        <p id="iouCardDesc" class="text-[11px] text-gray-500 mt-0.5">Categorized expense reimbursement with expenditure receipts.</p>
+                        <p id="iouCardDesc" class="text-[11px] text-gray-500 mt-0.5 hidden"></p>
                     </div>
                 </div>
                 <div class="flex-shrink-0">
@@ -1340,7 +1340,10 @@
             if (btnText) btnText.innerHTML = '<i class="fas fa-check-circle mr-1"></i> IOU Mode Active (Switch Back)';
             if (badge) badge.classList.remove('hidden');
             if (cardTitle) cardTitle.textContent = 'IOU Request (Cash Advance)';
-            if (cardDesc) cardDesc.textContent = 'No expense categories needed upfront. You will settle receipts within 72 hours.';
+            if (cardDesc) {
+                cardDesc.textContent = 'No expense categories needed upfront. You will settle receipts within 72 hours.';
+                cardDesc.classList.remove('hidden');
+            }
             if (icon) {
                 icon.className = 'fas fa-hand-holding-usd text-amber-700';
             }
@@ -1362,7 +1365,7 @@
             if (btnText) btnText.innerHTML = '<i class="fas fa-hand-holding-usd text-amber-600 mr-1"></i> Make Request IOU';
             if (badge) badge.classList.add('hidden');
             if (cardTitle) cardTitle.textContent = 'Standard Petty Cash Request';
-            if (cardDesc) cardDesc.textContent = 'Categorized expense reimbursement with expenditure receipts.';
+            if (cardDesc) { cardDesc.textContent = ''; cardDesc.classList.add('hidden'); }
             if (icon) {
                 icon.className = 'fas fa-receipt text-gray-500';
             }
