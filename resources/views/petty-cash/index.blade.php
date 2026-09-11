@@ -546,32 +546,58 @@
                 </div>
             </div>
 
+            <!-- IOU Toggle Option Card -->
+            <div class="bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-amber-50/70 border border-amber-200 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div id="iouIconBox" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-lg shadow-sm border border-gray-200 flex-shrink-0 transition-all">
+                        <i id="iouIcon" class="fas fa-receipt text-gray-500"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="iouCardTitle" class="text-xs font-bold text-gray-800">Standard Petty Cash Request</span>
+                            <span id="iouStatusBadge" class="hidden text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-sm">IOU Mode Active</span>
+                        </div>
+                        <p id="iouCardDesc" class="text-[11px] text-gray-500 mt-0.5">Categorized expense reimbursement with expenditure receipts.</p>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <input type="hidden" name="is_iou" id="create_is_iou" value="0">
+                    <button type="button" id="btnToggleIou" onclick="toggleIouMode()" class="w-full sm:w-auto px-3.5 py-2 text-xs font-bold rounded-lg border border-amber-400 bg-white text-amber-800 hover:bg-amber-100 hover:text-amber-900 transition-all shadow-sm flex items-center justify-center gap-1.5">
+                        <i class="fas fa-hand-holding-usd text-amber-600"></i>
+                        <span id="btnToggleIouText">Make Request IOU</span>
+                    </button>
+                </div>
+            </div>
+
             <div>
                 <div class="flex justify-between items-center mb-2">
-                    <label class="block text-sm font-bold text-gray-800">Expense Line Items *</label>
-                    <button type="button" onclick="addExpenseItemRow()" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-md hover:bg-brand-purple transition-all">
-                        <i class="fas fa-plus mr-1"></i> Add Line Item
+                    <div>
+                        <label id="itemsSectionLabel" class="block text-sm font-bold text-gray-800">Expense Line Items *</label>
+                        <p id="itemsSectionSubtext" class="text-[11px] text-amber-700 font-medium hidden"><i class="fas fa-info-circle mr-1"></i>No expense categories required for IOU requests.</p>
+                    </div>
+                    <button type="button" onclick="addExpenseItemRow()" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-md hover:bg-brand-purple transition-all font-semibold flex items-center gap-1">
+                        <i class="fas fa-plus"></i> Add Line Item
                     </button>
                 </div>
                 <div id="expenseItemsContainer" class="space-y-3">
                     <!-- Initial Row -->
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <div class="md:col-span-4">
-                            <select name="items[0][expense_category_id]" required onchange="toggleDinnerAttendees(this)" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-gray-50 p-3 rounded-lg border border-gray-200 item-row">
+                        <div class="col-span-1 md:col-span-4 category-col">
+                            <select name="items[0][expense_category_id]" required onchange="toggleDinnerAttendees(this)" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue item-cat-select">
                                 <option value="">Select Category *</option>
                                 @foreach($expenseCategories as $category)
                                     <option value="{{ $category->id }}">{{ $category->name }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="md:col-span-3">
-                            <input type="number" step="0.01" min="0.01" name="items[0][amount]" required placeholder="Amount *" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue">
+                        <div class="col-span-1 md:col-span-3 amount-col">
+                            <input type="number" step="0.01" min="0.01" name="items[0][amount]" required placeholder="Amount *" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue item-amount-input">
                         </div>
-                        <div class="md:col-span-4">
-                            <input type="text" name="items[0][description]" placeholder="Note / Details" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue">
+                        <div class="col-span-1 md:col-span-4 desc-col">
+                            <input type="text" name="items[0][description]" placeholder="Note / Details" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue item-desc-input">
                         </div>
-                        <div class="md:col-span-1 text-right">
-                            <button type="button" onclick="if(document.querySelectorAll('#expenseItemsContainer .grid').length > 1) this.closest('.grid').remove()" class="text-red-500 hover:text-red-700">
+                        <div class="col-span-1 md:col-span-1 text-right">
+                            <button type="button" onclick="if(document.querySelectorAll('#expenseItemsContainer .item-row').length > 1) this.closest('.item-row').remove()" class="text-red-500 hover:text-red-700">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -606,6 +632,10 @@
                         <i class="fas fa-plus mr-1"></i> Add File
                     </button>
                 </div>
+                <div id="iouProofNotice" class="hidden text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-2.5 mb-2 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-amber-600 flex-shrink-0"></i>
+                    <span><strong>IOU Advance Notice:</strong> Expenditure receipts/proofs are not required upfront. You will upload proofs when settling this IOU within 72 hours.</span>
+                </div>
                 <div id="newProofContainer" class="space-y-2">
                     <div class="flex items-center gap-2">
                         <input type="file" name="proofs[]" accept="image/*,.pdf,.doc,.docx" class="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-blue hover:file:bg-blue-100 border border-gray-200 rounded-lg p-1">
@@ -622,9 +652,9 @@
                     class="px-5 py-2.5 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300">
                     Cancel
                 </button>
-                <button type="submit"
-                    class="px-5 py-2.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white font-medium rounded-lg hover:opacity-90 shadow-md">
-                    Submit to HOD
+                <button type="submit" id="newPettyCashSubmitBtn"
+                    class="px-5 py-2.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white font-medium rounded-lg hover:opacity-90 shadow-md flex items-center gap-1.5">
+                    <span>Submit to HOD</span>
                 </button>
             </div>
         </form>
@@ -1278,6 +1308,131 @@
         }
     }
 
+    let isIouMode = false;
+
+    function toggleIouMode(forceState) {
+        if (typeof forceState === 'boolean') {
+            isIouMode = forceState;
+        } else {
+            isIouMode = !isIouMode;
+        }
+
+        const input = document.getElementById('create_is_iou');
+        if (input) input.value = isIouMode ? '1' : '0';
+
+        const btn = document.getElementById('btnToggleIou');
+        const btnText = document.getElementById('btnToggleIouText');
+        const badge = document.getElementById('iouStatusBadge');
+        const cardTitle = document.getElementById('iouCardTitle');
+        const cardDesc = document.getElementById('iouCardDesc');
+        const icon = document.getElementById('iouIcon');
+        const iconBox = document.getElementById('iouIconBox');
+        const proofNotice = document.getElementById('iouProofNotice');
+        const submitBtn = document.getElementById('newPettyCashSubmitBtn');
+        const sectionLabel = document.getElementById('itemsSectionLabel');
+        const sectionSubtext = document.getElementById('itemsSectionSubtext');
+
+        if (isIouMode) {
+            // IOU Active
+            if (btn) {
+                btn.className = 'w-full sm:w-auto px-3.5 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md hover:opacity-90 transition-all flex items-center justify-center gap-1.5 border border-amber-600';
+            }
+            if (btnText) btnText.innerHTML = '<i class="fas fa-check-circle mr-1"></i> IOU Mode Active (Switch Back)';
+            if (badge) badge.classList.remove('hidden');
+            if (cardTitle) cardTitle.textContent = 'IOU Request (Cash Advance)';
+            if (cardDesc) cardDesc.textContent = 'No expense categories needed upfront. You will settle receipts within 72 hours.';
+            if (icon) {
+                icon.className = 'fas fa-hand-holding-usd text-amber-700';
+            }
+            if (iconBox) {
+                iconBox.className = 'w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-lg shadow-sm border border-amber-300 flex-shrink-0 transition-all';
+            }
+            if (proofNotice) proofNotice.classList.remove('hidden');
+            if (sectionLabel) sectionLabel.textContent = 'IOU Advance Amount & Details *';
+            if (sectionSubtext) sectionSubtext.classList.remove('hidden');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-hand-holding-usd mr-1.5"></i> Submit IOU to HOD';
+                submitBtn.className = 'px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-medium rounded-lg hover:opacity-90 shadow-md flex items-center gap-1.5';
+            }
+        } else {
+            // Standard Active
+            if (btn) {
+                btn.className = 'w-full sm:w-auto px-3.5 py-2 text-xs font-bold rounded-lg border border-amber-400 bg-white text-amber-800 hover:bg-amber-100 hover:text-amber-900 transition-all shadow-sm flex items-center justify-center gap-1.5';
+            }
+            if (btnText) btnText.innerHTML = '<i class="fas fa-hand-holding-usd text-amber-600 mr-1"></i> Make Request IOU';
+            if (badge) badge.classList.add('hidden');
+            if (cardTitle) cardTitle.textContent = 'Standard Petty Cash Request';
+            if (cardDesc) cardDesc.textContent = 'Categorized expense reimbursement with expenditure receipts.';
+            if (icon) {
+                icon.className = 'fas fa-receipt text-gray-500';
+            }
+            if (iconBox) {
+                iconBox.className = 'w-10 h-10 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-lg shadow-sm border border-gray-200 flex-shrink-0 transition-all';
+            }
+            if (proofNotice) proofNotice.classList.add('hidden');
+            if (sectionLabel) sectionLabel.textContent = 'Expense Line Items *';
+            if (sectionSubtext) sectionSubtext.classList.add('hidden');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<span>Submit to HOD</span>';
+                submitBtn.className = 'px-5 py-2.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white font-medium rounded-lg hover:opacity-90 shadow-md flex items-center gap-1.5';
+            }
+        }
+
+        // Update all item rows
+        const rows = document.querySelectorAll('#expenseItemsContainer .item-row');
+        rows.forEach(row => updateRowForIouMode(row, isIouMode));
+    }
+
+    function updateRowForIouMode(row, iouActive) {
+        const catCol = row.querySelector('.category-col');
+        const catSelect = row.querySelector('.item-cat-select');
+        const amountCol = row.querySelector('.amount-col');
+        const amountInput = row.querySelector('.item-amount-input');
+        const descCol = row.querySelector('.desc-col');
+        const descInput = row.querySelector('.item-desc-input');
+        const attendeesContainer = row.querySelector('.attendees-container');
+
+        if (iouActive) {
+            if (catCol) catCol.classList.add('hidden');
+            if (catSelect) {
+                catSelect.removeAttribute('required');
+                catSelect.value = '';
+                catSelect.disabled = true;
+            }
+            if (attendeesContainer) attendeesContainer.classList.add('hidden');
+            if (amountCol) {
+                amountCol.className = 'col-span-1 md:col-span-5 amount-col';
+            }
+            if (amountInput) {
+                amountInput.placeholder = 'IOU Amount (LKR) *';
+            }
+            if (descCol) {
+                descCol.className = 'col-span-1 md:col-span-6 desc-col';
+            }
+            if (descInput) {
+                descInput.placeholder = 'Purpose / Reason for IOU (e.g. Shoot Advance)';
+            }
+        } else {
+            if (catCol) catCol.classList.remove('hidden');
+            if (catSelect) {
+                catSelect.setAttribute('required', 'required');
+                catSelect.disabled = false;
+            }
+            if (amountCol) {
+                amountCol.className = 'col-span-1 md:col-span-3 amount-col';
+            }
+            if (amountInput) {
+                amountInput.placeholder = 'Amount *';
+            }
+            if (descCol) {
+                descCol.className = 'col-span-1 md:col-span-4 desc-col';
+            }
+            if (descInput) {
+                descInput.placeholder = 'Note / Details';
+            }
+        }
+    }
+
     function addExpenseItemRow() {
         const container = document.getElementById('expenseItemsContainer');
         const index = container.children.length;
@@ -1287,22 +1442,22 @@
         ).join('');
 
         const row = document.createElement('div');
-        row.className = 'grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-gray-50 p-3 rounded-lg border border-gray-200';
+        row.className = 'grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-gray-50 p-3 rounded-lg border border-gray-200 item-row';
         row.innerHTML = `
-            <div class="md:col-span-4">
-                <select name="items[${index}][expense_category_id]" required onchange="toggleDinnerAttendees(this)" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue">
+            <div class="col-span-1 md:col-span-4 category-col">
+                <select name="items[${index}][expense_category_id]" required onchange="toggleDinnerAttendees(this)" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue item-cat-select">
                     <option value="">Select Category *</option>
                     ${catOptions}
                 </select>
             </div>
-            <div class="md:col-span-3">
-                <input type="number" step="0.01" min="0.01" name="items[${index}][amount]" required placeholder="Amount *" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue">
+            <div class="col-span-1 md:col-span-3 amount-col">
+                <input type="number" step="0.01" min="0.01" name="items[${index}][amount]" required placeholder="Amount *" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue item-amount-input">
             </div>
-            <div class="md:col-span-4">
-                <input type="text" name="items[${index}][description]" placeholder="Note / Details" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue">
+            <div class="col-span-1 md:col-span-4 desc-col">
+                <input type="text" name="items[${index}][description]" placeholder="Note / Details" class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-blue item-desc-input">
             </div>
-            <div class="md:col-span-1 text-right">
-                <button type="button" onclick="this.closest('.grid').remove()" class="text-red-500 hover:text-red-700">
+            <div class="col-span-1 md:col-span-1 text-right">
+                <button type="button" onclick="if(document.querySelectorAll('#expenseItemsContainer .item-row').length > 1) this.closest('.item-row').remove()" class="text-red-500 hover:text-red-700">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -1323,6 +1478,10 @@
             </div>
         `;
         container.appendChild(row);
+
+        if (isIouMode) {
+            updateRowForIouMode(row, true);
+        }
     }
 
     let canvas, ctx;
@@ -1588,7 +1747,7 @@
                         div.innerHTML = `
                             <input type="hidden" name="items[${item.id}][id]" value="${item.id}">
                             <div class="md:col-span-6 font-semibold text-xs text-gray-800">
-                                ${item.category ? item.category.name : 'Category'}
+                                ${item.category ? item.category.name : (pc.is_iou ? 'IOU Cash Advance' : 'General')}
                                 <span class="text-gray-500 font-normal block text-[11px]">${item.description || 'No note'}</span>
                             </div>
                             <div class="md:col-span-6 flex items-center gap-2">
@@ -1679,7 +1838,7 @@
                     
                     let itemsHtml = pc.items.map(item => `
                         <tr class="border-b border-gray-100 text-sm">
-                            <td class="py-2.5 px-3 font-semibold text-gray-800">${item.category ? item.category.name : 'General'}</td>
+                            <td class="py-2.5 px-3 font-semibold text-gray-800">${item.category ? item.category.name : (pc.is_iou ? '<span class="text-amber-700 font-bold">IOU Cash Advance</span>' : 'General')}</td>
                             <td class="py-2.5 px-3 text-gray-600">${item.description || '-'}</td>
                             <td class="py-2.5 px-3 text-right font-bold text-gray-900">LKR ${parseFloat(item.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                         </tr>
@@ -2231,6 +2390,7 @@
             return false;
         }
 
+        toggleIouMode(false);
         document.getElementById('newPettyCashModal').classList.remove('hidden');
         if (typeof createJobTs !== 'undefined' && createJobTs) createJobTs.clear();
     }

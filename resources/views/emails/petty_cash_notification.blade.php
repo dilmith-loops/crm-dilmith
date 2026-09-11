@@ -145,7 +145,7 @@
                         @foreach($pettyCash->items as $item)
                         <tr>
                             <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-weight: bold;">
-                                {{ $item->category->name ?? 'General' }}
+                                {{ $item->category->name ?? ($pettyCash->is_iou ? 'IOU Cash Advance' : 'General') }}
                             </td>
                             <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #64748b;">
                                 <div>{{ $item->description ?: '-' }}</div>

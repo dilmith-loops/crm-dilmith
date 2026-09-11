@@ -45,7 +45,7 @@ class DashboardController extends Controller
                 ->where('user_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->get();
-            $expenseCategories = \App\Models\ExpenseCategory::where('status', 'active')->orderBy('name')->get();
+            $expenseCategories = \App\Models\ExpenseCategory::where('status', 'active')->where('name', '!=', 'IOU')->orderBy('name')->get();
             
             $hods = \App\Models\User::where('role', 'HOD');
             if ($userDept) {

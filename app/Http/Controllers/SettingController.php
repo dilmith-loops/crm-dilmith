@@ -20,7 +20,7 @@ class SettingController extends Controller
         $managers = SeniorManager::all();
         $terms = StandardTerm::all();
         $currencies = SystemCurrency::all();
-        $expenseCategories = ExpenseCategory::all();
+        $expenseCategories = ExpenseCategory::where('name', '!=', 'IOU')->get();
         
         $departmentTargets = Target::where('type', 'department')->get()->keyBy('department');
         $userTargets = Target::where('type', 'user')->get()->keyBy('user_id');

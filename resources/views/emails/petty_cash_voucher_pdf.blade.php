@@ -282,7 +282,7 @@
             @foreach($pettyCash->items as $idx => $item)
             <tr>
                 <td>{{ $idx + 1 }}</td>
-                <td><strong>{{ $item->category->name ?? 'General' }}</strong></td>
+                <td><strong>{{ $item->category->name ?? ($pettyCash->is_iou ? 'IOU Cash Advance' : 'General') }}</strong></td>
                 <td>
                     <div>{{ $item->description ?: '-' }}</div>
                     @if(!empty($item->attendees) && is_array($item->attendees))

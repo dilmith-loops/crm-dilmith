@@ -185,7 +185,7 @@
                         @forelse($pettyCash->items as $index => $item)
                             <tr>
                                 <td class="py-2.5 px-4 text-gray-400 font-mono">{{ $index + 1 }}</td>
-                                <td class="py-2.5 px-4 font-bold text-gray-900">{{ $item->category->name ?? 'General' }}</td>
+                                <td class="py-2.5 px-4 font-bold text-gray-900">{{ $item->category->name ?? ($pettyCash->is_iou ? 'IOU Cash Advance' : 'General') }}</td>
                                 <td class="py-2.5 px-4 text-gray-600">
                                     <div>{{ $item->description ?: '-' }}</div>
                                     @if(!empty($item->attendees) && is_array($item->attendees))

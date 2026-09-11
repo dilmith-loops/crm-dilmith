@@ -61,7 +61,7 @@ class PettyCashController extends Controller
         }
 
         // Data for modals / dropdowns
-        $expenseCategories = ExpenseCategory::where('status', 'active')->orderBy('name')->get();
+        $expenseCategories = ExpenseCategory::where('status', 'active')->where('name', '!=', 'IOU')->orderBy('name')->get();
         $hods = User::where('role', 'HOD');
         if ($user->department) {
             $hods->where('department', $user->department);
@@ -107,14 +107,17 @@ class PettyCashController extends Controller
             return redirect()->back()->with('error', 'Request Blocked: You cannot submit a new petty cash request because you have an active unsettled IOU (' . $activeUnsettledIou->reference_number . '). According to policy, you must settle your existing IOU first.');
         }
 
+        $isIou = $request->boolean('is_iou');
+
         $request->validate([
             'hod_id' => 'nullable|exists:users,id',
             'job_number' => 'nullable',
             'job_numbers' => 'nullable|array',
             'job_numbers.*' => 'nullable|string|max:100',
             'extra_notes' => 'nullable|string',
+            'is_iou' => 'nullable|boolean',
             'items' => 'required|array|min:1',
-            'items.*.expense_category_id' => 'required|exists:expense_categories,id',
+            'items.*.expense_category_id' => $isIou ? 'nullable|exists:expense_categories,id' : 'required|exists:expense_categories,id',
             'items.*.amount' => 'required|numeric|min:0.01',
             'items.*.description' => 'nullable|string',
             'items.*.attendees' => 'nullable|array|max:5',
@@ -135,12 +138,13 @@ class PettyCashController extends Controller
         }
 
         $totalAmount = 0;
-        $isIou = false;
         foreach ($request->items as $item) {
             $totalAmount += (float)$item['amount'];
-            $category = ExpenseCategory::find($item['expense_category_id']);
-            if ($category && stripos($category->name, 'IOU') !== false) {
-                $isIou = true;
+            if (!empty($item['expense_category_id'])) {
+                $category = ExpenseCategory::find($item['expense_category_id']);
+                if ($category && stripos($category->name, 'IOU') !== false) {
+                    $isIou = true;
+                }
             }
         }
 
@@ -167,7 +171,7 @@ class PettyCashController extends Controller
 
             PettyCashItem::create([
                 'petty_cash_request_id' => $pettyCash->id,
-                'expense_category_id' => $itemData['expense_category_id'],
+                'expense_category_id' => !empty($itemData['expense_category_id']) ? $itemData['expense_category_id'] : null,
                 'amount' => $itemData['amount'],
                 'description' => $itemData['description'] ?? null,
                 'attendees' => !empty($attendees) ? $attendees : null,
@@ -581,14 +585,17 @@ class PettyCashController extends Controller
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
+        $isIou = $request->has('is_iou') ? $request->boolean('is_iou') : $pettyCash->is_iou;
+
         $request->validate([
             'hod_id' => 'required|exists:users,id',
             'job_number' => 'nullable',
             'job_numbers' => 'nullable|array',
             'job_numbers.*' => 'nullable|string|max:100',
             'extra_notes' => 'nullable|string',
+            'is_iou' => 'nullable|boolean',
             'items' => 'required|array|min:1',
-            'items.*.expense_category_id' => 'required|exists:expense_categories,id',
+            'items.*.expense_category_id' => $isIou ? 'nullable|exists:expense_categories,id' : 'required|exists:expense_categories,id',
             'items.*.amount' => 'required|numeric|min:0.01',
             'items.*.description' => 'nullable|string',
             'proofs' => 'nullable|array',
@@ -596,12 +603,13 @@ class PettyCashController extends Controller
         ]);
 
         $totalAmount = 0;
-        $isIou = false;
         foreach ($request->items as $item) {
             $totalAmount += (float)$item['amount'];
-            $category = ExpenseCategory::find($item['expense_category_id']);
-            if ($category && stripos($category->name, 'IOU') !== false) {
-                $isIou = true;
+            if (!empty($item['expense_category_id'])) {
+                $category = ExpenseCategory::find($item['expense_category_id']);
+                if ($category && stripos($category->name, 'IOU') !== false) {
+                    $isIou = true;
+                }
             }
         }
 
@@ -635,7 +643,7 @@ class PettyCashController extends Controller
 
             PettyCashItem::create([
                 'petty_cash_request_id' => $pettyCash->id,
-                'expense_category_id' => $itemData['expense_category_id'],
+                'expense_category_id' => !empty($itemData['expense_category_id']) ? $itemData['expense_category_id'] : null,
                 'amount' => $itemData['amount'],
                 'description' => $itemData['description'] ?? null,
                 'attendees' => !empty($attendees) ? $attendees : null,
@@ -716,6 +724,8 @@ class PettyCashController extends Controller
             return redirect()->back()->with('error', 'Unauthorized action. Only Finance Admin or Management can edit petty cash requests.');
         }
 
+        $isIou = $request->has('is_iou') ? $request->boolean('is_iou') : $pettyCash->is_iou;
+
         $request->validate([
             'hod_id' => 'required|exists:users,id',
             'job_number' => 'nullable',
@@ -727,8 +737,9 @@ class PettyCashController extends Controller
             'created_at' => 'nullable|date',
             'issued_at' => 'nullable|date',
             'settled_at' => 'nullable|date',
+            'is_iou' => 'nullable|boolean',
             'items' => 'required|array|min:1',
-            'items.*.expense_category_id' => 'required|exists:expense_categories,id',
+            'items.*.expense_category_id' => $isIou ? 'nullable|exists:expense_categories,id' : 'required|exists:expense_categories,id',
             'items.*.amount' => 'required|numeric|min:0.01',
             'items.*.description' => 'nullable|string',
             'proofs' => 'nullable|array',
@@ -738,12 +749,13 @@ class PettyCashController extends Controller
         ]);
 
         $totalAmount = 0;
-        $isIou = false;
         foreach ($request->items as $item) {
             $totalAmount += (float)$item['amount'];
-            $category = ExpenseCategory::find($item['expense_category_id']);
-            if ($category && stripos($category->name, 'IOU') !== false) {
-                $isIou = true;
+            if (!empty($item['expense_category_id'])) {
+                $category = ExpenseCategory::find($item['expense_category_id']);
+                if ($category && stripos($category->name, 'IOU') !== false) {
+                    $isIou = true;
+                }
             }
         }
 
@@ -776,7 +788,7 @@ class PettyCashController extends Controller
         foreach ($request->items as $itemData) {
             PettyCashItem::create([
                 'petty_cash_request_id' => $pettyCash->id,
-                'expense_category_id' => $itemData['expense_category_id'],
+                'expense_category_id' => !empty($itemData['expense_category_id']) ? $itemData['expense_category_id'] : null,
                 'amount' => $itemData['amount'],
                 'description' => $itemData['description'] ?? null,
             ]);
