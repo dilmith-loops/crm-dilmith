@@ -34,17 +34,23 @@ class PettyCashNotification extends Notification
     public static function getConfiguredSuperAdminEmails(): array
     {
         $settingValue = \App\Models\Setting::get('super_admin_notification_emails');
+        $cleanEmails = [];
 
-        if ($settingValue === null || trim((string)$settingValue) === '') {
-            return [];
+        if ($settingValue !== null && trim((string)$settingValue) !== '') {
+            $emails = preg_split('/[\r\n,;]+/', (string)$settingValue);
+            foreach ($emails as $email) {
+                $email = trim($email);
+                if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $cleanEmails[] = strtolower($email);
+                }
+            }
         }
 
-        $emails = preg_split('/[\r\n,;]+/', (string)$settingValue);
-        $cleanEmails = [];
-        foreach ($emails as $email) {
-            $email = trim($email);
-            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $cleanEmails[] = strtolower($email);
+        // Include any registered users with Super Admin or Finance Admin role
+        $adminUsers = User::whereIn('role', ['Super Admin', 'Finance Admin'])->get();
+        foreach ($adminUsers as $aUser) {
+            if (!empty($aUser->email) && filter_var($aUser->email, FILTER_VALIDATE_EMAIL)) {
+                $cleanEmails[] = strtolower(trim($aUser->email));
             }
         }
 

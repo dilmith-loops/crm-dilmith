@@ -93,7 +93,9 @@ class PettyCashVoucherMail extends Mailable
                 ? ($isIou ? "IOU Request Received: {$ref}" : "Petty Cash Request Received: {$ref}")
                 : ($isHod 
                     ? ($isIou ? "New IOU Request from {$requesterName}: {$ref}" : "New Petty Cash Request from {$requesterName}: {$ref}") 
-                    : ($isIou ? "New IOU Request Submitted: {$ref}" : "New Petty Cash Request Submitted: {$ref}")),
+                    : ($this->pettyCash->status === 'pending_super_admin'
+                        ? ($isIou ? "New IOU Request from HOD {$requesterName} (Direct to Finance): {$ref}" : "New Petty Cash Request from HOD {$requesterName} (Direct to Finance): {$ref}")
+                        : ($isIou ? "New IOU Request Submitted: {$ref}" : "New Petty Cash Request Submitted: {$ref}"))),
 
             'hod_approved' => $isRequester
                 ? ($isIou ? "IOU Request Approved by HOD: {$ref}" : "Petty Cash Request Approved by HOD: {$ref}")
@@ -111,7 +113,9 @@ class PettyCashVoucherMail extends Mailable
             'admin_rejected' => "Request Rejected by Finance: {$ref}",
             'iou_settled' => "IOU Request Settled: {$ref}",
             'iou_reminder' => "URGENT REMINDER: Please Settle IOU {$ref}",
-            'reappealed' => "Request Re-appealed: {$ref}",
+            'reappealed' => ($this->pettyCash->status === 'pending_super_admin') 
+                ? "Request Re-appealed by HOD: {$ref}" 
+                : "Request Re-appealed: {$ref}",
             'sent_to_management' => $isRequester
                 ? "Your {$typeStr} {$ref} Forwarded to Management for Approval"
                 : "Approval Request: {$typeStr} {$ref} ({$amountStr}) Sent to Management",
@@ -126,12 +130,18 @@ class PettyCashVoucherMail extends Mailable
 
         $customMessage = match ($this->action) {
             'submitted' => $isRequester
-                ? ($isIou 
-                    ? "Thank you, your IOU request is received and currently sent to the HOD approval."
-                    : "Thank you, your petty cash request is received and currently sent to the HOD approval.")
+                ? ($this->pettyCash->status === 'pending_super_admin'
+                    ? ($isIou
+                        ? "Thank you, your IOU request has been received and forwarded directly to Finance for approval."
+                        : "Thank you, your petty cash request has been received and forwarded directly to Finance for approval.")
+                    : ($isIou 
+                        ? "Thank you, your IOU request is received and currently sent to the HOD approval."
+                        : "Thank you, your petty cash request is received and currently sent to the HOD approval."))
                 : ($isHod 
                     ? "Your team member {$requesterName} is requesting " . ($isIou ? "an IOU." : "a petty cash.")
-                    : "A new {$typeStr} {$ref} for {$amountStr} has been submitted by {$requesterName} and sent for HOD approval."),
+                    : ($this->pettyCash->status === 'pending_super_admin'
+                        ? "A new {$typeStr} {$ref} for {$amountStr} has been submitted by HOD {$requesterName} and forwarded directly to Finance for approval."
+                        : "A new {$typeStr} {$ref} for {$amountStr} has been submitted by {$requesterName} and sent for HOD approval.")),
 
             'hod_approved' => $isRequester
                 ? ($isIou
@@ -184,6 +194,8 @@ class PettyCashVoucherMail extends Mailable
                 'actorName' => $this->actor->name ?? 'System',
                 'notifiableName' => $this->notifiable->name ?? 'User',
                 'customMessage' => $customMessage,
+                'isSuperAdmin' => $isSuperAdmin,
+                'isRequester' => $isRequester,
             ]);
     }
 

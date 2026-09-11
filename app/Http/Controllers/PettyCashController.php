@@ -108,9 +108,10 @@ class PettyCashController extends Controller
         }
 
         $isIou = $request->boolean('is_iou');
+        $isRequesterHod = ($user->role === 'HOD' || $user->hasRole('HOD'));
 
         $request->validate([
-            'hod_id' => 'nullable|exists:users,id',
+            'hod_id' => $isRequesterHod ? 'nullable|exists:users,id' : 'nullable|exists:users,id',
             'job_number' => 'nullable',
             'job_numbers' => 'nullable|array',
             'job_numbers.*' => 'nullable|string|max:100',
@@ -127,14 +128,18 @@ class PettyCashController extends Controller
         ]);
 
         $resolvedHod = null;
-        if ($request->filled('hod_id')) {
-            $resolvedHod = User::find($request->hod_id);
-        }
-        if (!$resolvedHod && $user->associated_hod) {
-            $resolvedHod = $user->associated_hod;
-        }
-        if (!$resolvedHod) {
-            $resolvedHod = User::where('role', 'HOD')->first();
+        if ($isRequesterHod) {
+            $resolvedHod = $user;
+        } else {
+            if ($request->filled('hod_id')) {
+                $resolvedHod = User::find($request->hod_id);
+            }
+            if (!$resolvedHod && $user->associated_hod) {
+                $resolvedHod = $user->associated_hod;
+            }
+            if (!$resolvedHod) {
+                $resolvedHod = User::where('role', 'HOD')->first();
+            }
         }
 
         $totalAmount = 0;
@@ -149,17 +154,18 @@ class PettyCashController extends Controller
         }
 
         $jobNumberString = $this->parseJobNumbers($request);
+        $status = $isRequesterHod ? 'pending_super_admin' : 'pending_hod';
 
         $pettyCash = PettyCashRequest::create([
             'reference_number' => PettyCashRequest::generateReferenceNumber(),
             'user_id' => $user->id,
-            'hod_id' => $resolvedHod ? $resolvedHod->id : $request->hod_id,
+            'hod_id' => $resolvedHod ? $resolvedHod->id : ($isRequesterHod ? $user->id : $request->hod_id),
             'department' => $user->department ?: 'General',
             'job_number' => $jobNumberString,
             'extra_notes' => $request->extra_notes,
             'total_amount' => $totalAmount,
             'is_iou' => $isIou,
-            'status' => 'pending_hod',
+            'status' => $status,
         ]);
 
         // Save Items
@@ -198,7 +204,21 @@ class PettyCashController extends Controller
             }
         }
 
-        // 1. Notify Associated HOD, Staff, and Super Admins
+        // If requester is an HOD, bypass HOD approval and send directly to Finance Admin
+        if ($isRequesterHod) {
+            $superAdmins = PettyCashNotification::getSuperAdminRecipients($user->id);
+            if ($superAdmins->isNotEmpty()) {
+                Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
+            }
+
+            if ($user) {
+                $user->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
+            }
+
+            return redirect()->back()->with('success', 'Petty Cash request submitted successfully and sent directly to Finance for approval.');
+        }
+
+        // 1. Notify Associated HOD for non-HOD staff
         $hod = $resolvedHod ?? ($pettyCash->associated_hod ?? User::find($request->hod_id));
         if ($hod && $hod->id !== $user->id) {
             $hod->notify(new PettyCashNotification($pettyCash, 'submitted', $user));
@@ -682,9 +702,12 @@ class PettyCashController extends Controller
         }
 
         $isIou = $request->has('is_iou') ? $request->boolean('is_iou') : $pettyCash->is_iou;
+        $isRequesterHod = ($pettyCash->user && ($pettyCash->user->role === 'HOD' || $pettyCash->user->hasRole('HOD'))) 
+            || $user->role === 'HOD' 
+            || $user->hasRole('HOD');
 
         $request->validate([
-            'hod_id' => 'required|exists:users,id',
+            'hod_id' => $isRequesterHod ? 'nullable|exists:users,id' : 'required|exists:users,id',
             'job_number' => 'nullable',
             'job_numbers' => 'nullable|array',
             'job_numbers.*' => 'nullable|string|max:100',
@@ -710,17 +733,22 @@ class PettyCashController extends Controller
         }
 
         // Determine new status:
-        // If rejected by HOD, resubmit to HOD -> pending_hod
+        // If requester is HOD, always route directly to Finance -> pending_super_admin
         // If rejected by Super Admin/Management and re-appealed by HOD, send to Super Admin -> pending_super_admin
         // If re-appealed by Staff, send back to HOD -> pending_hod
-        $newStatus = ($user->id === $pettyCash->hod_id && in_array($pettyCash->status, ['rejected_by_super_admin', 'rejected_by_management'])) 
+        $newStatus = ($isRequesterHod || ($user->id === $pettyCash->hod_id && in_array($pettyCash->status, ['rejected_by_super_admin', 'rejected_by_management']))) 
                      ? 'pending_super_admin' 
                      : 'pending_hod';
+
+        $reappealHodId = $request->hod_id;
+        if ($isRequesterHod) {
+            $reappealHodId = $user->id;
+        }
 
         $jobNumberString = $this->parseJobNumbers($request);
 
         $pettyCash->update([
-            'hod_id' => $request->hod_id,
+            'hod_id' => $reappealHodId ?: $pettyCash->hod_id,
             'job_number' => $jobNumberString,
             'extra_notes' => $request->extra_notes,
             'total_amount' => $totalAmount,

@@ -573,16 +573,26 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">HOD Associated With *</label>
-                    @php
-                        $defaultHodId = old('hod_id', auth()->user()->associated_hod ? auth()->user()->associated_hod->id : auth()->user()->supervisor_id);
-                    @endphp
-                    <select name="hod_id" required class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
-                        @foreach($hods as $h)
-                            <option value="{{ $h->id }}" {{ $defaultHodId == $h->id ? 'selected' : '' }}>
-                                {{ $h->name }} ({{ $h->department ?: 'HOD' }})
-                            </option>
-                        @endforeach
-                    </select>
+                    @if(auth()->user()->role === 'HOD' || auth()->user()->hasRole('HOD'))
+                        <input type="hidden" name="hod_id" value="{{ auth()->id() }}">
+                        <div class="flex items-center gap-2 p-2.5 bg-blue-50/80 border border-blue-200 rounded-lg text-xs text-blue-800">
+                            <i class="fas fa-bolt text-blue-600"></i>
+                            <div>
+                                <span class="font-bold">Direct to Finance:</span> As Head of Department, your request bypasses HOD approval and is routed directly to Finance.
+                            </div>
+                        </div>
+                    @else
+                        @php
+                            $defaultHodId = old('hod_id', auth()->user()->associated_hod ? auth()->user()->associated_hod->id : auth()->user()->supervisor_id);
+                        @endphp
+                        <select name="hod_id" required class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
+                            @foreach($hods as $h)
+                                <option value="{{ $h->id }}" {{ $defaultHodId == $h->id ? 'selected' : '' }}>
+                                    {{ $h->name }} ({{ $h->department ?: 'HOD' }})
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Job Number(s)</label>
@@ -701,7 +711,7 @@
                 </button>
                 <button type="submit" id="newPettyCashSubmitBtn"
                     class="px-5 py-2.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white font-medium rounded-lg hover:opacity-90 shadow-md flex items-center gap-1.5">
-                    <span>Submit to HOD</span>
+                    <span>{{ (auth()->user()->role === 'HOD' || auth()->user()->hasRole('HOD')) ? 'Submit to Finance' : 'Submit to HOD' }}</span>
                 </button>
             </div>
         </form>
@@ -1052,11 +1062,21 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">HOD Associated With *</label>
-                    <select name="hod_id" id="reappeal_hod_id" required class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
-                        @foreach($hods as $h)
-                            <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->department ?: 'HOD' }})</option>
-                        @endforeach
-                    </select>
+                    @if(auth()->user()->role === 'HOD' || auth()->user()->hasRole('HOD'))
+                        <input type="hidden" name="hod_id" id="reappeal_hod_id" value="{{ auth()->id() }}">
+                        <div class="flex items-center gap-2 p-2.5 bg-blue-50/80 border border-blue-200 rounded-lg text-xs text-blue-800">
+                            <i class="fas fa-bolt text-blue-600"></i>
+                            <div>
+                                <span class="font-bold">Direct to Finance:</span> As Head of Department, your re-appeal bypasses HOD approval and goes directly to Finance.
+                            </div>
+                        </div>
+                    @else
+                        <select name="hod_id" id="reappeal_hod_id" required class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
+                            @foreach($hods as $h)
+                                <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->department ?: 'HOD' }})</option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Job Number(s)</label>
@@ -1539,7 +1559,8 @@
             if (proofNotice) proofNotice.classList.remove('hidden');
             if (sectionLabel) sectionLabel.textContent = 'IOU Advance Amount & Details *';
             if (submitBtn) {
-                submitBtn.innerHTML = '<i class="fas fa-hand-holding-usd mr-1.5"></i> Submit IOU to HOD';
+                const submitTarget = '{{ (auth()->user()->role === "HOD" || auth()->user()->hasRole("HOD")) ? "Finance" : "HOD" }}';
+                submitBtn.innerHTML = `<i class="fas fa-hand-holding-usd mr-1.5"></i> Submit IOU to ${submitTarget}`;
                 submitBtn.className = 'px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-medium rounded-lg hover:opacity-90 shadow-md flex items-center gap-1.5';
             }
         } else {
@@ -1561,7 +1582,8 @@
             if (proofNotice) proofNotice.classList.add('hidden');
             if (sectionLabel) sectionLabel.textContent = 'Expense Line Items *';
             if (submitBtn) {
-                submitBtn.innerHTML = '<span>Submit to HOD</span>';
+                const submitTarget = '{{ (auth()->user()->role === "HOD" || auth()->user()->hasRole("HOD")) ? "Finance" : "HOD" }}';
+                submitBtn.innerHTML = `<span>Submit to ${submitTarget}</span>`;
                 submitBtn.className = 'px-5 py-2.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white font-medium rounded-lg hover:opacity-90 shadow-md flex items-center gap-1.5';
             }
         }

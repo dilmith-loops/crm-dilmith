@@ -67,6 +67,14 @@
                                 <span style="background-color: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                                     Pending Management
                                 </span>
+                            @elseif($action === 'hod_approved' || $pettyCash->status === 'pending_super_admin')
+                                <span style="background-color: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                                    Pending Finance Approval
+                                </span>
+                            @elseif($pettyCash->status === 'pending_hod')
+                                <span style="background-color: #fef3c7; color: #d97706; border: 1px solid #fde68a; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                                    Pending HOD Approval
+                                </span>
                             @else
                                 <span style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                                     {{ strtoupper(str_replace('_', ' ', $action)) }}
@@ -207,7 +215,7 @@
                     <a href="{{ route('petty-cash.index', ['mgmt_approve_id' => $pettyCash->id, 'scope' => 'approvals']) }}" target="_blank" style="background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%); color: #ffffff; text-decoration: none; padding: 12px 22px; font-size: 13px; font-weight: bold; border-radius: 8px; display: inline-block; margin-right: 6px; margin-bottom: 8px; box-shadow: 0 4px 6px -1px rgba(147, 51, 234, 0.4);">
                         👔 Review & Approve Request (Management) &rarr;
                     </a>
-                    @elseif($action === 'management_approved')
+                    @elseif($action === 'management_approved' || ($pettyCash->status === 'pending_super_admin' && !empty($isSuperAdmin)))
                     <a href="{{ route('petty-cash.index', ['approve_id' => $pettyCash->id, 'scope' => 'approvals']) }}" target="_blank" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; text-decoration: none; padding: 12px 22px; font-size: 13px; font-weight: bold; border-radius: 8px; display: inline-block; margin-right: 6px; margin-bottom: 8px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);">
                         💰 Open Finance Approval & Hand Over Cash &rarr;
                     </a>
