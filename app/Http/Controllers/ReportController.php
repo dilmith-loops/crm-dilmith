@@ -372,49 +372,41 @@ class ReportController extends Controller
         if ($stageFilter) $deadlineCount->where('stage', $stageFilter);
         $deadlineCount = $deadlineCount->whereNotNull('close_date')->where('close_date', '>=', now()->toDateString())->count();
 
-        // Petty Cash Approved & Settled Metrics
-        $pettyCashQuery = \App\Models\PettyCashRequest::whereIn('status', ['approved', 'iou_issued', 'settled']);
-        if ($startDate && $endDate) {
-            $pettyCashQuery->where(function($q) use ($startDate, $endDate) {
-                $q->whereBetween('issued_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-                  ->orWhere(function($sq) use ($startDate, $endDate) {
-                      $sq->whereNull('issued_at')->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()]);
-                  });
-            });
-        } elseif ($startDate) {
-            $pettyCashQuery->where(function($q) use ($startDate) {
-                $q->where('issued_at', '>=', $startDate->startOfDay())
-                  ->orWhere(function($sq) use ($startDate) {
-                      $sq->whereNull('issued_at')->where('created_at', '>=', $startDate->startOfDay());
-                  });
-            });
-        } elseif ($endDate) {
-            $pettyCashQuery->where(function($q) use ($endDate) {
-                $q->where('issued_at', '<=', $endDate->endOfDay())
-                  ->orWhere(function($sq) use ($endDate) {
-                      $sq->whereNull('issued_at')->where('created_at', '<=', $endDate->endOfDay());
-                  });
-            });
-        }
+        // Petty Cash Approved & Settled Metrics (Only for Management and Finance Admin)
+        $pettyCashTotal = 0;
+        $pettyCashCount = 0;
+        if ($user->hasAdminPrivileges()) {
+            $pettyCashQuery = \App\Models\PettyCashRequest::whereIn('status', ['approved', 'iou_issued', 'settled']);
+            if ($startDate && $endDate) {
+                $pettyCashQuery->where(function($q) use ($startDate, $endDate) {
+                    $q->whereBetween('issued_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+                      ->orWhere(function($sq) use ($startDate, $endDate) {
+                          $sq->whereNull('issued_at')->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()]);
+                      });
+                });
+            } elseif ($startDate) {
+                $pettyCashQuery->where(function($q) use ($startDate) {
+                    $q->where('issued_at', '>=', $startDate->startOfDay())
+                      ->orWhere(function($sq) use ($startDate) {
+                          $sq->whereNull('issued_at')->where('created_at', '>=', $startDate->startOfDay());
+                      });
+                });
+            } elseif ($endDate) {
+                $pettyCashQuery->where(function($q) use ($endDate) {
+                    $q->where('issued_at', '<=', $endDate->endOfDay())
+                      ->orWhere(function($sq) use ($endDate) {
+                          $sq->whereNull('issued_at')->where('created_at', '<=', $endDate->endOfDay());
+                      });
+                });
+            }
 
-        if ($department) {
-            $pettyCashQuery->where('department', $department);
-        }
+            if ($department) {
+                $pettyCashQuery->where('department', $department);
+            }
 
-        if ($isRestricted) {
-            $pettyCashQuery->where(function($q) use ($user) {
-                $q->where('user_id', $user->id);
-                if ($user->department) {
-                    $q->orWhere('department', $user->department);
-                }
-                if ($user->role === 'HOD') {
-                    $q->orWhere('hod_id', $user->id);
-                }
-            });
+            $pettyCashTotal = (float) $pettyCashQuery->sum('total_amount');
+            $pettyCashCount = (int) $pettyCashQuery->count();
         }
-
-        $pettyCashTotal = (float) $pettyCashQuery->sum('total_amount');
-        $pettyCashCount = (int) $pettyCashQuery->count();
 
         return view('reports.index', compact(
             'startDate',
@@ -481,6 +473,10 @@ class ReportController extends Controller
         $salesDepts = ['AM', 'BD'];
 
         if ($type === 'petty_cash') {
+            if (!$user->hasAdminPrivileges()) {
+                abort(403, 'Unauthorized. Only Management and Finance Admin can export Petty Cash reports.');
+            }
+
             $query = \App\Models\PettyCashRequest::with(['user', 'items.category'])
                 ->whereIn('status', ['approved', 'iou_issued', 'settled']);
 
@@ -509,18 +505,6 @@ class ReportController extends Controller
 
             if ($department) {
                 $query->where('department', $department);
-            }
-
-            if ($isRestricted) {
-                $query->where(function($q) use ($user) {
-                    $q->where('user_id', $user->id);
-                    if ($user->department) {
-                        $q->orWhere('department', $user->department);
-                    }
-                    if ($user->role === 'HOD') {
-                        $q->orWhere('hod_id', $user->id);
-                    }
-                });
             }
 
             $requests = $query->orderBy('issued_at', 'desc')->orderBy('created_at', 'desc')->get();
