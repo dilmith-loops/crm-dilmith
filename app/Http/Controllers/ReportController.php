@@ -372,6 +372,50 @@ class ReportController extends Controller
         if ($stageFilter) $deadlineCount->where('stage', $stageFilter);
         $deadlineCount = $deadlineCount->whereNotNull('close_date')->where('close_date', '>=', now()->toDateString())->count();
 
+        // Petty Cash Approved & Settled Metrics
+        $pettyCashQuery = \App\Models\PettyCashRequest::whereIn('status', ['approved', 'iou_issued', 'settled']);
+        if ($startDate && $endDate) {
+            $pettyCashQuery->where(function($q) use ($startDate, $endDate) {
+                $q->whereBetween('issued_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+                  ->orWhere(function($sq) use ($startDate, $endDate) {
+                      $sq->whereNull('issued_at')->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()]);
+                  });
+            });
+        } elseif ($startDate) {
+            $pettyCashQuery->where(function($q) use ($startDate) {
+                $q->where('issued_at', '>=', $startDate->startOfDay())
+                  ->orWhere(function($sq) use ($startDate) {
+                      $sq->whereNull('issued_at')->where('created_at', '>=', $startDate->startOfDay());
+                  });
+            });
+        } elseif ($endDate) {
+            $pettyCashQuery->where(function($q) use ($endDate) {
+                $q->where('issued_at', '<=', $endDate->endOfDay())
+                  ->orWhere(function($sq) use ($endDate) {
+                      $sq->whereNull('issued_at')->where('created_at', '<=', $endDate->endOfDay());
+                  });
+            });
+        }
+
+        if ($department) {
+            $pettyCashQuery->where('department', $department);
+        }
+
+        if ($isRestricted) {
+            $pettyCashQuery->where(function($q) use ($user) {
+                $q->where('user_id', $user->id);
+                if ($user->department) {
+                    $q->orWhere('department', $user->department);
+                }
+                if ($user->role === 'HOD') {
+                    $q->orWhere('hod_id', $user->id);
+                }
+            });
+        }
+
+        $pettyCashTotal = (float) $pettyCashQuery->sum('total_amount');
+        $pettyCashCount = (int) $pettyCashQuery->count();
+
         return view('reports.index', compact(
             'startDate',
             'endDate',
@@ -399,7 +443,9 @@ class ReportController extends Controller
             'reportType',
             'pendingCount',
             'completeCount',
-            'deadlineCount'
+            'deadlineCount',
+            'pettyCashTotal',
+            'pettyCashCount'
         ));
     }
 
@@ -434,7 +480,150 @@ class ReportController extends Controller
         $sbuDepts = ['Creative', 'Digital', 'Tech', 'PM', 'Corporate'];
         $salesDepts = ['AM', 'BD'];
 
-        if ($type === 'detailed') {
+        if ($type === 'petty_cash') {
+            $query = \App\Models\PettyCashRequest::with(['user', 'items.category'])
+                ->whereIn('status', ['approved', 'iou_issued', 'settled']);
+
+            if ($startDate && $endDate) {
+                $query->where(function($q) use ($startDate, $endDate) {
+                    $q->whereBetween('issued_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+                      ->orWhere(function($sq) use ($startDate, $endDate) {
+                          $sq->whereNull('issued_at')->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()]);
+                      });
+                });
+            } elseif ($startDate) {
+                $query->where(function($q) use ($startDate) {
+                    $q->where('issued_at', '>=', $startDate->startOfDay())
+                      ->orWhere(function($sq) use ($startDate) {
+                          $sq->whereNull('issued_at')->where('created_at', '>=', $startDate->startOfDay());
+                      });
+                });
+            } elseif ($endDate) {
+                $query->where(function($q) use ($endDate) {
+                    $q->where('issued_at', '<=', $endDate->endOfDay())
+                      ->orWhere(function($sq) use ($endDate) {
+                          $sq->whereNull('issued_at')->where('created_at', '<=', $endDate->endOfDay());
+                      });
+                });
+            }
+
+            if ($department) {
+                $query->where('department', $department);
+            }
+
+            if ($isRestricted) {
+                $query->where(function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                    if ($user->department) {
+                        $q->orWhere('department', $user->department);
+                    }
+                    if ($user->role === 'HOD') {
+                        $q->orWhere('hod_id', $user->id);
+                    }
+                });
+            }
+
+            $requests = $query->orderBy('issued_at', 'desc')->orderBy('created_at', 'desc')->get();
+
+            // Collect all unique job numbers to preload customer names efficiently
+            $allJobNumbers = [];
+            foreach ($requests as $pc) {
+                if (!empty($pc->job_number)) {
+                    $parts = explode(',', $pc->job_number);
+                    foreach ($parts as $p) {
+                        $trimmed = trim($p);
+                        if ($trimmed !== '') {
+                            $allJobNumbers[] = $trimmed;
+                        }
+                    }
+                }
+            }
+            $allJobNumbers = array_values(array_unique($allJobNumbers));
+
+            $jobCustomerMap = [];
+            if (!empty($allJobNumbers)) {
+                $deals = \App\Models\Deal::whereIn('job_number', $allJobNumbers)->with('customer')->get();
+                foreach ($deals as $deal) {
+                    $cName = $deal->customer->name ?? ($deal->customer_name ?? null);
+                    if ($cName) {
+                        $jobCustomerMap[$deal->job_number] = $cName;
+                    }
+                }
+            }
+
+            $filename = "petty_cash_report_" . now()->format('YmdHis') . ".csv";
+            $headers = ['Date', 'Voucher No.', 'User', 'Department', 'Job No.', 'Customer', 'Expense Category', 'Description', 'Amount'];
+
+            $callback = function () use ($requests, $headers, $jobCustomerMap) {
+                $file = fopen('php://output', 'w');
+                fputcsv($file, $headers, ',', '"', "\\");
+
+                foreach ($requests as $pc) {
+                    $dateStr = $pc->issued_at ? $pc->issued_at->format('Y-m-d') : ($pc->created_at ? $pc->created_at->format('Y-m-d') : '');
+                    $voucherNo = $pc->reference_number;
+                    $userName = $pc->user->name ?? 'N/A';
+                    $department = $pc->department ?: ($pc->user->department ?? 'N/A');
+                    $jobNo = $pc->job_number ?: '-';
+
+                    // Resolve customer(s) from job number(s)
+                    $customerNames = [];
+                    if (!empty($pc->job_number)) {
+                        $parts = explode(',', $pc->job_number);
+                        foreach ($parts as $p) {
+                            $trimmed = trim($p);
+                            if (isset($jobCustomerMap[$trimmed])) {
+                                $customerNames[] = $jobCustomerMap[$trimmed];
+                            }
+                        }
+                    }
+                    $customerStr = !empty($customerNames) ? implode(', ', array_unique($customerNames)) : '-';
+
+                    if ($pc->items && $pc->items->isNotEmpty()) {
+                        foreach ($pc->items as $item) {
+                            $categoryName = $item->category->name ?? ($pc->is_iou ? 'IOU Cash Advance' : 'General');
+                            $description = $item->description ?: ($pc->extra_notes ?: '-');
+                            $amount = number_format((float)$item->amount, 2, '.', '');
+
+                            fputcsv($file, [
+                                $dateStr,
+                                $voucherNo,
+                                $userName,
+                                $department,
+                                $jobNo,
+                                $customerStr,
+                                $categoryName,
+                                $description,
+                                $amount,
+                            ], ',', '"', "\\");
+                        }
+                    } else {
+                        // Fallback if request has no individual line items
+                        $categoryName = $pc->is_iou ? 'IOU Cash Advance' : 'General';
+                        $description = $pc->extra_notes ?: '-';
+                        $amount = number_format((float)$pc->total_amount, 2, '.', '');
+
+                        fputcsv($file, [
+                            $dateStr,
+                            $voucherNo,
+                            $userName,
+                            $department,
+                            $jobNo,
+                            $customerStr,
+                            $categoryName,
+                            $description,
+                            $amount,
+                        ], ',', '"', "\\");
+                    }
+                }
+
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => "attachment; filename=\"$filename\"",
+            ]);
+        } elseif ($type === 'detailed') {
             // Updated to match the new Deal-based detailed report logic
             $dealQuery = Deal::query();
             if ($startDate && $endDate) {

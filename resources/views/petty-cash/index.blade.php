@@ -58,6 +58,10 @@
             <p class="text-sm text-gray-500 mt-1">Manage, review, and track petty cash expenditure requests across departments.</p>
         </div>
         <div class="flex items-center space-x-3 w-full md:w-auto">
+            <a href="{{ route('reports.export', ['type' => 'petty_cash']) }}"
+               class="w-full md:w-auto px-4 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-xs transition-all flex items-center justify-center shadow-xs" title="Export Approved Petty Cash Report CSV">
+                <i class="fas fa-file-csv text-emerald-600 mr-2 text-sm"></i> Export CSV
+            </a>
             <button onclick="handleNewRequestClick(event)"
                 class="w-full md:w-auto px-5 py-2.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white rounded-lg hover:opacity-90 font-medium transition-all flex items-center justify-center shadow-md">
                 <i class="fas fa-plus mr-2"></i> New Petty Cash Request

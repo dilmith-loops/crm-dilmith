@@ -75,8 +75,12 @@
                         <i class="fas fa-sync-alt mr-1"></i> Update
                     </button>
                     <a href="{{ route('reports.export', array_merge(request()->all(), ['type' => 'deals'])) }}" 
-                       class="px-3 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 transition-all text-center flex items-center justify-center h-[38px] shadow-md border border-emerald-500">
+                       class="px-3 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 transition-all text-center flex items-center justify-center h-[38px] shadow-md border border-emerald-500 whitespace-nowrap" title="Export Deals to CSV">
                         <i class="fas fa-file-csv mr-1"></i> Export Deals
+                    </a>
+                    <a href="{{ route('reports.export', array_merge(request()->all(), ['type' => 'petty_cash'])) }}" 
+                       class="px-3 py-2 bg-gradient-to-r from-brand-pink to-brand-purple text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:opacity-90 transition-all text-center flex items-center justify-center h-[38px] shadow-md border border-pink-500 whitespace-nowrap" title="Export Petty Cash Report to CSV">
+                        <i class="fas fa-wallet mr-1"></i> Export Petty Cash
                     </a>
                     <a href="{{ route('reports.index') }}" class="px-3 py-2 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-gray-200 transition-all text-center flex items-center justify-center h-[38px]">
                         Reset
@@ -87,7 +91,7 @@
     </div>
 
     <!-- Quick Insights (Added for HOD/Managers) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <a href="{{ route('reports.index', array_merge(request()->query(), ['report_type' => 'pending'])) }}" 
            class="group p-6 rounded-2xl border-2 transition-all duration-300 {{ $reportType === 'pending' ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-white border-transparent hover:border-indigo-100 hover:shadow-md' }}">
             <div class="flex items-center justify-between mb-4">
@@ -128,6 +132,30 @@
             </div>
             <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider">Project Deadlines</h3>
             <p class="text-xs text-gray-500 mt-1">Upcoming project estimated closing dates.</p>
+        </a>
+
+        <a href="{{ route('reports.export', array_merge(request()->all(), ['type' => 'petty_cash'])) }}" 
+           class="group p-6 rounded-2xl border-2 transition-all duration-300 bg-white border-transparent hover:border-pink-100 hover:shadow-md" title="Download Petty Cash CSV Report">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl bg-pink-50 text-brand-pink group-hover:bg-brand-pink group-hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <div class="text-right">
+                    <span class="text-lg font-black text-slate-800">LKR {{ number_format($pettyCashTotal, 2) }}</span>
+                    <span class="block text-[10px] text-gray-400 font-bold uppercase">{{ number_format($pettyCashCount) }} Vouchers</span>
+                </div>
+            </div>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider">Petty Cash Report</h3>
+                    <p class="text-xs text-gray-500 mt-1">Export approved & settled expenses.</p>
+                </div>
+                <span class="text-xs text-brand-pink font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                    CSV <i class="fas fa-arrow-down text-[10px]"></i>
+                </span>
+            </div>
         </a>
     </div>
 
