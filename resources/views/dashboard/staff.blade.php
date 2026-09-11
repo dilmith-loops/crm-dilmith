@@ -451,9 +451,8 @@
                 <div class="flex justify-between items-center mb-2">
                     <div>
                         <label id="staffItemsSectionLabel" class="block text-xs sm:text-sm font-bold text-gray-800">Expense Line Items *</label>
-                        <p id="staffItemsSectionSubtext" class="text-[11px] text-amber-700 font-medium hidden"><i class="fas fa-info-circle mr-1"></i>No expense categories required for IOU requests.</p>
                     </div>
-                    <button type="button" onclick="addExpenseItemRow()" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-md hover:bg-brand-purple transition-all font-semibold flex items-center gap-1">
+                    <button type="button" id="staffBtnAddExpenseItem" onclick="addExpenseItemRow()" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-md hover:bg-brand-purple transition-all font-semibold flex items-center gap-1">
                         <i class="fas fa-plus"></i> Add Line Item
                     </button>
                 </div>
@@ -474,7 +473,7 @@
                         <div class="col-span-1 md:col-span-4 desc-col">
                             <input type="text" name="items[0][description]" placeholder="Note / Details" class="w-full rounded-md border-gray-300 text-base sm:text-xs focus:ring-brand-blue item-desc-input">
                         </div>
-                        <div class="col-span-1 md:col-span-1 flex justify-end md:justify-center pt-1 md:pt-0">
+                        <div class="col-span-1 md:col-span-1 flex justify-end md:justify-center pt-1 md:pt-0 delete-col">
                             <button type="button" onclick="if(document.querySelectorAll('#expenseItemsContainer .item-row').length > 1) this.closest('.item-row').remove()" class="text-red-500 hover:text-red-700 text-xs py-1 flex items-center gap-1 font-semibold">
                                 <i class="fas fa-trash"></i> <span class="md:hidden">Remove</span>
                             </button>
@@ -747,10 +746,17 @@
         const proofNotice = document.getElementById('staffIouProofNotice');
         const submitBtn = document.getElementById('staffNewPettyCashSubmitBtn');
         const sectionLabel = document.getElementById('staffItemsSectionLabel');
-        const sectionSubtext = document.getElementById('staffItemsSectionSubtext');
+        const btnAddExpenseItem = document.getElementById('staffBtnAddExpenseItem');
 
         if (isStaffIouMode) {
             // IOU Active
+            if (btnAddExpenseItem) btnAddExpenseItem.classList.add('hidden');
+            // In IOU mode, keep only a single row
+            const allRows = document.querySelectorAll('#expenseItemsContainer .item-row');
+            for (let i = 1; i < allRows.length; i++) {
+                allRows[i].remove();
+            }
+
             if (btn) {
                 btn.className = 'w-full sm:w-auto px-3.5 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md hover:opacity-90 transition-all flex items-center justify-center gap-1.5 border border-amber-600';
             }
@@ -768,13 +774,13 @@
             }
             if (proofNotice) proofNotice.classList.remove('hidden');
             if (sectionLabel) sectionLabel.textContent = 'IOU Advance Amount & Details *';
-            if (sectionSubtext) sectionSubtext.classList.remove('hidden');
             if (submitBtn) {
                 submitBtn.innerHTML = '<i class="fas fa-hand-holding-usd mr-1.5"></i> Submit IOU to HOD';
                 submitBtn.className = 'w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-medium rounded-lg hover:opacity-90 shadow-md text-sm flex items-center justify-center gap-1.5';
             }
         } else {
             // Standard Active
+            if (btnAddExpenseItem) btnAddExpenseItem.classList.remove('hidden');
             if (btn) {
                 btn.className = 'w-full sm:w-auto px-3.5 py-2 text-xs font-bold rounded-lg border border-amber-400 bg-white text-amber-800 hover:bg-amber-100 hover:text-amber-900 transition-all shadow-sm flex items-center justify-center gap-1.5';
             }
@@ -793,7 +799,6 @@
             }
             if (proofNotice) proofNotice.classList.add('hidden');
             if (sectionLabel) sectionLabel.textContent = 'Expense Line Items *';
-            if (sectionSubtext) sectionSubtext.classList.add('hidden');
             if (submitBtn) {
                 submitBtn.innerHTML = '<span>Submit to HOD</span>';
                 submitBtn.className = 'w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-brand-pink to-brand-purple text-white font-medium rounded-lg hover:opacity-90 shadow-md text-sm flex items-center justify-center gap-1.5';
@@ -812,6 +817,7 @@
         const amountInput = row.querySelector('.item-amount-input');
         const descCol = row.querySelector('.desc-col');
         const descInput = row.querySelector('.item-desc-input');
+        const deleteCol = row.querySelector('.delete-col');
         const attendeesContainer = row.querySelector('.attendees-container');
 
         if (iouActive) {
@@ -822,6 +828,7 @@
                 catSelect.disabled = true;
             }
             if (attendeesContainer) attendeesContainer.classList.add('hidden');
+            if (deleteCol) deleteCol.classList.add('hidden');
             if (amountCol) {
                 amountCol.className = 'col-span-1 md:col-span-5 amount-col';
             }
@@ -829,7 +836,7 @@
                 amountInput.placeholder = 'IOU Amount (LKR) *';
             }
             if (descCol) {
-                descCol.className = 'col-span-1 md:col-span-6 desc-col';
+                descCol.className = 'col-span-1 md:col-span-7 desc-col';
             }
             if (descInput) {
                 descInput.placeholder = 'Purpose / Reason for IOU (e.g. Shoot Advance)';
@@ -840,6 +847,7 @@
                 catSelect.setAttribute('required', 'required');
                 catSelect.disabled = false;
             }
+            if (deleteCol) deleteCol.classList.remove('hidden');
             if (amountCol) {
                 amountCol.className = 'col-span-1 md:col-span-3 amount-col';
             }
@@ -856,6 +864,7 @@
     }
 
     function addExpenseItemRow() {
+        if (isStaffIouMode) return;
         const container = document.getElementById('expenseItemsContainer');
         const index = container.children.length;
         
@@ -878,7 +887,7 @@
             <div class="col-span-1 md:col-span-4 desc-col">
                 <input type="text" name="items[${index}][description]" placeholder="Note / Details" class="w-full rounded-md border-gray-300 text-base sm:text-xs focus:ring-brand-blue item-desc-input">
             </div>
-            <div class="col-span-1 md:col-span-1 flex justify-end md:justify-center pt-1 md:pt-0">
+            <div class="col-span-1 md:col-span-1 flex justify-end md:justify-center pt-1 md:pt-0 delete-col">
                 <button type="button" onclick="if(document.querySelectorAll('#expenseItemsContainer .item-row').length > 1) this.closest('.item-row').remove()" class="text-red-500 hover:text-red-700 text-xs py-1 flex items-center gap-1 font-semibold">
                     <i class="fas fa-trash"></i> <span class="md:hidden">Remove</span>
                 </button>
