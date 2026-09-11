@@ -186,6 +186,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/petty-cash/{pettyCash}/admin-reject', [PettyCashController::class, 'adminReject'])->name('petty-cash.adminReject');
     Route::get('/petty-cash/{id}/admin-reject', function ($id) { return redirect()->route('petty-cash.index', ['reject_id' => $id, 'scope' => 'approvals']); });
     Route::post('/petty-cash/{pettyCash}/send-to-management', [PettyCashController::class, 'sendToManagement'])->name('petty-cash.sendToManagement');
+    Route::post('/petty-cash/{pettyCash}/management-approve', [PettyCashController::class, 'managementApprove'])->name('petty-cash.managementApprove');
+    Route::get('/petty-cash/{id}/management-approve', function ($id) { return redirect()->route('petty-cash.index', ['mgmt_approve_id' => $id, 'scope' => 'approvals']); });
+    Route::post('/petty-cash/{pettyCash}/management-reject', [PettyCashController::class, 'managementReject'])->name('petty-cash.managementReject');
+    Route::get('/petty-cash/{id}/management-reject', function ($id) { return redirect()->route('petty-cash.index', ['mgmt_reject_id' => $id, 'scope' => 'approvals']); });
     Route::post('/petty-cash/{pettyCash}/settle', [PettyCashController::class, 'settleIOU'])->name('petty-cash.settle');
     Route::get('/petty-cash/{id}/settle', function ($id) { return redirect()->route('petty-cash.index', ['settle_id' => $id, 'scope' => 'approvals']); });
     Route::post('/petty-cash/{pettyCash}/reappeal', [PettyCashController::class, 'reappeal'])->name('petty-cash.reappeal');

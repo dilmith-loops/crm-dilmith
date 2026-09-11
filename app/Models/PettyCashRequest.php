@@ -31,6 +31,9 @@ class PettyCashRequest extends Model
         'management_notes',
         'sent_to_management_at',
         'sent_to_management_by',
+        'management_approved_at',
+        'management_approved_by',
+        'management_rejection_note',
         'reappeal_count',
     ];
 
@@ -39,6 +42,7 @@ class PettyCashRequest extends Model
         'issued_at' => 'datetime',
         'settled_at' => 'datetime',
         'sent_to_management_at' => 'datetime',
+        'management_approved_at' => 'datetime',
         'issued_money_notes' => 'array',
         'settlement_money_notes' => 'array',
     ];
@@ -167,6 +171,11 @@ class PettyCashRequest extends Model
     public function managementSender()
     {
         return $this->belongsTo(User::class, 'sent_to_management_by');
+    }
+
+    public function managementApprover()
+    {
+        return $this->belongsTo(User::class, 'management_approved_by');
     }
 
     public static function generateReferenceNumber()

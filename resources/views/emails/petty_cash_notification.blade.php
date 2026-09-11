@@ -55,6 +55,14 @@
                                 <span style="background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                                     Rejected by HOD
                                 </span>
+                            @elseif($action === 'management_approved')
+                                <span style="background-color: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                                    Management Approved
+                                </span>
+                            @elseif($action === 'management_rejected')
+                                <span style="background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                                    Rejected by Management
+                                </span>
                             @elseif($action === 'sent_to_management' || $pettyCash->status === 'pending_management')
                                 <span style="background-color: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                                     Pending Management
@@ -195,7 +203,15 @@
 
                 <!-- CTA Buttons -->
                 <div style="text-align: center; margin: 24px 0 16px 0;">
-                    @if(in_array($action, ['admin_approved', 'iou_settled']) || in_array($pettyCash->status, ['approved', 'iou_issued', 'settled']))
+                    @if($action === 'sent_to_management')
+                    <a href="{{ route('petty-cash.index', ['mgmt_approve_id' => $pettyCash->id, 'scope' => 'approvals']) }}" target="_blank" style="background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%); color: #ffffff; text-decoration: none; padding: 12px 22px; font-size: 13px; font-weight: bold; border-radius: 8px; display: inline-block; margin-right: 6px; margin-bottom: 8px; box-shadow: 0 4px 6px -1px rgba(147, 51, 234, 0.4);">
+                        👔 Review & Approve Request (Management) &rarr;
+                    </a>
+                    @elseif($action === 'management_approved')
+                    <a href="{{ route('petty-cash.index', ['approve_id' => $pettyCash->id, 'scope' => 'approvals']) }}" target="_blank" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; text-decoration: none; padding: 12px 22px; font-size: 13px; font-weight: bold; border-radius: 8px; display: inline-block; margin-right: 6px; margin-bottom: 8px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);">
+                        💰 Open Finance Approval & Hand Over Cash &rarr;
+                    </a>
+                    @elseif(in_array($action, ['admin_approved', 'iou_settled']) || in_array($pettyCash->status, ['approved', 'iou_issued', 'settled']))
                     <a href="{{ route('petty-cash.download-secure', $pettyCash->getSecureVoucherToken()) }}" target="_blank" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; text-decoration: none; padding: 12px 22px; font-size: 13px; font-weight: bold; border-radius: 8px; display: inline-block; margin-right: 6px; margin-bottom: 8px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);">
                         📄 View / Download Voucher PDF &rarr;
                     </a>

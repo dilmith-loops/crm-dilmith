@@ -222,7 +222,7 @@ class PettyCashController extends Controller
 
     public function show(PettyCashRequest $pettyCash)
     {
-        $pettyCash->load(['user', 'hod', 'items.category', 'proofs']);
+        $pettyCash->load(['user', 'hod', 'managementApprover', 'items.category', 'proofs']);
         $pettyCash->append(['issued_notes_total', 'settlement_notes_total']);
         return response()->json([
             'success' => true,
@@ -485,6 +485,102 @@ class PettyCashController extends Controller
         return redirect()->back()->with('success', $msg);
     }
 
+    public function managementApprove(Request $request, PettyCashRequest $pettyCash)
+    {
+        $user = auth()->user();
+
+        $isConfiguredMgmt = in_array(strtolower($user->email ?? ''), PettyCashNotification::getConfiguredManagementEmails());
+        if (!$user->hasAdminPrivileges() && !$user->hasRole('Management') && !$user->hasRole('Manager') && !$isConfiguredMgmt) {
+            return redirect()->back()->with('error', 'Unauthorized action. Only Management can approve this request.');
+        }
+
+        if ($pettyCash->status !== 'pending_management') {
+            return redirect()->back()->with('error', 'This request is not awaiting Management approval.');
+        }
+
+        $request->validate([
+            'management_approval_notes' => 'nullable|string|max:2000',
+            'management_notes' => 'nullable|string|max:2000',
+        ]);
+
+        $notesVal = $request->input('management_notes', $request->input('management_approval_notes'));
+        $updateNotes = $pettyCash->management_notes;
+        if (!empty($notesVal)) {
+            $prefix = "\n[Management Approval Note by {$user->name}]: ";
+            $updateNotes = $updateNotes ? ($updateNotes . $prefix . $notesVal) : ($notesVal);
+        }
+
+        $pettyCash->update([
+            'status' => 'pending_super_admin',
+            'management_approved_at' => now(),
+            'management_approved_by' => $user->id,
+            'management_notes' => $updateNotes,
+        ]);
+
+        // Email & in-app notification to Finance Admin (Super Admin)
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients();
+        if ($superAdmins->isNotEmpty()) {
+            Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'management_approved', $user, $notesVal));
+        }
+
+        // Also notify the requesting staff user
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser && $requestedUser->id !== $user->id) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'management_approved', $user, $notesVal));
+        }
+
+        // Notify HOD if different
+        $associatedHod = $pettyCash->associated_hod;
+        if ($associatedHod && $associatedHod->id !== $user->id && $associatedHod->id !== $pettyCash->user_id) {
+            $associatedHod->notify(new PettyCashNotification($pettyCash, 'management_approved', $user, $notesVal));
+        }
+
+        return redirect()->back()->with('success', "Petty Cash request #{$pettyCash->reference_number} was APPROVED by Management. Finance Admin has been notified by email to approve and disburse funds.");
+    }
+
+    public function managementReject(Request $request, PettyCashRequest $pettyCash)
+    {
+        $user = auth()->user();
+
+        $isConfiguredMgmt = in_array(strtolower($user->email ?? ''), PettyCashNotification::getConfiguredManagementEmails());
+        if (!$user->hasAdminPrivileges() && !$user->hasRole('Management') && !$user->hasRole('Manager') && !$isConfiguredMgmt) {
+            return redirect()->back()->with('error', 'Unauthorized action. Only Management can reject this request.');
+        }
+
+        if ($pettyCash->status !== 'pending_management') {
+            return redirect()->back()->with('error', 'This request is not awaiting Management approval.');
+        }
+
+        $request->validate([
+            'management_rejection_note' => 'required|string|max:2000',
+        ]);
+
+        $pettyCash->update([
+            'status' => 'rejected_by_management',
+            'management_rejection_note' => $request->management_rejection_note,
+        ]);
+
+        // Notify Staff
+        $requestedUser = User::find($pettyCash->user_id);
+        if ($requestedUser) {
+            $requestedUser->notify(new PettyCashNotification($pettyCash, 'management_rejected', $user, $request->management_rejection_note));
+        }
+
+        // Notify Associated HOD
+        $associatedHod = $pettyCash->associated_hod;
+        if ($associatedHod && $associatedHod->id !== $user->id) {
+            $associatedHod->notify(new PettyCashNotification($pettyCash, 'management_rejected', $user, $request->management_rejection_note));
+        }
+
+        // Notify Finance Admins
+        $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
+        if ($superAdmins->isNotEmpty()) {
+            Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'management_rejected', $user, $request->management_rejection_note));
+        }
+
+        return redirect()->back()->with('success', "Petty Cash request #{$pettyCash->reference_number} was REJECTED by Management. Staff, HOD, and Finance Admin have been notified.");
+    }
+
     public function settleIOU(Request $request, PettyCashRequest $pettyCash)
     {
         $user = auth()->user();
@@ -615,9 +711,9 @@ class PettyCashController extends Controller
 
         // Determine new status:
         // If rejected by HOD, resubmit to HOD -> pending_hod
-        // If rejected by Super Admin and re-appealed by HOD, send to Super Admin -> pending_super_admin
+        // If rejected by Super Admin/Management and re-appealed by HOD, send to Super Admin -> pending_super_admin
         // If re-appealed by Staff, send back to HOD -> pending_hod
-        $newStatus = ($user->id === $pettyCash->hod_id && $pettyCash->status === 'rejected_by_super_admin') 
+        $newStatus = ($user->id === $pettyCash->hod_id && in_array($pettyCash->status, ['rejected_by_super_admin', 'rejected_by_management'])) 
                      ? 'pending_super_admin' 
                      : 'pending_hod';
 
@@ -630,6 +726,9 @@ class PettyCashController extends Controller
             'total_amount' => $totalAmount,
             'is_iou' => $isIou,
             'status' => $newStatus,
+            'hod_rejection_note' => null,
+            'admin_rejection_note' => null,
+            'management_rejection_note' => null,
             'reappeal_count' => $pettyCash->reappeal_count + 1,
         ]);
 
@@ -732,7 +831,7 @@ class PettyCashController extends Controller
             'job_numbers' => 'nullable|array',
             'job_numbers.*' => 'nullable|string|max:100',
             'extra_notes' => 'nullable|string',
-            'status' => 'required|string|in:pending_hod,pending_super_admin,pending_management,approved,rejected_by_hod,rejected_by_super_admin,iou_issued,pending_settlement,settled',
+            'status' => 'required|string|in:pending_hod,pending_super_admin,pending_management,approved,rejected_by_hod,rejected_by_super_admin,rejected_by_management,iou_issued,pending_settlement,settled',
             'management_notes' => 'nullable|string',
             'created_at' => 'nullable|date',
             'issued_at' => 'nullable|date',

@@ -168,6 +168,10 @@
            class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'rejected_by_super_admin' ? 'bg-rose-600 text-white shadow-sm' : 'bg-rose-50 text-rose-800 hover:bg-rose-100' }}">
             Rejected by Finance
         </a>
+        <a href="{{ route('petty-cash.index', ['scope' => $scope, 'status' => 'rejected_by_management']) }}" 
+           class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'rejected_by_management' ? 'bg-rose-800 text-white shadow-sm' : 'bg-rose-50 text-rose-900 hover:bg-rose-100' }}">
+            Rejected by Management
+        </a>
     </div>
 
     <!-- Requests Container: Desktop Table & Mobile Cards -->
@@ -212,9 +216,16 @@
                                         <i class="fas fa-clock mr-1"></i> Pending HOD
                                     </span>
                                 @elseif($pc->status === 'pending_super_admin')
-                                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center whitespace-nowrap">
-                                        <i class="fas fa-user-shield mr-1"></i> Pending Finance Approval
-                                    </span>
+                                    <div class="flex flex-col gap-1 items-start">
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center whitespace-nowrap">
+                                            <i class="fas fa-user-shield mr-1"></i> Pending Finance Approval
+                                        </span>
+                                        @if($pc->management_approved_at)
+                                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center whitespace-nowrap" title="Approved by Management at {{ $pc->management_approved_at->format('Y-m-d H:i') }}">
+                                                <i class="fas fa-user-check mr-1 text-purple-600"></i> Mgmt Approved
+                                            </span>
+                                        @endif
+                                    </div>
                                 @elseif($pc->status === 'pending_management')
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center whitespace-nowrap">
                                         <i class="fas fa-user-tie mr-1"></i> Pending Management
@@ -242,6 +253,10 @@
                                 @elseif($pc->status === 'rejected_by_super_admin')
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 inline-flex items-center whitespace-nowrap" title="{{ $pc->admin_rejection_note }}">
                                         <i class="fas fa-ban mr-1"></i> Rejected by Finance
+                                    </span>
+                                @elseif($pc->status === 'rejected_by_management')
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center whitespace-nowrap" title="{{ $pc->management_rejection_note }}">
+                                        <i class="fas fa-times-circle mr-1 text-rose-600"></i> Rejected by Management
                                     </span>
                                 @endif
                             </td>
@@ -277,23 +292,34 @@
                                     @endif
 
                                     @if(auth()->user()->hasAdminPrivileges())
-                                        @if(!in_array($pc->status, ['approved', 'settled']))
-                                            <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}', {{ $pc->total_amount }})"
-                                                class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center whitespace-nowrap">
-                                                <i class="fas fa-check-double mr-1"></i> {{ $pc->status === 'pending_settlement' ? 'Approve Settlement' : 'Approve' }}
+                                        @if($pc->status === 'pending_management')
+                                            <button onclick="openManagementApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}', '{{ addslashes($pc->management_notes ?? '') }}')"
+                                                class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center shadow-sm whitespace-nowrap">
+                                                <i class="fas fa-check mr-1"></i> Approve
                                             </button>
-                                            @if($pc->status !== 'pending_management')
-                                                <button onclick="openSendToManagementModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}')"
-                                                    class="px-2.5 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center whitespace-nowrap shadow-sm" title="Send Approval Request to Management">
-                                                    <i class="fas fa-paper-plane mr-1"></i> To Management
+                                            <button onclick="openManagementRejectModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}')"
+                                                class="px-2.5 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition-colors inline-flex items-center shadow-sm whitespace-nowrap">
+                                                <i class="fas fa-times mr-1"></i> Reject
+                                            </button>
+                                        @else
+                                            @if(!in_array($pc->status, ['approved', 'settled', 'rejected_by_management']))
+                                                <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}', {{ $pc->total_amount }})"
+                                                    class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center whitespace-nowrap">
+                                                    <i class="fas fa-check-double mr-1"></i> {{ $pc->status === 'pending_settlement' ? 'Approve Settlement' : 'Approve' }}
+                                                </button>
+                                                @if(empty($pc->management_approved_at))
+                                                    <button onclick="openSendToManagementModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}')"
+                                                        class="px-2.5 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center whitespace-nowrap shadow-sm" title="Send Approval Request to Management">
+                                                        <i class="fas fa-paper-plane mr-1"></i> To Management
+                                                    </button>
+                                                @endif
+                                            @endif
+                                            @if(!in_array($pc->status, ['rejected_by_super_admin', 'settled', 'approved', 'rejected_by_management']))
+                                                <button onclick="openAdminRejectModal({{ $pc->id }})"
+                                                    class="px-2.5 py-1.5 bg-rose-700 text-white text-xs font-semibold rounded-lg hover:bg-rose-800 transition-colors inline-flex items-center whitespace-nowrap">
+                                                    <i class="fas fa-ban mr-1"></i> Reject
                                                 </button>
                                             @endif
-                                        @endif
-                                        @if($pc->status !== 'rejected_by_super_admin' && $pc->status !== 'settled')
-                                            <button onclick="openAdminRejectModal({{ $pc->id }})"
-                                                class="px-2.5 py-1.5 bg-rose-700 text-white text-xs font-semibold rounded-lg hover:bg-rose-800 transition-colors inline-flex items-center whitespace-nowrap">
-                                                <i class="fas fa-ban mr-1"></i> Reject
-                                            </button>
                                         @endif
                                     @endif
 
@@ -312,7 +338,7 @@
                                         </form>
                                     @endif
 
-                                    @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin']) && (auth()->id() === $pc->user_id || auth()->id() === $pc->hod_id || auth()->user()->hasAdminPrivileges()))
+                                    @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin', 'rejected_by_management']) && (auth()->id() === $pc->user_id || auth()->id() === $pc->hod_id || auth()->user()->hasAdminPrivileges()))
                                         <button onclick="openReappealModal({{ $pc->id }})"
                                             class="px-2.5 py-1.5 bg-brand-blue text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center whitespace-nowrap">
                                             <i class="fas fa-redo mr-1"></i> Re-appeal
@@ -351,9 +377,16 @@
                                     <i class="fas fa-clock mr-1 text-[10px]"></i> Pending HOD
                                 </span>
                             @elseif($pc->status === 'pending_super_admin')
-                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center">
-                                    <i class="fas fa-user-shield mr-1 text-[10px]"></i> Pending Finance
-                                </span>
+                                <div class="flex flex-col gap-1 items-start">
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center">
+                                        <i class="fas fa-user-shield mr-1 text-[10px]"></i> Pending Finance
+                                    </span>
+                                    @if($pc->management_approved_at)
+                                        <span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center" title="Approved by Management at {{ $pc->management_approved_at->format('Y-m-d H:i') }}">
+                                            <i class="fas fa-user-check mr-1 text-purple-600"></i> Mgmt Approved
+                                        </span>
+                                    @endif
+                                </div>
                             @elseif($pc->status === 'pending_management')
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center">
                                     <i class="fas fa-user-tie mr-1 text-[10px]"></i> Pending Mgmt
@@ -381,6 +414,10 @@
                             @elseif($pc->status === 'rejected_by_super_admin')
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 inline-flex items-center" title="{{ $pc->admin_rejection_note }}">
                                     <i class="fas fa-ban mr-1 text-[10px]"></i> Rejected by Finance
+                                </span>
+                            @elseif($pc->status === 'rejected_by_management')
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center" title="{{ $pc->management_rejection_note }}">
+                                    <i class="fas fa-times-circle mr-1 text-[10px] text-rose-600"></i> Rejected by Mgmt
                                 </span>
                             @endif
                         </div>
@@ -456,23 +493,34 @@
                         @endif
 
                         @if(auth()->user()->hasAdminPrivileges())
-                            @if(!in_array($pc->status, ['approved', 'settled']))
-                                <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}', {{ $pc->total_amount }})"
-                                    class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center">
-                                    <i class="fas fa-check-double mr-1"></i> {{ $pc->status === 'pending_settlement' ? 'Approve Settlement' : 'Approve' }}
+                            @if($pc->status === 'pending_management')
+                                <button onclick="openManagementApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}', '{{ addslashes($pc->management_notes ?? '') }}')"
+                                    class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center shadow-sm">
+                                    <i class="fas fa-check mr-1"></i> Approve
                                 </button>
-                                @if($pc->status !== 'pending_management')
-                                    <button onclick="openSendToManagementModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}')"
-                                        class="px-2.5 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center shadow-sm" title="Send Approval Request to Management">
-                                        <i class="fas fa-paper-plane mr-1"></i> To Management
+                                <button onclick="openManagementRejectModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}')"
+                                    class="px-2.5 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition-colors inline-flex items-center shadow-sm">
+                                    <i class="fas fa-times mr-1"></i> Reject
+                                </button>
+                            @else
+                                @if(!in_array($pc->status, ['approved', 'settled', 'rejected_by_management']))
+                                    <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}', {{ $pc->total_amount }})"
+                                        class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center">
+                                        <i class="fas fa-check-double mr-1"></i> {{ $pc->status === 'pending_settlement' ? 'Approve Settlement' : 'Approve' }}
+                                    </button>
+                                    @if(empty($pc->management_approved_at))
+                                        <button onclick="openSendToManagementModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', '{{ number_format($pc->total_amount, 2) }}')"
+                                            class="px-2.5 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center shadow-sm" title="Send Approval Request to Management">
+                                            <i class="fas fa-paper-plane mr-1"></i> To Management
+                                        </button>
+                                    @endif
+                                @endif
+                                @if(!in_array($pc->status, ['rejected_by_super_admin', 'settled', 'approved', 'rejected_by_management']))
+                                    <button onclick="openAdminRejectModal({{ $pc->id }})"
+                                        class="px-2.5 py-1.5 bg-rose-700 text-white text-xs font-semibold rounded-lg hover:bg-rose-800 transition-colors inline-flex items-center">
+                                        <i class="fas fa-ban mr-1"></i> Reject
                                     </button>
                                 @endif
-                            @endif
-                            @if($pc->status !== 'rejected_by_super_admin' && $pc->status !== 'settled')
-                                <button onclick="openAdminRejectModal({{ $pc->id }})"
-                                    class="px-2.5 py-1.5 bg-rose-700 text-white text-xs font-semibold rounded-lg hover:bg-rose-800 transition-colors inline-flex items-center">
-                                    <i class="fas fa-ban mr-1"></i> Reject
-                                </button>
                             @endif
                         @endif
 
@@ -491,7 +539,7 @@
                             </form>
                         @endif
 
-                        @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin']) && (auth()->id() === $pc->user_id || auth()->id() === $pc->hod_id || auth()->user()->hasAdminPrivileges()))
+                        @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin', 'rejected_by_management']) && (auth()->id() === $pc->user_id || auth()->id() === $pc->hod_id || auth()->user()->hasAdminPrivileges()))
                             <button onclick="openReappealModal({{ $pc->id }})"
                                 class="px-2.5 py-1.5 bg-brand-blue text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors">
                                 <i class="fas fa-redo mr-1"></i> Re-appeal
@@ -1152,6 +1200,137 @@
     </div>
 </div>
 
+<!-- Management Approve Confirmation Modal -->
+<div id="managementApproveModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 p-2 sm:p-4 md:p-6 flex items-center justify-center">
+    <div class="relative my-auto p-5 sm:p-6 border w-full max-w-lg shadow-2xl rounded-2xl bg-white max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+            <h3 class="text-base sm:text-lg font-bold text-gray-800 flex items-center">
+                <i class="fas fa-user-check text-green-600 mr-2"></i> Approve Request (Management)
+            </h3>
+            <button onclick="closeManagementApproveModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="managementApproveForm" action="" method="POST" class="mt-4 space-y-4">
+            @csrf
+
+            <!-- Summary Box -->
+            <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-xl p-3.5 text-xs space-y-1.5 text-gray-700">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Request Reference:</span>
+                    <strong class="font-mono text-emerald-900 font-bold" id="mgmtApproveRefDisplay">-</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Requester:</span>
+                    <strong class="text-gray-800" id="mgmtApproveRequesterDisplay">-</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Requested Amount:</span>
+                    <strong class="text-emerald-700 font-bold text-sm" id="mgmtApproveAmountDisplay">LKR 0.00</strong>
+                </div>
+            </div>
+
+            <!-- Note from Finance (if available) -->
+            <div id="mgmtApproveFinanceNotesContainer" class="bg-purple-50/80 border border-purple-200 rounded-xl p-3 text-xs text-purple-950 space-y-1 hidden">
+                <div class="flex items-center font-semibold text-purple-900">
+                    <i class="fas fa-comment-dots text-purple-700 mr-1.5"></i> Note from Finance:
+                </div>
+                <p class="text-gray-700 whitespace-pre-line text-xs" id="mgmtApproveFinanceNotesText"></p>
+            </div>
+
+            <!-- Confirmation Prompt -->
+            <div class="bg-blue-50 border border-blue-200/80 rounded-xl p-3 text-xs text-blue-900 flex items-start gap-2.5">
+                <i class="fas fa-info-circle text-blue-600 text-base mt-0.5 flex-shrink-0"></i>
+                <div class="space-y-1">
+                    <p class="font-bold">Confirmation Required:</p>
+                    <p class="text-blue-800 leading-relaxed">
+                        Are you sure you want to approve this petty cash request? Once approved, Finance Admin will receive an email notification to disburse the physical cash using the handover approval form.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Management Approval Remarks / Notes -->
+            <div>
+                <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1">
+                    Approval Remarks / Notes <span class="text-gray-400 font-normal text-xs">(Optional)</span>
+                </label>
+                <textarea name="management_notes" id="mgmtApproveNotesInput" rows="2"
+                    placeholder="Optional remarks from management..."
+                    class="w-full rounded-lg border-gray-300 text-xs sm:text-sm focus:border-green-600 focus:ring-green-600 shadow-sm p-2.5"></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
+                <button type="button" onclick="closeManagementApproveModal()"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="px-5 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center shadow-md">
+                    <i class="fas fa-check-circle mr-1.5"></i> Confirm & Approve
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Management Reject Modal -->
+<div id="managementRejectModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 p-2 sm:p-4 md:p-6 flex items-center justify-center">
+    <div class="relative my-auto p-5 sm:p-6 border w-full max-w-lg shadow-2xl rounded-2xl bg-white max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+            <h3 class="text-base sm:text-lg font-bold text-rose-700 flex items-center">
+                <i class="fas fa-times-circle text-rose-600 mr-2"></i> Reject Request (Management)
+            </h3>
+            <button onclick="closeManagementRejectModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="managementRejectForm" action="" method="POST" class="mt-4 space-y-4">
+            @csrf
+
+            <!-- Summary Box -->
+            <div class="bg-rose-50/70 border border-rose-100 rounded-xl p-3.5 text-xs space-y-1.5 text-gray-700">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Request Reference:</span>
+                    <strong class="font-mono text-rose-900 font-bold" id="mgmtRejectRefDisplay">-</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Requester:</span>
+                    <strong class="text-gray-800" id="mgmtRejectRequesterDisplay">-</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Requested Amount:</span>
+                    <strong class="text-rose-700 font-bold text-sm" id="mgmtRejectAmountDisplay">LKR 0.00</strong>
+                </div>
+            </div>
+
+            <!-- Rejection Reason -->
+            <div>
+                <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1">
+                    Management Rejection Reason <span class="text-rose-600">*</span>
+                </label>
+                <textarea name="management_rejection_note" id="mgmtRejectNoteInput" required rows="4"
+                    placeholder="Provide detailed reason for rejection by Management (Will notify Staff, HOD, and Finance)..."
+                    class="w-full rounded-lg border-gray-300 text-xs sm:text-sm focus:border-rose-600 focus:ring-rose-600 shadow-sm p-2.5"></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
+                <button type="button" onclick="closeManagementRejectModal()"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="px-4 py-2 bg-rose-700 text-white text-xs font-bold rounded-lg hover:bg-rose-800 transition-colors inline-flex items-center shadow-md">
+                    <i class="fas fa-ban mr-1.5"></i> Reject Request
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Edit Petty Cash Request Modal (Finance Admin & Management) -->
 <div id="editPettyCashModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-50 p-2 sm:p-4 md:p-6 flex items-center justify-center">
     <div class="relative my-auto p-5 sm:p-6 border w-full max-w-3xl shadow-2xl rounded-2xl bg-white max-h-[92vh] overflow-y-auto">
@@ -1576,6 +1755,40 @@
         document.getElementById('sendToManagementModal').classList.add('hidden');
     }
 
+    function openManagementApproveModal(id, ref, requester, amount, financeNotes = '') {
+        document.getElementById('managementApproveForm').action = "{{ route('petty-cash.index') }}/" + id + "/management-approve";
+        document.getElementById('mgmtApproveRefDisplay').textContent = ref;
+        document.getElementById('mgmtApproveRequesterDisplay').textContent = requester;
+        document.getElementById('mgmtApproveAmountDisplay').textContent = 'LKR ' + amount;
+        const notesContainer = document.getElementById('mgmtApproveFinanceNotesContainer');
+        const notesText = document.getElementById('mgmtApproveFinanceNotesText');
+        if (financeNotes && financeNotes.trim()) {
+            notesText.textContent = financeNotes;
+            notesContainer.classList.remove('hidden');
+        } else {
+            notesContainer.classList.add('hidden');
+        }
+        document.getElementById('mgmtApproveNotesInput').value = '';
+        document.getElementById('managementApproveModal').classList.remove('hidden');
+    }
+
+    function closeManagementApproveModal() {
+        document.getElementById('managementApproveModal').classList.add('hidden');
+    }
+
+    function openManagementRejectModal(id, ref, requester, amount) {
+        document.getElementById('managementRejectForm').action = "{{ route('petty-cash.index') }}/" + id + "/management-reject";
+        document.getElementById('mgmtRejectRefDisplay').textContent = ref;
+        document.getElementById('mgmtRejectRequesterDisplay').textContent = requester;
+        document.getElementById('mgmtRejectAmountDisplay').textContent = 'LKR ' + amount;
+        document.getElementById('mgmtRejectNoteInput').value = '';
+        document.getElementById('managementRejectModal').classList.remove('hidden');
+    }
+
+    function closeManagementRejectModal() {
+        document.getElementById('managementRejectModal').classList.add('hidden');
+    }
+
     function calculateApproveNotesTotal() {
         let total = 0;
         const inputs = document.querySelectorAll('.approve-note-input');
@@ -1942,8 +2155,30 @@
                     }
 
                     let mgmtNotesHtml = '';
-                    if (pc.management_notes || pc.sent_to_management_at) {
-                        mgmtNotesHtml = `
+                    if (pc.management_approved_at) {
+                        mgmtNotesHtml += `
+                            <div class="mt-4 bg-emerald-50/90 border border-emerald-200 rounded-xl p-3.5 text-xs text-emerald-950 space-y-1">
+                                <div class="flex justify-between items-center">
+                                    <strong class="text-emerald-900 font-bold flex items-center">
+                                        <i class="fas fa-user-check text-emerald-700 mr-1.5"></i> Management Approved
+                                    </strong>
+                                    <span class="text-[11px] text-emerald-700 font-mono">${formatDateStr(pc.management_approved_at)}</span>
+                                </div>
+                                ${pc.management_approver ? `<p class="text-emerald-900 text-xs"><strong>Approved By:</strong> ${pc.management_approver.name}</p>` : ''}
+                                ${pc.management_notes ? `<p class="text-gray-700 mt-1"><strong>Management Remarks:</strong> ${pc.management_notes}</p>` : ''}
+                            </div>
+                        `;
+                    } else if (pc.status === 'rejected_by_management' || pc.management_rejection_note) {
+                        mgmtNotesHtml += `
+                            <div class="mt-4 bg-rose-50/90 border border-rose-200 rounded-xl p-3.5 text-xs text-rose-950 space-y-1">
+                                <strong class="text-rose-900 font-bold flex items-center">
+                                    <i class="fas fa-times-circle text-rose-700 mr-1.5"></i> Rejected by Management
+                                </strong>
+                                <p class="text-rose-800 mt-1"><strong>Reason:</strong> ${pc.management_rejection_note || '-'}</p>
+                            </div>
+                        `;
+                    } else if (pc.status === 'pending_management' || pc.sent_to_management_at) {
+                        mgmtNotesHtml += `
                             <div class="mt-4 bg-purple-50/80 border border-purple-200 rounded-xl p-3.5 text-xs text-purple-950 space-y-1">
                                 <div class="flex justify-between items-center">
                                     <strong class="text-purple-900 font-bold flex items-center">
@@ -2347,6 +2582,35 @@
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() { openReappealModal({{ request('reappeal_id') }}); }, 200);
         });
+    @elseif(request('mgmt_approve_id'))
+        @php $mgmtApprovePc = \App\Models\PettyCashRequest::with('user')->find(request('mgmt_approve_id')); @endphp
+        @if($mgmtApprovePc)
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                openManagementApproveModal(
+                    {{ $mgmtApprovePc->id }},
+                    '{{ $mgmtApprovePc->reference_number }}',
+                    '{{ addslashes($mgmtApprovePc->user->name ?? "Staff") }}',
+                    '{{ number_format($mgmtApprovePc->total_amount, 2) }}',
+                    '{{ addslashes($mgmtApprovePc->management_notes ?? "") }}'
+                );
+            }, 200);
+        });
+        @endif
+    @elseif(request('mgmt_reject_id'))
+        @php $mgmtRejectPc = \App\Models\PettyCashRequest::with('user')->find(request('mgmt_reject_id')); @endphp
+        @if($mgmtRejectPc)
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                openManagementRejectModal(
+                    {{ $mgmtRejectPc->id }},
+                    '{{ $mgmtRejectPc->reference_number }}',
+                    '{{ addslashes($mgmtRejectPc->user->name ?? "Staff") }}',
+                    '{{ number_format($mgmtRejectPc->total_amount, 2) }}'
+                );
+            }, 200);
+        });
+        @endif
     @endif
     function confirmDeletePettyCash(event, formElement, refNumber) {
         event.preventDefault();

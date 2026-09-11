@@ -225,6 +225,12 @@ class PettyCashNotification extends Notification
             case 'sent_to_management':
                 $message = "Petty Cash request {$ref} was forwarded to Management for approval." . ($this->note ? " Reason: {$this->note}" : "");
                 break;
+            case 'management_approved':
+                $message = "Petty Cash request {$ref} was APPROVED by Management and awaits Finance final approval & disbursement.";
+                break;
+            case 'management_rejected':
+                $message = "Petty Cash request {$ref} was REJECTED by Management. Reason: {$this->note}";
+                break;
             default:
                 $message = "Petty Cash request {$ref} was updated.";
                 break;

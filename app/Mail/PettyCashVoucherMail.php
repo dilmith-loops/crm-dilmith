@@ -115,6 +115,12 @@ class PettyCashVoucherMail extends Mailable
             'sent_to_management' => $isRequester
                 ? "Your {$typeStr} {$ref} Forwarded to Management for Approval"
                 : "Approval Request: {$typeStr} {$ref} ({$amountStr}) Sent to Management",
+            'management_approved' => $isSuperAdmin
+                ? "Management APPROVED: {$typeStr} {$ref} ({$amountStr}) - Awaiting Finance Approval"
+                : ($isRequester 
+                    ? "Management Approved: Your {$typeStr} {$ref}" 
+                    : "Management Approved: {$typeStr} {$ref} ({$requesterName})"),
+            'management_rejected' => "Request Rejected by Management: {$ref}",
             default => "Update on {$typeStr} {$ref}",
         };
 
@@ -159,6 +165,14 @@ class PettyCashVoucherMail extends Mailable
             'sent_to_management' => $isRequester
                 ? "Your {$typeStr} {$ref} for {$amountStr} has been forwarded to Management for approval by Finance."
                 : "Finance Admin ({$approverName}) has submitted {$typeStr} {$ref} for {$amountStr} requested by {$requesterName} for Management approval." . ($this->note ? " Reason/Note: {$this->note}" : ""),
+            'management_approved' => $isSuperAdmin
+                ? "Petty cash request {$ref} for {$amountStr} requested by {$requesterName} was APPROVED by Management ({$approverName}). Please proceed with final Finance approval and cash disbursement." . ($this->note ? " Management Note: {$this->note}" : "")
+                : ($isRequester
+                    ? "Your {$typeStr} {$ref} for {$amountStr} was APPROVED by Management. It is now awaiting final Finance cash disbursement."
+                    : "Petty cash request {$ref} for {$requesterName} was APPROVED by Management and is awaiting final Finance cash disbursement."),
+            'management_rejected' => $isRequester
+                ? "Your {$typeStr} {$ref} was REJECTED by Management. Reason: " . ($this->note ?: 'No reason provided')
+                : "Petty cash request {$ref} for {$requesterName} was REJECTED by Management. Reason: " . ($this->note ?: 'No reason provided'),
             default => "{$typeStr} {$ref} was updated.",
         };
 

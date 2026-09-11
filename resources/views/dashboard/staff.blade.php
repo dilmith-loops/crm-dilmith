@@ -213,9 +213,16 @@
                                         Pending HOD
                                     </span>
                                 @elseif($pc->status === 'pending_super_admin')
-                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center whitespace-nowrap">
-                                        Pending Finance Approval
-                                    </span>
+                                    <div class="flex flex-col gap-1 items-start">
+                                        <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center whitespace-nowrap">
+                                            Pending Finance Approval
+                                        </span>
+                                        @if($pc->management_approved_at)
+                                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center whitespace-nowrap" title="Approved by Management at {{ $pc->management_approved_at->format('Y-m-d H:i') }}">
+                                                <i class="fas fa-user-check mr-1 text-purple-600"></i> Mgmt Approved
+                                            </span>
+                                        @endif
+                                    </div>
                                 @elseif($pc->status === 'pending_management')
                                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center whitespace-nowrap">
                                         <i class="fas fa-user-tie mr-1"></i> Pending Management
@@ -244,6 +251,10 @@
                                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 inline-flex items-center whitespace-nowrap" title="{{ $pc->admin_rejection_note }}">
                                         Rejected by Finance
                                     </span>
+                                @elseif($pc->status === 'rejected_by_management')
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center whitespace-nowrap" title="{{ $pc->management_rejection_note }}">
+                                        <i class="fas fa-times-circle mr-1 text-rose-600"></i> Rejected by Management
+                                    </span>
                                 @endif
                             </td>
                             <td class="py-3.5 px-6 text-right whitespace-nowrap space-x-2">
@@ -257,7 +268,7 @@
                                         <i class="fas fa-file-signature mr-1"></i> Settle IOU
                                     </button>
                                 @endif
-                                @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin']))
+                                @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin', 'rejected_by_management']))
                                     <button onclick="openReappealModal({{ $pc->id }})"
                                         class="px-3 py-1.5 bg-brand-blue text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors">
                                         Re-appeal
@@ -293,9 +304,16 @@
                                     <i class="fas fa-clock mr-1 text-[10px]"></i> Pending HOD
                                 </span>
                             @elseif($pc->status === 'pending_super_admin')
-                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center">
-                                    <i class="fas fa-user-shield mr-1 text-[10px]"></i> Pending Finance
-                                </span>
+                                <div class="flex flex-col gap-1 items-start">
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 inline-flex items-center">
+                                        <i class="fas fa-user-shield mr-1 text-[10px]"></i> Pending Finance
+                                    </span>
+                                    @if($pc->management_approved_at)
+                                        <span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center" title="Approved by Management at {{ $pc->management_approved_at->format('Y-m-d H:i') }}">
+                                            <i class="fas fa-user-check mr-1 text-purple-600"></i> Mgmt Approved
+                                        </span>
+                                    @endif
+                                </div>
                             @elseif($pc->status === 'pending_management')
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center">
                                     <i class="fas fa-user-tie mr-1 text-[10px]"></i> Pending Mgmt
@@ -323,6 +341,10 @@
                             @elseif($pc->status === 'rejected_by_super_admin')
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 inline-flex items-center" title="{{ $pc->admin_rejection_note }}">
                                     <i class="fas fa-ban mr-1 text-[10px]"></i> Rejected by Finance
+                                </span>
+                            @elseif($pc->status === 'rejected_by_management')
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center" title="{{ $pc->management_rejection_note }}">
+                                    <i class="fas fa-times-circle mr-1 text-[10px] text-rose-600"></i> Rejected by Mgmt
                                 </span>
                             @endif
                         </div>
@@ -369,7 +391,7 @@
                                 <i class="fas fa-file-signature mr-1"></i> Settle IOU
                             </button>
                         @endif
-                        @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin']))
+                        @if(in_array($pc->status, ['rejected_by_hod', 'rejected_by_super_admin', 'rejected_by_management']))
                             <button onclick="openReappealModal({{ $pc->id }})"
                                 class="px-3 py-1.5 bg-brand-blue text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors">
                                 <i class="fas fa-redo mr-1"></i> Re-appeal
@@ -998,7 +1020,11 @@
                     if (pc.admin_rejection_note) {
                         notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong>Finance Rejection Note:</strong> ${pc.admin_rejection_note}</div>`;
                     }
-                    if (pc.management_notes) {
+                    if (pc.management_approved_at) {
+                        notesHtml += `<div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 mb-2"><strong class="flex items-center text-emerald-800"><i class="fas fa-user-check text-emerald-600 mr-1.5"></i> Management Approved:</strong><p class="mt-0.5 text-emerald-800">Approved by Management on ${formatDateStr(pc.management_approved_at)}</p>${pc.management_notes ? `<p class="mt-1 text-gray-700">Remarks: ${pc.management_notes}</p>` : ''}</div>`;
+                    } else if (pc.status === 'rejected_by_management' || pc.management_rejection_note) {
+                        notesHtml += `<div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 mb-2"><strong><i class="fas fa-times-circle text-rose-600 mr-1"></i> Management Rejection Reason:</strong> ${pc.management_rejection_note || '-'}</div>`;
+                    } else if (pc.management_notes) {
                         notesHtml += `<div class="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-900 mb-2"><strong><i class="fas fa-user-tie mr-1 text-purple-700"></i> Notes to Management:</strong> ${pc.management_notes}</div>`;
                     }
 
