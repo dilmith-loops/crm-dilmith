@@ -1,10 +1,9 @@
-var staticCacheName = "pwa-v2";
+var staticCacheName = "pwa-v3";
 var filesToCache = [
-    '/pc/',
-    '/pc/login',
-    '/pc/favicon.png',
-    '/pc/images/pwa-icon-192.png',
-    '/pc/images/pwa-icon-512.png'
+    '/login',
+    '/favicon.png',
+    '/images/pwa-icon-192.png',
+    '/images/pwa-icon-512.png'
 ];
 
 self.addEventListener("install", function (event) {
