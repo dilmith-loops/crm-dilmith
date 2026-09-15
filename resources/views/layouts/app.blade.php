@@ -166,6 +166,12 @@
                     @endif
                 @endif
             </nav>
+            <div class="px-3 pb-3">
+                <button type="button" data-display-flex="flex" class="pwa-install-btn hidden w-full items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-brand-purple to-brand-pink hover:opacity-90 text-white text-xs font-bold rounded-lg shadow-sm transition-all" title="Install App">
+                    <i class="fas fa-download"></i>
+                    <span>Install App</span>
+                </button>
+            </div>
             <div class="p-4 border-t border-gray-700">
                 <div class="flex items-center space-x-2">
                     <img src="https://ui-avatars.com/api/?name={{ Auth::user()->name ?? 'Admin' }}&background=random"
@@ -277,6 +283,12 @@
                     @endif
                 @endif
             </nav>
+            <div class="px-3 pb-3">
+                <button type="button" data-display-flex="flex" class="pwa-install-btn hidden w-full items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-brand-purple to-brand-pink text-white text-sm font-bold rounded-xl shadow-md active:scale-95 transition-all" title="Install App">
+                    <i class="fas fa-download text-base"></i>
+                    <span>Install Loops App</span>
+                </button>
+            </div>
             <div class="p-4 border-t border-gray-700 bg-gray-900/50">
                 <div class="flex items-center space-x-3">
                     <img src="https://ui-avatars.com/api/?name={{ Auth::user()->name ?? 'Admin' }}&background=random"
@@ -311,7 +323,11 @@
                         <h2 class="text-lg sm:text-xl font-bold text-gray-800 truncate">@yield('header')</h2>
                     </div>
                     @auth
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        <button type="button" data-display-flex="inline" class="pwa-install-btn hidden px-3 py-1.5 bg-gradient-to-r from-brand-purple to-brand-pink text-white text-xs font-bold rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all items-center gap-1.5" title="Install Loops CRM">
+                            <i class="fas fa-download text-xs"></i>
+                            <span class="hidden sm:inline">Install App</span>
+                        </button>
                         <button type="button" onclick="document.getElementById('changePasswordModal').classList.remove('hidden')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm" title="Change Password">
                             <i class="fas fa-key text-brand-purple"></i>
                             <span class="hidden sm:inline">Change Password</span>
@@ -530,18 +546,8 @@
             </form>
         </div>
     </div>
-    <!-- PWA Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('{{ asset("serviceworker.js") }}', { scope: '{{ asset("") }}' }).then(function(reg) {
-                    console.log('PWA ServiceWorker registered with scope:', reg.scope);
-                }).catch(function(err) {
-                    console.error('PWA ServiceWorker registration failed:', err);
-                });
-            });
-        }
-    </script>
+    <!-- PWA Install Prompts & Controller -->
+    @include('partials.pwa-install')
 </body>
 
 </html>

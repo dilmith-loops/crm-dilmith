@@ -115,6 +115,14 @@
                     Sign In <i class="fas fa-arrow-right ml-2 text-sm"></i>
                 </button>
             </div>
+
+            <!-- PWA Install Button on Login Screen -->
+            <div class="mt-4 pwa-install-btn hidden" data-display-flex="block">
+                <button type="button" class="pwa-install-trigger w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs sm:text-sm font-bold rounded-xl border border-gray-200 shadow-2xs hover:border-gray-300 transition-all active:scale-98">
+                    <i class="fas fa-download text-brand-purple"></i>
+                    <span>Install Loops CRM App</span>
+                </button>
+            </div>
         </form>
 
         <div class="mt-6 sm:mt-8 text-center">
@@ -130,14 +138,8 @@
         }
         .animate-shake { animation: shake 0.4s ease-in-out; }
     </style>
-    <!-- PWA Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('{{ asset("serviceworker.js") }}');
-            });
-        }
-    </script>
+    <!-- PWA Install Prompts & Controller -->
+    @include('partials.pwa-install')
 </body>
 
 </html>
