@@ -71,7 +71,57 @@
     </div>
 </div>
 
-<!-- Generic Desktop / Browser Fallback Guide Modal -->
+<!-- Android PWA Install Guide Modal (When Chrome hasn't triggered native prompt) -->
+<div id="pwa-android-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 hidden backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 text-left relative transform transition-all">
+        <button type="button" onclick="document.getElementById('pwa-android-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1">
+            <i class="fas fa-times text-lg"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-4">
+            <img src="{{ asset('images/pwa-icon-192.png') }}" alt="Loops CRM" class="w-12 h-12 rounded-xl shadow border border-gray-100 object-cover">
+            <div>
+                <h3 class="text-base font-black text-gray-800">Install on Android</h3>
+                <p class="text-xs text-gray-500">Google Chrome / Samsung Internet</p>
+            </div>
+        </div>
+
+        <div class="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs text-gray-700">
+            <div class="flex items-start gap-3">
+                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold text-xs">1</span>
+                <div>
+                    Tap the <span class="font-bold text-gray-900">3 vertical dots (⋮)</span> at the top-right corner of Chrome.
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold text-xs">2</span>
+                <div>
+                    Tap <span class="font-bold text-gray-900">"Install app"</span> (or <span class="font-bold text-gray-900">"Add to Home screen"</span>).
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold text-xs">3</span>
+                <div>
+                    Confirm by tapping <span class="font-bold text-brand-purple">Install</span> in the popup.
+                </div>
+            </div>
+
+            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 leading-relaxed">
+                <i class="fas fa-shield-halved text-amber-600 mr-1"></i>
+                <strong>Important:</strong> Android Chrome strictly requires a secure connection (<strong>HTTPS</strong>). If you are accessing via <code>http://</code> on an IP address, Chrome disables installation.
+            </div>
+        </div>
+
+        <button type="button" onclick="document.getElementById('pwa-android-modal').classList.add('hidden')"
+            class="mt-5 w-full py-2.5 bg-gradient-to-r from-brand-purple to-brand-pink text-white text-xs font-bold rounded-xl shadow hover:opacity-90 active:scale-95 transition-all">
+            Got It
+        </button>
+    </div>
+</div>
+
+<!-- Desktop Fallback Guide Modal -->
 <div id="pwa-fallback-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 hidden backdrop-blur-sm p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 text-left relative transform transition-all">
         <button type="button" onclick="document.getElementById('pwa-fallback-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1">
@@ -82,14 +132,13 @@
             <img src="{{ asset('images/pwa-icon-192.png') }}" alt="Loops CRM" class="w-12 h-12 rounded-xl shadow border border-gray-100 object-cover">
             <div>
                 <h3 class="text-base font-black text-gray-800">Install Loops CRM</h3>
-                <p class="text-xs text-gray-500">Run as a standalone desktop/mobile app</p>
+                <p class="text-xs text-gray-500">Run as a standalone desktop app</p>
             </div>
         </div>
 
         <div class="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs text-gray-700">
             <p><span class="font-bold text-gray-900">Chrome / Edge:</span> Click the <i class="fas fa-download text-brand-purple"></i> install icon in your address bar, or click Menu (⋮) &rarr; "Install Loops CRM".</p>
-            <p><span class="font-bold text-gray-900">Android:</span> Tap Menu (⋮) in Chrome &rarr; "Install app" or "Add to Home screen".</p>
-            <p><span class="font-bold text-gray-900">Note:</span> Ensure you are accessing via a secure connection (HTTPS) for installation to be enabled.</p>
+            <p><span class="font-bold text-gray-900">Note:</span> Ensure you are accessing via HTTPS for installation to be enabled.</p>
         </div>
 
         <button type="button" onclick="document.getElementById('pwa-fallback-modal').classList.add('hidden')"
@@ -103,60 +152,48 @@
 <script>
 (function() {
     let deferredPrompt = null;
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
         || window.navigator.standalone === true 
         || document.referrer.includes('android-app://');
 
-    // If already running in standalone mode (already installed), do not show install triggers
+    // If already running in standalone mode (already installed), hide all install buttons
     if (isStandalone) {
+        hideAllInstallUi();
         return;
     }
 
     const mobileBanner = document.getElementById('pwa-mobile-banner');
     const iosModal = document.getElementById('pwa-ios-modal');
+    const androidModal = document.getElementById('pwa-android-modal');
     const fallbackModal = document.getElementById('pwa-fallback-modal');
 
-    function showInstallUi() {
-        // Unhide all install buttons
-        document.querySelectorAll('.pwa-install-btn').forEach(function(el) {
-            el.classList.remove('hidden');
-            if (el.dataset.displayFlex === 'inline') {
-                el.classList.add('inline-flex');
-            } else if (el.dataset.displayFlex === 'flex') {
-                el.classList.add('flex');
-            }
-        });
-
-        // Show mobile banner if mobile screen and not dismissed in the past 24h
+    function initMobileBanner() {
+        if (!mobileBanner) return;
         const isMobileScreen = window.innerWidth <= 768;
         const dismissedAt = localStorage.getItem('pwa_banner_dismissed_at');
         const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
 
-        if (mobileBanner && isMobileScreen && (!dismissedAt || parseInt(dismissedAt, 10) < oneDayAgo)) {
+        if (isMobileScreen && (!dismissedAt || parseInt(dismissedAt, 10) < oneDayAgo)) {
             mobileBanner.classList.remove('hidden');
         }
     }
 
-    // Android & Chromium desktop install prompt capture
+    // Android & Chromium install prompt capture
     window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
         deferredPrompt = e;
-        showInstallUi();
+        initMobileBanner();
     });
 
-    // For iOS Safari (which does not trigger beforeinstallprompt)
-    if (isIOS) {
-        showInstallUi();
+    // Initialize banner on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMobileBanner);
+    } else {
+        initMobileBanner();
     }
-
-    // Also show install buttons if we're on standard browser so users can click for instructions
-    window.addEventListener('load', function() {
-        // If beforeinstallprompt hasn't fired after 1.5 seconds and not standalone, show buttons so user can see it
-        setTimeout(function() {
-            showInstallUi();
-        }, 1500);
-    });
 
     // Click handler for any install trigger
     function triggerInstall(e) {
@@ -172,17 +209,15 @@
                 deferredPrompt = null;
             });
         } else if (isIOS) {
-            if (iosModal) {
-                iosModal.classList.remove('hidden');
-            }
+            if (iosModal) iosModal.classList.remove('hidden');
+        } else if (isAndroid) {
+            if (androidModal) androidModal.classList.remove('hidden');
         } else {
-            if (fallbackModal) {
-                fallbackModal.classList.remove('hidden');
-            }
+            if (fallbackModal) fallbackModal.classList.remove('hidden');
         }
     }
 
-    // Bind triggers
+    // Bind triggers across the DOM
     document.addEventListener('click', function(e) {
         const trigger = e.target.closest('.pwa-install-trigger, .pwa-install-btn');
         if (trigger) {
@@ -211,7 +246,10 @@
         });
         if (mobileBanner) mobileBanner.classList.add('hidden');
         if (iosModal) iosModal.classList.add('hidden');
+        if (androidModal) androidModal.classList.add('hidden');
         if (fallbackModal) fallbackModal.classList.add('hidden');
+    }
+
     // Service Worker Registration
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {

@@ -167,7 +167,7 @@
                 @endif
             </nav>
             <div class="px-3 pb-3">
-                <button type="button" data-display-flex="flex" class="pwa-install-btn hidden w-full items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-brand-purple to-brand-pink hover:opacity-90 text-white text-xs font-bold rounded-lg shadow-sm transition-all" title="Install App">
+                <button type="button" class="pwa-install-btn flex w-full items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-brand-purple to-brand-pink hover:opacity-90 text-white text-xs font-bold rounded-lg shadow-sm transition-all" title="Install App">
                     <i class="fas fa-download"></i>
                     <span>Install App</span>
                 </button>
@@ -284,7 +284,7 @@
                 @endif
             </nav>
             <div class="px-3 pb-3">
-                <button type="button" data-display-flex="flex" class="pwa-install-btn hidden w-full items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-brand-purple to-brand-pink text-white text-sm font-bold rounded-xl shadow-md active:scale-95 transition-all" title="Install App">
+                <button type="button" class="pwa-install-btn flex w-full items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-brand-purple to-brand-pink text-white text-sm font-bold rounded-xl shadow-md active:scale-95 transition-all" title="Install App">
                     <i class="fas fa-download text-base"></i>
                     <span>Install Loops App</span>
                 </button>
@@ -324,9 +324,9 @@
                     </div>
                     @auth
                     <div class="flex items-center space-x-2 sm:space-x-3">
-                        <button type="button" data-display-flex="inline" class="pwa-install-btn hidden px-3 py-1.5 bg-gradient-to-r from-brand-purple to-brand-pink text-white text-xs font-bold rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all items-center gap-1.5" title="Install Loops CRM">
+                        <button type="button" class="pwa-install-btn inline-flex px-2.5 py-1.5 sm:px-3 sm:py-1.5 bg-gradient-to-r from-brand-purple to-brand-pink text-white text-xs font-bold rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all items-center gap-1.5" title="Install Loops CRM">
                             <i class="fas fa-download text-xs"></i>
-                            <span class="hidden sm:inline">Install App</span>
+                            <span>Install</span>
                         </button>
                         <button type="button" onclick="document.getElementById('changePasswordModal').classList.remove('hidden')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm" title="Change Password">
                             <i class="fas fa-key text-brand-purple"></i>

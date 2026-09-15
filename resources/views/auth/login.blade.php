@@ -117,7 +117,7 @@
             </div>
 
             <!-- PWA Install Button on Login Screen -->
-            <div class="mt-4 pwa-install-btn hidden" data-display-flex="block">
+            <div class="mt-4 pwa-install-btn">
                 <button type="button" class="pwa-install-trigger w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs sm:text-sm font-bold rounded-xl border border-gray-200 shadow-2xs hover:border-gray-300 transition-all active:scale-98">
                     <i class="fas fa-download text-brand-purple"></i>
                     <span>Install Loops CRM App</span>
