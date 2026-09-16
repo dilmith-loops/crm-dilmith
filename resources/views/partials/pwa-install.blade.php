@@ -260,5 +260,30 @@
             });
         });
     }
+
+    // Global PWA Refresh App Handler
+    window.refreshPwaApp = function(btn) {
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-wait');
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.classList.add('fa-spin');
+            }
+        }
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for (let reg of registrations) {
+                    reg.update();
+                }
+            }).catch(function(err) {
+                console.log('SW update error:', err);
+            });
+        }
+        setTimeout(function() {
+            window.location.reload();
+        }, 300);
+    };
 })();
 </script>
+
