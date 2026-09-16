@@ -166,11 +166,7 @@
                     @endif
                 @endif
             </nav>
-            <div class="px-3 pb-2 space-y-1.5">
-                <button type="button" onclick="refreshPwaApp(this)" class="flex w-full items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-medium rounded-lg transition-all active:scale-95" title="Refresh App">
-                    <i class="fas fa-arrows-rotate text-brand-teal text-xs"></i>
-                    <span>Refresh App</span>
-                </button>
+            <div class="px-3 pb-3">
                 <button type="button" class="pwa-install-btn flex w-full items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-brand-purple to-brand-pink hover:opacity-90 text-white text-xs font-bold rounded-lg shadow-sm transition-all" title="Install App">
                     <i class="fas fa-download"></i>
                     <span>Install App</span>
@@ -287,11 +283,7 @@
                     @endif
                 @endif
             </nav>
-            <div class="px-3 pb-2 space-y-2">
-                <button type="button" onclick="refreshPwaApp(this)" class="flex w-full items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white text-xs font-bold rounded-xl shadow transition-all active:scale-95" title="Refresh App">
-                    <i class="fas fa-arrows-rotate text-brand-teal text-sm"></i>
-                    <span>Refresh App</span>
-                </button>
+            <div class="px-3 pb-3">
                 <button type="button" class="pwa-install-btn flex w-full items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-brand-purple to-brand-pink text-white text-sm font-bold rounded-xl shadow-md active:scale-95 transition-all" title="Install App">
                     <i class="fas fa-download text-base"></i>
                     <span>Install Loops App</span>
