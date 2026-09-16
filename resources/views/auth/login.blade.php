@@ -109,6 +109,13 @@
                 </div>
             </div>
 
+            <div class="flex items-center justify-between pt-1">
+                <label class="flex items-center text-xs sm:text-sm text-gray-600 font-medium cursor-pointer select-none">
+                    <input type="checkbox" name="remember" value="1" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4 mr-2">
+                    <span>Keep me signed in</span>
+                </label>
+            </div>
+
             <div class="pt-2">
                 <button type="submit"
                     class="w-full flex justify-center items-center py-3.5 sm:py-4 px-6 border border-transparent rounded-xl shadow-xl text-base sm:text-lg font-black text-white bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/25 focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all duration-300 transform active:scale-95">

@@ -31,7 +31,7 @@ Route::get('manifest.json', function () {
         'short_name' => 'Loops CRM',
         'description' => 'Loops Integrated CRM, Petty Cash & Invoicing Management System',
         'id' => url('/'),
-        'start_url' => url('/login'),
+        'start_url' => url('/'),
         'scope' => url('/'),
         'display' => 'standalone',
         'orientation' => 'any',

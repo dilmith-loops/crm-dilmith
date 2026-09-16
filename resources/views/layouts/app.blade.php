@@ -93,6 +93,32 @@
             margin-right: 6px;
         }
     </style>
+    <script>
+        window.refreshPwaApp = function(btn) {
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-75', 'cursor-wait');
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.add('fa-spin');
+                }
+            }
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for (let reg of registrations) { reg.update(); }
+                }).catch(function(e) {});
+            }
+            setTimeout(function() {
+                try {
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('_pwa_refresh', Date.now().toString());
+                    window.location.replace(currentUrl.toString());
+                } catch(e) {
+                    window.location.reload();
+                }
+            }, 200);
+        };
+    </script>
     @stack('head')
 </head>
 

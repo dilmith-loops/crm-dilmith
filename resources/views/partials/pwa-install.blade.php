@@ -150,6 +150,38 @@
 
 <!-- PWA Global Controller Script -->
 <script>
+// Global PWA Refresh App Handler (Defined globally so it always runs on iOS PWA & desktop)
+window.refreshPwaApp = function(btn) {
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-75', 'cursor-wait');
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.classList.add('fa-spin');
+        }
+    }
+
+    // Trigger ServiceWorker background update check
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (let reg of registrations) {
+                reg.update();
+            }
+        }).catch(function(err) {});
+    }
+
+    // Bulletproof reload for iOS Safari Standalone PWA and desktop browsers
+    setTimeout(function() {
+        try {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('_pwa_refresh', Date.now().toString());
+            window.location.replace(currentUrl.toString());
+        } catch(e) {
+            window.location.reload();
+        }
+    }, 200);
+};
+
 (function() {
     let deferredPrompt = null;
     const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)
@@ -159,86 +191,10 @@
         || window.navigator.standalone === true 
         || document.referrer.includes('android-app://');
 
-    // If already running in standalone mode (already installed), hide all install buttons
-    if (isStandalone) {
-        hideAllInstallUi();
-        return;
-    }
-
     const mobileBanner = document.getElementById('pwa-mobile-banner');
     const iosModal = document.getElementById('pwa-ios-modal');
     const androidModal = document.getElementById('pwa-android-modal');
     const fallbackModal = document.getElementById('pwa-fallback-modal');
-
-    function initMobileBanner() {
-        if (!mobileBanner) return;
-        const isMobileScreen = window.innerWidth <= 768;
-        const dismissedAt = localStorage.getItem('pwa_banner_dismissed_at');
-        const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-
-        if (isMobileScreen && (!dismissedAt || parseInt(dismissedAt, 10) < oneDayAgo)) {
-            mobileBanner.classList.remove('hidden');
-        }
-    }
-
-    // Android & Chromium install prompt capture
-    window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        deferredPrompt = e;
-        initMobileBanner();
-    });
-
-    // Initialize banner on DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initMobileBanner);
-    } else {
-        initMobileBanner();
-    }
-
-    // Click handler for any install trigger
-    function triggerInstall(e) {
-        if (e) e.preventDefault();
-
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(function(choiceResult) {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('User accepted PWA installation');
-                    hideAllInstallUi();
-                }
-                deferredPrompt = null;
-            });
-        } else if (isIOS) {
-            if (iosModal) iosModal.classList.remove('hidden');
-        } else if (isAndroid) {
-            if (androidModal) androidModal.classList.remove('hidden');
-        } else {
-            if (fallbackModal) fallbackModal.classList.remove('hidden');
-        }
-    }
-
-    // Bind triggers across the DOM
-    document.addEventListener('click', function(e) {
-        const trigger = e.target.closest('.pwa-install-trigger, .pwa-install-btn');
-        if (trigger) {
-            triggerInstall(e);
-        }
-    });
-
-    // Dismiss banner
-    const dismissBtn = document.getElementById('pwa-dismiss-banner-btn');
-    if (dismissBtn && mobileBanner) {
-        dismissBtn.addEventListener('click', function() {
-            mobileBanner.classList.add('hidden');
-            localStorage.setItem('pwa_banner_dismissed_at', Date.now().toString());
-        });
-    }
-
-    // App installed event
-    window.addEventListener('appinstalled', function() {
-        console.log('Loops CRM PWA was successfully installed');
-        hideAllInstallUi();
-    });
 
     function hideAllInstallUi() {
         document.querySelectorAll('.pwa-install-btn').forEach(function(el) {
@@ -250,7 +206,82 @@
         if (fallbackModal) fallbackModal.classList.add('hidden');
     }
 
-    // Service Worker Registration
+    // If running in standalone mode (already installed), hide install triggers only
+    if (isStandalone) {
+        hideAllInstallUi();
+    } else {
+        function initMobileBanner() {
+            if (!mobileBanner) return;
+            const isMobileScreen = window.innerWidth <= 768;
+            const dismissedAt = localStorage.getItem('pwa_banner_dismissed_at');
+            const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+
+            if (isMobileScreen && (!dismissedAt || parseInt(dismissedAt, 10) < oneDayAgo)) {
+                mobileBanner.classList.remove('hidden');
+            }
+        }
+
+        // Android & Chromium install prompt capture
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            initMobileBanner();
+        });
+
+        // Initialize banner on DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMobileBanner);
+        } else {
+            initMobileBanner();
+        }
+
+        // Click handler for any install trigger
+        function triggerInstall(e) {
+            if (e) e.preventDefault();
+
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function(choiceResult) {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted PWA installation');
+                        hideAllInstallUi();
+                    }
+                    deferredPrompt = null;
+                });
+            } else if (isIOS) {
+                if (iosModal) iosModal.classList.remove('hidden');
+            } else if (isAndroid) {
+                if (androidModal) androidModal.classList.remove('hidden');
+            } else {
+                if (fallbackModal) fallbackModal.classList.remove('hidden');
+            }
+        }
+
+        // Bind triggers across the DOM
+        document.addEventListener('click', function(e) {
+            const trigger = e.target.closest('.pwa-install-trigger, .pwa-install-btn');
+            if (trigger) {
+                triggerInstall(e);
+            }
+        });
+
+        // Dismiss banner
+        const dismissBtn = document.getElementById('pwa-dismiss-banner-btn');
+        if (dismissBtn && mobileBanner) {
+            dismissBtn.addEventListener('click', function() {
+                mobileBanner.classList.add('hidden');
+                localStorage.setItem('pwa_banner_dismissed_at', Date.now().toString());
+            });
+        }
+
+        // App installed event
+        window.addEventListener('appinstalled', function() {
+            console.log('Loops CRM PWA was successfully installed');
+            hideAllInstallUi();
+        });
+    }
+
+    // Service Worker Registration (always register even if standalone)
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
             navigator.serviceWorker.register('{{ asset("serviceworker.js") }}', { scope: '{{ asset("") }}' }).then(function(reg) {
@@ -260,30 +291,6 @@
             });
         });
     }
-
-    // Global PWA Refresh App Handler
-    window.refreshPwaApp = function(btn) {
-        if (btn) {
-            btn.disabled = true;
-            btn.classList.add('opacity-75', 'cursor-wait');
-            const icon = btn.querySelector('i');
-            if (icon) {
-                icon.classList.add('fa-spin');
-            }
-        }
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for (let reg of registrations) {
-                    reg.update();
-                }
-            }).catch(function(err) {
-                console.log('SW update error:', err);
-            });
-        }
-        setTimeout(function() {
-            window.location.reload();
-        }, 300);
-    };
 })();
 </script>
 

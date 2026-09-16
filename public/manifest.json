@@ -3,7 +3,7 @@
   "short_name": "Loops CRM",
   "description": "Loops Integrated CRM, Petty Cash & Invoicing Management System",
   "id": "/",
-  "start_url": "/login",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",

@@ -10,6 +10,10 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
         return view('auth.login');
     }
 
@@ -20,10 +24,13 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials)) {
+        // Default remember to true so mobile PWA and desktop sessions persist across app restarts
+        $remember = $request->boolean('remember', true);
+
+        if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
-            return redirect()->intended('dashboard');
+            return redirect()->intended(route('dashboard'));
         }
 
         return back()->withErrors([
