@@ -67,6 +67,14 @@
                                 <span style="background-color: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                                     Pending Management
                                 </span>
+                            @elseif($action === 'iou_settlement_exceeded' || $pettyCash->status === 'pending_settlement_hod')
+                                <span style="background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                                    Settlement Exceeded (Pending HOD)
+                                </span>
+                            @elseif($action === 'iou_settlement_hod_approved')
+                                <span style="background-color: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                                    HOD Approved (Pending Finance)
+                                </span>
                             @elseif($action === 'hod_approved' || $pettyCash->status === 'pending_super_admin')
                                 <span style="background-color: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                                     Pending Finance Approval
@@ -92,6 +100,33 @@
                 <p style="font-size: 13px; color: #475569; margin-bottom: 20px; font-weight: 500;">
                     {{ $customMessage }}
                 </p>
+
+                <!-- Exceeded IOU Settlement Summary Card -->
+                @if($pettyCash->isIOU() && ($action === 'iou_settlement_exceeded' || $action === 'iou_settlement_hod_approved' || $pettyCash->isSettlementExceeded()))
+                <table width="100%" style="background-color: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 10px; padding: 14px; margin-bottom: 20px; border-collapse: collapse;">
+                    <tr>
+                        <td colspan="3" style="padding-bottom: 8px; border-bottom: 1px dashed #fde68a;">
+                            <span style="font-size: 11px; font-weight: 800; color: #b45309; text-transform: uppercase; letter-spacing: 0.5px;">
+                                ⚠️ Settlement Exceeded Approved Advance Amount
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="33%" style="padding-top: 10px;">
+                            <span style="font-size: 11px; color: #78350f; display: block;">Approved Amount:</span>
+                            <strong style="font-size: 13px; color: #1e293b; font-family: monospace;">LKR {{ number_format($pettyCash->effective_approved_amount, 2) }}</strong>
+                        </td>
+                        <td width="33%" style="padding-top: 10px;">
+                            <span style="font-size: 11px; color: #78350f; display: block;">Settlement Amount:</span>
+                            <strong style="font-size: 13px; color: #0f172a; font-family: monospace;">LKR {{ number_format($pettyCash->settlement_amount ?: $pettyCash->total_amount, 2) }}</strong>
+                        </td>
+                        <td width="34%" style="padding-top: 10px;">
+                            <span style="font-size: 11px; color: #b91c1c; display: block; font-weight: bold;">Exceeded By:</span>
+                            <strong style="font-size: 13px; color: #dc2626; font-family: monospace;">+ LKR {{ number_format($pettyCash->exceeded_amount, 2) }}</strong>
+                        </td>
+                    </tr>
+                </table>
+                @endif
 
                 <!-- 72-Hour Policy Notice for IOUs -->
                 @if($pettyCash->isIOU() && $pettyCash->status !== 'settled')

@@ -118,7 +118,7 @@
     @php
         $unsettledIou = \App\Models\PettyCashRequest::where('user_id', auth()->id())
             ->where('is_iou', true)
-            ->whereIn('status', ['approved', 'iou_issued', 'pending_settlement'])
+            ->whereIn('status', ['approved', 'iou_issued', 'pending_settlement', 'pending_settlement_hod'])
             ->orderBy('created_at', 'desc')
             ->first();
     @endphp
@@ -239,6 +239,10 @@
                                     <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-300 inline-flex items-center whitespace-nowrap">
                                         <i class="fas fa-file-invoice-dollar mr-1"></i> Settlement Pending
                                     </span>
+                                @elseif($pc->status === 'pending_settlement_hod')
+                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center whitespace-nowrap" title="Settlement Exceeded Approved Amount - Awaiting HOD Approval">
+                                        <i class="fas fa-exclamation-triangle mr-1 text-amber-600"></i> Exceeded (Pending HOD)
+                                    </span>
                                 @elseif($pc->status === 'settled')
                                     <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center whitespace-nowrap">
                                         <i class="fas fa-check-double mr-1"></i> IOU Settled
@@ -329,6 +333,10 @@
                             @elseif($pc->status === 'pending_settlement')
                                 <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-300 inline-flex items-center">
                                     <i class="fas fa-file-invoice-dollar mr-1 text-[10px]"></i> Settlement Pending
+                                </span>
+                            @elseif($pc->status === 'pending_settlement_hod')
+                                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center" title="Settlement Exceeded Approved Amount - Awaiting HOD Approval">
+                                    <i class="fas fa-exclamation-triangle mr-1 text-[10px] text-amber-600"></i> Exceeded (Pending HOD)
                                 </span>
                             @elseif($pc->status === 'settled')
                                 <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center">
@@ -705,9 +713,23 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-gray-800 mb-2">Final Expenditure Line Items & Amounts</label>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-xs font-bold text-gray-800">Final Expenditure Line Items & Amounts</label>
+                    <div class="flex items-center gap-2.5 text-xs font-semibold">
+                        <span id="staffSettleApprovedAmountDisplay" class="text-gray-500">Approved: <strong class="text-gray-800 font-mono">LKR 0.00</strong></span>
+                        <span id="staffSettleTotalSpentDisplay" class="text-brand-purple font-mono font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Spent: LKR 0.00</span>
+                    </div>
+                </div>
                 <div id="settleItemsContainer" class="space-y-3">
                     <!-- Dynamic JS content -->
+                </div>
+                <!-- Dynamic Exceeded Warning Banner -->
+                <div id="staffSettleExceededWarning" class="mt-3 hidden p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+                    <i class="fas fa-exclamation-triangle text-amber-600 text-base mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        <strong class="text-amber-950 font-bold block mb-0.5">⚠️ Settlement Exceeds Approved Amount</strong>
+                        <span id="staffSettleExceededWarningText" class="text-amber-900">The total expenditure exceeds the approved advance amount. This settlement will be forwarded to your Head of Department (HOD) for approval before Finance review.</span>
+                    </div>
                 </div>
             </div>
 
@@ -973,6 +995,12 @@
                     const container = document.getElementById('settleItemsContainer');
                     container.innerHTML = '';
 
+                    window.staffCurrentApprovedIouAmount = parseFloat(pc.approved_amount || pc.total_amount) || 0;
+                    const approvedDisplay = document.getElementById('staffSettleApprovedAmountDisplay');
+                    if (approvedDisplay) {
+                        approvedDisplay.innerHTML = `Approved Advance: <strong class="text-gray-800 font-mono">LKR ${window.staffCurrentApprovedIouAmount.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>`;
+                    }
+
                     pc.items.forEach((item) => {
                         const div = document.createElement('div');
                         div.className = 'grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-gray-50 p-3 rounded-lg border border-gray-200';
@@ -984,11 +1012,13 @@
                             </div>
                             <div class="md:col-span-6 flex items-center gap-2">
                                 <span class="text-xs text-gray-500 font-bold whitespace-nowrap">Spent LKR:</span>
-                                <input type="number" step="0.01" min="0.01" name="items[${item.id}][amount]" value="${item.amount}" required class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-purple">
+                                <input type="number" step="0.01" min="0.01" name="items[${item.id}][amount]" value="${item.amount}" required class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-purple staff-settle-item-input" oninput="calculateStaffSettleSpentTotal()">
                             </div>
                         `;
                         container.appendChild(div);
                     });
+
+                    calculateStaffSettleSpentTotal();
 
                     const notesInput = document.getElementById('staffSettleExtraNotesInput');
                     if (notesInput) {
@@ -998,6 +1028,29 @@
                     document.getElementById('settleIouModal').classList.remove('hidden');
                 }
             });
+    }
+
+    function calculateStaffSettleSpentTotal() {
+        let total = 0;
+        document.querySelectorAll('.staff-settle-item-input').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        const warningEl = document.getElementById('staffSettleExceededWarning');
+        const warningTextEl = document.getElementById('staffSettleExceededWarningText');
+        const totalDisplay = document.getElementById('staffSettleTotalSpentDisplay');
+        if (totalDisplay) {
+            totalDisplay.textContent = `Spent: LKR ${total.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        }
+        const approved = window.staffCurrentApprovedIouAmount || 0;
+        if (warningEl && warningTextEl) {
+            if (approved > 0 && total > approved) {
+                const diff = total - approved;
+                warningTextEl.innerHTML = `Total spent (<strong>LKR ${total.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>) exceeds the approved advance (<strong>LKR ${approved.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>) by <strong class="text-red-700">+ LKR ${diff.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>. This settlement will be routed to your Head of Department (HOD) for approval before Finance review.`;
+                warningEl.classList.remove('hidden');
+            } else {
+                warningEl.classList.add('hidden');
+            }
+        }
     }
 
     function viewPettyCashDetails(id) {

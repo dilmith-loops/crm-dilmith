@@ -237,6 +237,12 @@ class PettyCashNotification extends Notification
             case 'management_rejected':
                 $message = "Petty Cash request {$ref} was REJECTED by Management. Reason: {$this->note}";
                 break;
+            case 'iou_settlement_exceeded':
+                $message = "IOU request {$ref} settlement EXCEEDED approved amount and requires HOD approval.";
+                break;
+            case 'iou_settlement_hod_approved':
+                $message = "Exceeded IOU settlement {$ref} was APPROVED by HOD and awaits Finance approval.";
+                break;
             default:
                 $message = "Petty Cash request {$ref} was updated.";
                 break;

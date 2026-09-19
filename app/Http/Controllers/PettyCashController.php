@@ -25,9 +25,9 @@ class PettyCashController extends Controller
             $query->where('user_id', $user->id);
         } elseif ($scope === 'approvals') {
             if ($user->hasAdminPrivileges()) {
-                $query->whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management']);
+                $query->whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management', 'pending_settlement', 'pending_settlement_hod']);
             } elseif ($user->role === 'HOD') {
-                $query->where('hod_id', $user->id)->where('status', 'pending_hod');
+                $query->where('hod_id', $user->id)->whereIn('status', ['pending_hod', 'pending_settlement_hod']);
             } else {
                 $query->where('user_id', $user->id);
             }
@@ -55,9 +55,9 @@ class PettyCashController extends Controller
         $myRequestsCount = PettyCashRequest::where('user_id', $user->id)->count();
         $pendingApprovalsCount = 0;
         if ($user->hasAdminPrivileges()) {
-            $pendingApprovalsCount = PettyCashRequest::whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management'])->count();
+            $pendingApprovalsCount = PettyCashRequest::whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management', 'pending_settlement', 'pending_settlement_hod'])->count();
         } elseif ($user->role === 'HOD') {
-            $pendingApprovalsCount = PettyCashRequest::where('hod_id', $user->id)->where('status', 'pending_hod')->count();
+            $pendingApprovalsCount = PettyCashRequest::where('hod_id', $user->id)->whereIn('status', ['pending_hod', 'pending_settlement_hod'])->count();
         }
 
         // Data for modals / dropdowns
@@ -100,7 +100,7 @@ class PettyCashController extends Controller
         // Prevent new petty cash request if user has an active Super Admin approved unsettled IOU
         $activeUnsettledIou = PettyCashRequest::where('user_id', $user->id)
             ->where('is_iou', true)
-            ->whereIn('status', ['approved', 'iou_issued', 'pending_settlement'])
+            ->whereIn('status', ['approved', 'iou_issued', 'pending_settlement', 'pending_settlement_hod'])
             ->first();
 
         if ($activeUnsettledIou) {
@@ -164,6 +164,7 @@ class PettyCashController extends Controller
             'job_number' => $jobNumberString,
             'extra_notes' => $request->extra_notes,
             'total_amount' => $totalAmount,
+            'approved_amount' => $totalAmount,
             'is_iou' => $isIou,
             'status' => $status,
         ]);
@@ -257,6 +258,31 @@ class PettyCashController extends Controller
         // Ensure user is assigned HOD or Admin (Finance Admin / Management)
         if ($user->id !== $pettyCash->hod_id && !$user->hasAdminPrivileges() && $user->role !== 'HOD') {
             return redirect()->back()->with('error', 'Unauthorized action.');
+        }
+
+        // Check if approving an exceeded IOU settlement
+        if ($pettyCash->status === 'pending_settlement_hod') {
+            $pettyCash->update([
+                'status' => 'pending_settlement',
+            ]);
+
+            // Notify Staff & Super Admins upon HOD Approval of exceeded settlement
+            $superAdmins = PettyCashNotification::getSuperAdminRecipients($pettyCash->user_id);
+            if ($superAdmins->isNotEmpty()) {
+                Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'iou_settlement_hod_approved', $user));
+            }
+
+            $requestedUser = User::find($pettyCash->user_id);
+            if ($requestedUser) {
+                $requestedUser->notify(new PettyCashNotification($pettyCash, 'iou_settlement_hod_approved', $user));
+            }
+
+            $associatedHod = $pettyCash->associated_hod;
+            if ($associatedHod && $associatedHod->id !== $user->id && $associatedHod->id !== $pettyCash->user_id) {
+                $associatedHod->notify(new PettyCashNotification($pettyCash, 'iou_settlement_hod_approved', $user));
+            }
+
+            return redirect()->back()->with('success', 'Exceeded IOU settlement approved and forwarded to Finance for final approval.');
         }
 
         $pettyCash->update([
@@ -375,6 +401,7 @@ class PettyCashController extends Controller
             'status' => $newStatus,
             'signature_path' => $savedSignaturePath ?: $pettyCash->signature_path,
             'issued_at' => $issuedAt,
+            'approved_amount' => $pettyCash->approved_amount ?: $pettyCash->total_amount,
         ];
         if ($request->has('issued_money_notes')) {
             $updateData['issued_money_notes'] = $request->input('issued_money_notes');
@@ -621,9 +648,12 @@ class PettyCashController extends Controller
             'settlement_money_notes' => 'nullable|array',
         ]);
 
+        // Capture originally approved amount
+        $approvedAmount = (float)($pettyCash->approved_amount ?: $pettyCash->total_amount);
+
         // Update items/amounts if submitted
+        $settlementTotal = 0;
         if ($request->has('items')) {
-            $totalAmount = 0;
             foreach ($request->items as $itemData) {
                 $item = PettyCashItem::find($itemData['id']);
                 if ($item) {
@@ -636,12 +666,11 @@ class PettyCashController extends Controller
                         $updateItemData['attendees'] = !empty($attendees) ? $attendees : null;
                     }
                     $item->update($updateItemData);
-                    $totalAmount += (float)$itemData['amount'];
+                    $settlementTotal += (float)$itemData['amount'];
                 }
             }
-            if ($totalAmount > 0) {
-                $pettyCash->update(['total_amount' => $totalAmount]);
-            }
+        } else {
+            $settlementTotal = (float)$pettyCash->items()->sum('amount');
         }
 
         // Upload settlement proofs
@@ -667,14 +696,57 @@ class PettyCashController extends Controller
         $settledAt = $request->filled('settled_at') ? $request->input('settled_at') : now();
         $settledNote = $request->input('extra_notes') ?: $request->input('settlement_note');
 
+        // Check if settlement exceeded approved amount
+        $isExceeded = round($settlementTotal, 2) > round($approvedAmount, 2);
+
+        $isRequesterHod = ($pettyCash->user && ($pettyCash->user->role === 'HOD' || $pettyCash->user->hasRole('HOD'))) 
+            || ($user->role === 'HOD' || $user->hasRole('HOD'));
+        $hasHod = !empty($pettyCash->hod_id) || !empty($pettyCash->associated_hod);
+
+        // If exceeded and requester has an HOD (and is not an HOD themselves): goes to HOD approval first!
+        $needsHodApproval = $isExceeded && !$isRequesterHod && $hasHod;
+        $newStatus = $needsHodApproval ? 'pending_settlement_hod' : 'pending_settlement';
+
         $pettyCash->update([
-            'status' => 'pending_settlement',
+            'status' => $newStatus,
+            'approved_amount' => $approvedAmount,
+            'settlement_amount' => $settlementTotal,
+            'total_amount' => $settlementTotal > 0 ? $settlementTotal : $pettyCash->total_amount,
             'settled_at' => $settledAt,
             'settlement_note' => $settledNote,
             'extra_notes' => $settledNote ?: $pettyCash->extra_notes,
             'settlement_money_notes' => $request->input('settlement_money_notes'),
         ]);
 
+        if ($isExceeded) {
+            // Send emails immediately when exceeded
+            // 1. Notify HOD for approval
+            $associatedHod = $pettyCash->associated_hod;
+            if ($associatedHod && $associatedHod->id !== $user->id) {
+                $associatedHod->notify(new PettyCashNotification($pettyCash, 'iou_settlement_exceeded', $user));
+            }
+
+            // 2. Notify Requester / Staff member
+            $requestedUser = User::find($pettyCash->user_id);
+            if ($requestedUser) {
+                $requestedUser->notify(new PettyCashNotification($pettyCash, 'iou_settlement_exceeded', $user));
+            }
+
+            // 3. Notify Finance Admins / Super Admins
+            $superAdmins = PettyCashNotification::getSuperAdminRecipients($user->id);
+            if ($superAdmins->isNotEmpty()) {
+                Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'iou_settlement_exceeded', $user));
+            }
+
+            $exceededAmount = round($settlementTotal - $approvedAmount, 2);
+            $msg = $needsHodApproval 
+                ? 'IOU Settlement exceeded approved amount (Approved: LKR ' . number_format($approvedAmount, 2) . ', Spent: LKR ' . number_format($settlementTotal, 2) . ', Exceeded by: LKR ' . number_format($exceededAmount, 2) . '). It has been forwarded to your HOD for approval, and notification emails have been sent.'
+                : 'IOU Settlement exceeded approved amount. Submitted successfully for Finance approval.';
+
+            return redirect()->back()->with('success', $msg);
+        }
+
+        // Standard settlement within or equal to approved amount
         // Notify Super Admins, Associated HOD & Requested Staff User
         $superAdmins = PettyCashNotification::getSuperAdminRecipients();
         Notification::send($superAdmins, new PettyCashNotification($pettyCash, 'submitted', $user));
@@ -859,7 +931,7 @@ class PettyCashController extends Controller
             'job_numbers' => 'nullable|array',
             'job_numbers.*' => 'nullable|string|max:100',
             'extra_notes' => 'nullable|string',
-            'status' => 'required|string|in:pending_hod,pending_super_admin,pending_management,approved,rejected_by_hod,rejected_by_super_admin,rejected_by_management,iou_issued,pending_settlement,settled',
+            'status' => 'required|string|in:pending_hod,pending_super_admin,pending_management,approved,rejected_by_hod,rejected_by_super_admin,rejected_by_management,iou_issued,pending_settlement,pending_settlement_hod,settled',
             'management_notes' => 'nullable|string',
             'created_at' => 'nullable|date',
             'issued_at' => 'nullable|date',

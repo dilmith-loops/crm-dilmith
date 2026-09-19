@@ -210,6 +210,10 @@
                         <span class="status-badge status-iou">Status: IOU Issued (Unsettled)</span>
                     @elseif($pettyCash->status === 'settled')
                         <span class="status-badge status-settled">Status: Settled</span>
+                    @elseif($pettyCash->status === 'pending_settlement')
+                        <span class="status-badge status-default" style="background-color: #f3e8ff; color: #6b21a8; border-color: #d8b4fe;">Status: Pending Settlement</span>
+                    @elseif($pettyCash->status === 'pending_settlement_hod')
+                        <span class="status-badge status-default" style="background-color: #fef3c7; color: #92400e; border-color: #fde68a;">Status: Settlement Exceeded (Pending HOD)</span>
                     @elseif($pettyCash->status === 'pending_super_admin')
                         <span class="status-badge status-default" style="background-color: #dbeafe; color: #1e40af; border-color: #bfdbfe;">Status: Pending Finance Approval</span>
                     @elseif($pettyCash->status === 'pending_hod')
@@ -308,6 +312,16 @@
                 <td colspan="3" style="text-align: right; text-transform: uppercase;">Total Amount:</td>
                 <td style="text-align: right; color: #ec4899;">LKR {{ number_format($pettyCash->total_amount, 2) }}</td>
             </tr>
+            @if($pettyCash->isIOU() && $pettyCash->isSettlementExceeded())
+            <tr>
+                <td colspan="3" style="text-align: right; text-transform: uppercase; font-size: 10px; color: #78350f;">Approved Advance:</td>
+                <td style="text-align: right; font-size: 10px; color: #334155;">LKR {{ number_format($pettyCash->effective_approved_amount, 2) }}</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="text-align: right; text-transform: uppercase; font-size: 10px; color: #b91c1c; font-weight: bold;">Exceeded By:</td>
+                <td style="text-align: right; font-size: 10px; color: #dc2626; font-weight: bold;">+ LKR {{ number_format($pettyCash->exceeded_amount, 2) }}</td>
+            </tr>
+            @endif
         </tfoot>
     </table>
 

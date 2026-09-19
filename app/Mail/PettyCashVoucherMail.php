@@ -125,8 +125,22 @@ class PettyCashVoucherMail extends Mailable
                     ? "Management Approved: Your {$typeStr} {$ref}" 
                     : "Management Approved: {$typeStr} {$ref} ({$requesterName})"),
             'management_rejected' => "Request Rejected by Management: {$ref}",
+            'iou_settlement_exceeded' => $isHod
+                ? "ACTION REQUIRED: IOU Settlement Exceeded for {$ref} by {$requesterName} (Requires HOD Approval)"
+                : ($isRequester
+                    ? "IOU Settlement Exceeded Approved Amount: {$ref} - Sent to HOD Approval"
+                    : "IOU Settlement Exceeded Approved Amount: {$ref} ({$requesterName}) - Pending HOD Approval"),
+            'iou_settlement_hod_approved' => $isSuperAdmin
+                ? "HOD Approved Exceeded IOU Settlement: {$ref} ({$requesterName}) - Awaiting Finance Approval"
+                : ($isRequester
+                    ? "HOD Approved Your Exceeded IOU Settlement: {$ref} (Sent to Finance)"
+                    : "Exceeded IOU Settlement Approved: {$ref} (Sent to Finance)"),
             default => "Update on {$typeStr} {$ref}",
         };
+
+        $approvedStr = "LKR " . number_format($this->pettyCash->effective_approved_amount, 2);
+        $settlementStr = "LKR " . number_format($this->pettyCash->settlement_amount ?: $this->pettyCash->total_amount, 2);
+        $exceededStr = "LKR " . number_format($this->pettyCash->exceeded_amount, 2);
 
         $customMessage = match ($this->action) {
             'submitted' => $isRequester
@@ -183,6 +197,16 @@ class PettyCashVoucherMail extends Mailable
             'management_rejected' => $isRequester
                 ? "Your {$typeStr} {$ref} was REJECTED by Management. Reason: " . ($this->note ?: 'No reason provided')
                 : "Petty cash request {$ref} for {$requesterName} was REJECTED by Management. Reason: " . ($this->note ?: 'No reason provided'),
+            'iou_settlement_exceeded' => $isHod
+                ? "Your team member {$requesterName} submitted an IOU settlement for {$ref} totaling {$settlementStr}, which EXCEEDED the approved amount of {$approvedStr} (Exceeded by {$exceededStr}). Please review and approve/reject this settlement so it can proceed to Finance for final approval."
+                : ($isRequester
+                    ? "Your IOU settlement for {$ref} totaling {$settlementStr} has been received. Because it EXCEEDED the approved amount of {$approvedStr} (Exceeded by {$exceededStr}), your settlement has been forwarded to your Head of Department (HOD) for approval before proceeding to Finance."
+                    : "An IOU settlement for {$ref} submitted by {$requesterName} totaled {$settlementStr}, exceeding the approved amount of {$approvedStr} by {$exceededStr}. It has been forwarded to HOD for initial approval before Finance final review."),
+            'iou_settlement_hod_approved' => $isSuperAdmin
+                ? "The Head of Department ({$approverName}) has APPROVED the exceeded IOU settlement for {$ref} requested by {$requesterName} (Settlement: {$settlementStr}, Approved: {$approvedStr}). Please review and proceed with final Finance approval."
+                : ($isRequester
+                    ? "Your exceeded IOU settlement for {$ref} has been APPROVED by your Head of Department ({$approverName}) and forwarded to Finance for final approval."
+                    : "You have approved the exceeded IOU settlement for {$ref} ({$requesterName}). It has been forwarded to Finance for final approval."),
             default => "{$typeStr} {$ref} was updated.",
         };
 

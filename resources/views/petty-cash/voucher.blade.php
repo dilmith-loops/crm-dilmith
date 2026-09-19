@@ -108,6 +108,8 @@
                         <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-100 text-emerald-800">STATUS: SETTLED</span>
                     @elseif($pettyCash->status === 'pending_settlement')
                         <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-purple-100 text-purple-800">STATUS: PENDING SETTLEMENT</span>
+                    @elseif($pettyCash->status === 'pending_settlement_hod')
+                        <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300">STATUS: SETTLEMENT EXCEEDED (PENDING HOD)</span>
                     @elseif($pettyCash->status === 'pending_super_admin')
                         <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-blue-100 text-blue-800">STATUS: PENDING FINANCE APPROVAL</span>
                     @elseif($pettyCash->status === 'pending_hod')
@@ -222,6 +224,16 @@
                             <td colspan="3" class="py-3 px-4 text-right text-gray-800 uppercase">Total Amount:</td>
                             <td class="py-3 px-4 text-right text-brand-pink font-mono">LKR {{ number_format($pettyCash->total_amount, 2) }}</td>
                         </tr>
+                        @if($pettyCash->isIOU() && $pettyCash->isSettlementExceeded())
+                            <tr class="bg-amber-50/60 border-t border-amber-200 text-xs">
+                                <td colspan="3" class="py-2 px-4 text-right text-amber-900 font-semibold">Approved Advance Amount:</td>
+                                <td class="py-2 px-4 text-right text-gray-700 font-mono">LKR {{ number_format($pettyCash->effective_approved_amount, 2) }}</td>
+                            </tr>
+                            <tr class="bg-amber-50/60 text-xs font-bold">
+                                <td colspan="3" class="py-2 px-4 text-right text-amber-900">Exceeded Amount:</td>
+                                <td class="py-2 px-4 text-right text-red-600 font-mono">+ LKR {{ number_format($pettyCash->exceeded_amount, 2) }}</td>
+                            </tr>
+                        @endif
                     </tfoot>
                 </table>
             </div>

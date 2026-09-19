@@ -74,7 +74,7 @@
     @php
         $unsettledIou = \App\Models\PettyCashRequest::where('user_id', auth()->id())
             ->where('is_iou', true)
-            ->whereIn('status', ['approved', 'iou_issued', 'pending_settlement'])
+            ->whereIn('status', ['approved', 'iou_issued', 'pending_settlement', 'pending_settlement_hod'])
             ->orderBy('created_at', 'desc')
             ->first();
     @endphp
@@ -153,6 +153,10 @@
         <a href="{{ route('petty-cash.index', ['scope' => $scope, 'status' => 'pending_hod']) }}" 
            class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'pending_hod' ? 'bg-amber-500 text-white shadow-sm' : 'bg-amber-50 text-amber-800 hover:bg-amber-100' }}">
             Pending HOD
+        </a>
+        <a href="{{ route('petty-cash.index', ['scope' => $scope, 'status' => 'pending_settlement_hod']) }}" 
+           class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'pending_settlement_hod' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-50 text-amber-900 hover:bg-amber-100' }}">
+            Settlement Exceeded
         </a>
         <a href="{{ route('petty-cash.index', ['scope' => $scope, 'status' => 'pending_super_admin']) }}" 
            class="px-4 py-2 text-xs font-semibold rounded-full transition-all {{ request('status') === 'pending_super_admin' ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-50 text-blue-800 hover:bg-blue-100' }}">
@@ -248,6 +252,10 @@
                                     <span class="px-3 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-300 inline-flex items-center whitespace-nowrap">
                                         <i class="fas fa-file-invoice-dollar mr-1"></i> Settlement Pending
                                     </span>
+                                @elseif($pc->status === 'pending_settlement_hod')
+                                    <span class="px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center whitespace-nowrap" title="Settlement Exceeded Approved Amount - Awaiting HOD Approval">
+                                        <i class="fas fa-exclamation-triangle mr-1 text-amber-600"></i> Exceeded (Pending HOD)
+                                    </span>
                                 @elseif($pc->status === 'settled')
                                     <span class="px-3 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center whitespace-nowrap">
                                         <i class="fas fa-check-double mr-1"></i> IOU Settled
@@ -284,11 +292,11 @@
                                         </button>
                                     @endif
 
-                                    @if($pc->status === 'pending_hod' && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasAdminPrivileges()))
+                                    @if(in_array($pc->status, ['pending_hod', 'pending_settlement_hod']) && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasAdminPrivileges()))
                                         <form action="{{ route('petty-cash.hodApprove', $pc) }}" method="POST" class="inline-block">
                                             @csrf
-                                            <button type="submit" class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center whitespace-nowrap">
-                                                <i class="fas fa-check mr-1"></i> Accept
+                                            <button type="submit" class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center whitespace-nowrap" title="{{ $pc->status === 'pending_settlement_hod' ? 'Approve Exceeded Settlement and Forward to Finance' : 'Accept Request' }}">
+                                                <i class="fas fa-check mr-1"></i> {{ $pc->status === 'pending_settlement_hod' ? 'Approve Exceeded' : 'Accept' }}
                                             </button>
                                         </form>
                                         <button onclick="openHodRejectModal({{ $pc->id }})"
@@ -409,6 +417,10 @@
                                 <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-300 inline-flex items-center">
                                     <i class="fas fa-file-invoice-dollar mr-1 text-[10px]"></i> Settlement Pending
                                 </span>
+                            @elseif($pc->status === 'pending_settlement_hod')
+                                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center" title="Settlement Exceeded Approved Amount - Awaiting HOD Approval">
+                                    <i class="fas fa-exclamation-triangle mr-1 text-[10px] text-amber-600"></i> Exceeded (Pending HOD)
+                                </span>
                             @elseif($pc->status === 'settled')
                                 <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center">
                                     <i class="fas fa-check-double mr-1 text-[10px]"></i> IOU Settled
@@ -485,11 +497,11 @@
                             </button>
                         @endif
 
-                        @if($pc->status === 'pending_hod' && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasAdminPrivileges()))
+                        @if(in_array($pc->status, ['pending_hod', 'pending_settlement_hod']) && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasAdminPrivileges()))
                             <form action="{{ route('petty-cash.hodApprove', $pc) }}" method="POST" class="inline-block">
                                 @csrf
-                                <button type="submit" class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center">
-                                    <i class="fas fa-check mr-1"></i> Accept
+                                <button type="submit" class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center" title="{{ $pc->status === 'pending_settlement_hod' ? 'Approve Exceeded Settlement and Forward to Finance' : 'Accept Request' }}">
+                                    <i class="fas fa-check mr-1"></i> {{ $pc->status === 'pending_settlement_hod' ? 'Approve Exceeded' : 'Accept' }}
                                 </button>
                             </form>
                             <button onclick="openHodRejectModal({{ $pc->id }})"
@@ -938,9 +950,23 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-gray-800 mb-2">Final Expenditure Line Items & Amounts</label>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-xs font-bold text-gray-800">Final Expenditure Line Items & Amounts</label>
+                    <div class="flex items-center gap-3 text-xs font-semibold">
+                        <span id="settleApprovedAmountDisplay" class="text-gray-500">Approved: <strong class="text-gray-800 font-mono">LKR 0.00</strong></span>
+                        <span id="settleTotalSpentDisplay" class="text-brand-purple font-mono font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Spent: LKR 0.00</span>
+                    </div>
+                </div>
                 <div id="settleItemsContainer" class="space-y-3">
                     <!-- Dynamic JS content -->
+                </div>
+                <!-- Dynamic Exceeded Warning Banner -->
+                <div id="settleExceededWarning" class="mt-3 hidden p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+                    <i class="fas fa-exclamation-triangle text-amber-600 text-base mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        <strong class="text-amber-950 font-bold block mb-0.5">⚠️ Settlement Exceeds Approved Amount</strong>
+                        <span id="settleExceededWarningText" class="text-amber-900">The total expenditure exceeds the approved advance amount. This settlement will be forwarded to your Head of Department (HOD) for approval before Finance review.</span>
+                    </div>
                 </div>
             </div>
 
@@ -1403,6 +1429,7 @@
                         <option value="pending_management">Pending Management Approval</option>
                         <option value="approved">Approved</option>
                         <option value="iou_issued">Approved (IOU Unsettled)</option>
+                        <option value="pending_settlement_hod">Settlement Exceeded (Pending HOD)</option>
                         <option value="pending_settlement">Settlement Pending</option>
                         <option value="settled">IOU Settled</option>
                         <option value="rejected_by_hod">Rejected by HOD</option>
@@ -1995,6 +2022,12 @@
                     const container = document.getElementById('settleItemsContainer');
                     container.innerHTML = '';
 
+                    window.currentApprovedIouAmount = parseFloat(pc.approved_amount || pc.total_amount) || 0;
+                    const approvedDisplay = document.getElementById('settleApprovedAmountDisplay');
+                    if (approvedDisplay) {
+                        approvedDisplay.innerHTML = `Approved Advance: <strong class="text-gray-800 font-mono">LKR ${window.currentApprovedIouAmount.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>`;
+                    }
+
                     pc.items.forEach((item) => {
                         const div = document.createElement('div');
                         div.className = 'grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-gray-50 p-3 rounded-lg border border-gray-200';
@@ -2006,15 +2039,40 @@
                             </div>
                             <div class="md:col-span-6 flex items-center gap-2">
                                 <span class="text-xs text-gray-500 font-bold whitespace-nowrap">Spent LKR:</span>
-                                <input type="number" step="0.01" min="0.01" name="items[${item.id}][amount]" value="${item.amount}" required class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-purple">
+                                <input type="number" step="0.01" min="0.01" name="items[${item.id}][amount]" value="${item.amount}" required class="w-full rounded-md border-gray-300 text-xs focus:ring-brand-purple settle-item-amount-input" oninput="calculateSettleSpentTotal()">
                             </div>
                         `;
                         container.appendChild(div);
                     });
 
+                    calculateSettleSpentTotal();
+
                     document.getElementById('settleIouModal').classList.remove('hidden');
                 }
             });
+    }
+
+    function calculateSettleSpentTotal() {
+        let total = 0;
+        document.querySelectorAll('.settle-item-amount-input').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        const warningEl = document.getElementById('settleExceededWarning');
+        const warningTextEl = document.getElementById('settleExceededWarningText');
+        const totalDisplay = document.getElementById('settleTotalSpentDisplay');
+        if (totalDisplay) {
+            totalDisplay.textContent = `Spent: LKR ${total.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        }
+        const approved = window.currentApprovedIouAmount || 0;
+        if (warningEl && warningTextEl) {
+            if (approved > 0 && total > approved) {
+                const diff = total - approved;
+                warningTextEl.innerHTML = `Total spent (<strong>LKR ${total.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>) exceeds the approved advance (<strong>LKR ${approved.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>) by <strong class="text-red-700">+ LKR ${diff.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>. This settlement will be routed to your Head of Department (HOD) for approval before Finance review.`;
+                warningEl.classList.remove('hidden');
+            } else {
+                warningEl.classList.add('hidden');
+            }
+        }
     }
 
     function openHodRejectModal(id) {
@@ -2219,8 +2277,31 @@
                         `;
                     }
 
+                    let exceededBannerHtml = '';
+                    const approvedVal = parseFloat(pc.approved_amount || pc.total_amount) || 0;
+                    const settledVal = parseFloat(pc.settlement_amount || pc.total_amount) || 0;
+                    if (pc.is_iou && (pc.status === 'pending_settlement_hod' || (pc.settlement_amount && settledVal > approvedVal))) {
+                        const diff = Math.max(0, settledVal - approvedVal);
+                        exceededBannerHtml = `
+                            <div class="p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 mb-3 space-y-1.5 shadow-2xs">
+                                <div class="flex justify-between items-center font-bold text-amber-950">
+                                    <span class="flex items-center gap-1.5"><i class="fas fa-exclamation-triangle text-amber-600"></i> IOU Settlement Exceeded Approved Advance</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${pc.status === 'pending_settlement_hod' ? 'bg-amber-200 text-amber-900 border border-amber-300' : 'bg-green-100 text-green-800'}">
+                                        ${pc.status === 'pending_settlement_hod' ? 'Awaiting HOD Approval' : 'HOD Approved'}
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+                                    <div><span class="text-amber-800 block font-sans">Approved Advance:</span><strong>LKR ${approvedVal.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong></div>
+                                    <div><span class="text-amber-800 block font-sans">Settlement Total:</span><strong>LKR ${settledVal.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong></div>
+                                    <div><span class="text-red-700 block font-sans font-bold">Exceeded By:</span><strong class="text-red-600 font-bold">+ LKR ${diff.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
                     document.getElementById('modalBody').innerHTML = `
                         ${iouPolicyBannerHtml}
+                        ${exceededBannerHtml}
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl text-xs">
                             <div><span class="text-gray-500 block">Requested By:</span><strong class="text-gray-800 text-sm">${pc.user ? pc.user.name : '-'}</strong></div>
                             <div><span class="text-gray-500 block">Department:</span><strong class="text-gray-800 text-sm">${pc.department || '-'}</strong></div>

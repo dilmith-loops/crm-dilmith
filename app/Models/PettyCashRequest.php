@@ -17,6 +17,8 @@ class PettyCashRequest extends Model
         'job_number',
         'extra_notes',
         'total_amount',
+        'approved_amount',
+        'settlement_amount',
         'is_iou',
         'issued_at',
         'issued_money_notes',
@@ -39,6 +41,8 @@ class PettyCashRequest extends Model
 
     protected $casts = [
         'is_iou' => 'boolean',
+        'approved_amount' => 'decimal:2',
+        'settlement_amount' => 'decimal:2',
         'issued_at' => 'datetime',
         'settled_at' => 'datetime',
         'sent_to_management_at' => 'datetime',
@@ -231,6 +235,7 @@ class PettyCashRequest extends Model
             'iou_issued' => 'IOU Issued (Unsettled)',
             'settled' => 'Settled',
             'pending_settlement' => 'Pending Settlement',
+            'pending_settlement_hod' => 'Settlement Exceeded (Pending HOD)',
             'pending_super_admin' => 'Pending Finance Approval',
             'pending_hod' => 'Pending HOD Approval',
             'pending_management' => 'Pending Management Approval',
@@ -239,5 +244,36 @@ class PettyCashRequest extends Model
             'rejected_by_hod' => 'Rejected by HOD',
             default => ucwords(str_replace('_', ' ', $this->status ?? '')),
         };
+    }
+
+    /**
+     * Check if the IOU settlement has exceeded the approved amount.
+     */
+    public function isSettlementExceeded(): bool
+    {
+        if (!$this->isIOU()) {
+            return false;
+        }
+        $approved = (float)($this->approved_amount ?: $this->total_amount);
+        $settled = (float)($this->settlement_amount ?: ($this->status === 'pending_settlement' || $this->status === 'pending_settlement_hod' || $this->status === 'settled' ? $this->total_amount : 0));
+        return round($settled, 2) > round($approved, 2);
+    }
+
+    /**
+     * Get the amount by which settlement exceeded the approved amount.
+     */
+    public function getExceededAmountAttribute(): float
+    {
+        $approved = (float)($this->approved_amount ?: $this->total_amount);
+        $settled = (float)($this->settlement_amount ?: $this->total_amount);
+        return max(0, round($settled - $approved, 2));
+    }
+
+    /**
+     * Get the effective approved amount with fallback to total_amount.
+     */
+    public function getEffectiveApprovedAmountAttribute(): float
+    {
+        return (float)($this->approved_amount ?: $this->total_amount);
     }
 }

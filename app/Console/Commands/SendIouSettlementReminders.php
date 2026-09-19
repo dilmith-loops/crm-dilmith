@@ -32,7 +32,7 @@ class SendIouSettlementReminders extends Command
 
         // Find active unsettled IOUs
         $unsettledIous = PettyCashRequest::where('is_iou', true)
-            ->whereIn('status', ['iou_issued', 'pending_settlement'])
+            ->whereIn('status', ['iou_issued', 'pending_settlement', 'pending_settlement_hod'])
             ->whereNotNull('issued_at')
             ->get();
 
