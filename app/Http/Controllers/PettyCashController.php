@@ -24,8 +24,16 @@ class PettyCashController extends Controller
             // Show only the logged-in user's own requested petty cash requests
             $query->where('user_id', $user->id);
         } elseif ($scope === 'approvals') {
-            if ($user->hasAdminPrivileges()) {
+            if ($user->isFinanceAdmin()) {
                 $query->whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management', 'pending_settlement', 'pending_settlement_hod']);
+            } elseif ($user->isManagement()) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('status', 'pending_management')
+                      ->orWhere(function ($sub) use ($user) {
+                          $sub->where('hod_id', $user->id)
+                              ->whereIn('status', ['pending_hod', 'pending_settlement_hod']);
+                      });
+                });
             } else {
                 $query->where('hod_id', $user->id)->whereIn('status', ['pending_hod', 'pending_settlement_hod']);
             }
@@ -52,8 +60,16 @@ class PettyCashController extends Controller
         // Calculate counts for tabs
         $myRequestsCount = PettyCashRequest::where('user_id', $user->id)->count();
         $pendingApprovalsCount = 0;
-        if ($user->hasAdminPrivileges()) {
+        if ($user->isFinanceAdmin()) {
             $pendingApprovalsCount = PettyCashRequest::whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management', 'pending_settlement', 'pending_settlement_hod'])->count();
+        } elseif ($user->isManagement()) {
+            $pendingApprovalsCount = PettyCashRequest::where(function ($q) use ($user) {
+                $q->where('status', 'pending_management')
+                  ->orWhere(function ($sub) use ($user) {
+                      $sub->where('hod_id', $user->id)
+                          ->whereIn('status', ['pending_hod', 'pending_settlement_hod']);
+                  });
+            })->count();
         } else {
             $pendingApprovalsCount = PettyCashRequest::where('hod_id', $user->id)->whereIn('status', ['pending_hod', 'pending_settlement_hod'])->count();
         }
@@ -244,8 +260,8 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        // Ensure user is assigned HOD or Admin (Finance Admin / Management)
-        if ($user->id !== $pettyCash->hod_id && !$user->hasAdminPrivileges() && $user->role !== 'HOD') {
+        // Ensure user is assigned HOD or Finance Admin
+        if ($user->id !== $pettyCash->hod_id && !$user->isFinanceAdmin()) {
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
@@ -299,7 +315,7 @@ class PettyCashController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->id !== $pettyCash->hod_id && !$user->hasAdminPrivileges() && $user->role !== 'HOD') {
+        if ($user->id !== $pettyCash->hod_id && !$user->isFinanceAdmin()) {
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 

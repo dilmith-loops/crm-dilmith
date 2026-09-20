@@ -304,7 +304,7 @@
                                         </button>
                                     @endif
 
-                                    @if(in_array($pc->status, ['pending_hod', 'pending_settlement_hod']) && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasAdminPrivileges()))
+                                    @if(in_array($pc->status, ['pending_hod', 'pending_settlement_hod']) && (auth()->user()->id === $pc->hod_id || auth()->user()->isFinanceAdmin()))
                                         <form action="{{ route('petty-cash.hodApprove', $pc) }}" method="POST" class="inline-block">
                                             @csrf
                                             <button type="submit" class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center whitespace-nowrap" title="{{ $pc->status === 'pending_settlement_hod' ? 'Approve Exceeded Settlement and Forward to Finance' : 'Accept Request' }}">
@@ -327,7 +327,7 @@
                                                 class="px-2.5 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition-colors inline-flex items-center shadow-sm whitespace-nowrap">
                                                 <i class="fas fa-times mr-1"></i> Reject
                                             </button>
-                                        @else
+                                        @elseif(auth()->user()->isFinanceAdmin())
                                             @if(!in_array($pc->status, ['approved', 'settled', 'rejected_by_management']))
                                                 <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}', {{ $pc->total_amount }})"
                                                     class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center whitespace-nowrap">
@@ -509,7 +509,7 @@
                             </button>
                         @endif
 
-                        @if(in_array($pc->status, ['pending_hod', 'pending_settlement_hod']) && (auth()->user()->id === $pc->hod_id || auth()->user()->role === 'HOD' || auth()->user()->hasAdminPrivileges()))
+                        @if(in_array($pc->status, ['pending_hod', 'pending_settlement_hod']) && (auth()->user()->id === $pc->hod_id || auth()->user()->isFinanceAdmin()))
                             <form action="{{ route('petty-cash.hodApprove', $pc) }}" method="POST" class="inline-block">
                                 @csrf
                                 <button type="submit" class="px-2.5 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors inline-flex items-center" title="{{ $pc->status === 'pending_settlement_hod' ? 'Approve Exceeded Settlement and Forward to Finance' : 'Accept Request' }}">
@@ -532,7 +532,7 @@
                                     class="px-2.5 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition-colors inline-flex items-center shadow-sm">
                                     <i class="fas fa-times mr-1"></i> Reject
                                 </button>
-                            @else
+                            @elseif(auth()->user()->isFinanceAdmin())
                                 @if(!in_array($pc->status, ['approved', 'settled', 'rejected_by_management']))
                                     <button onclick="openAdminApproveModal({{ $pc->id }}, '{{ $pc->reference_number }}', '{{ addslashes($pc->user->name ?? 'Staff') }}', {{ $pc->isIOU() ? 'true' : 'false' }}, '{{ $pc->status }}', {{ $pc->total_amount }})"
                                         class="px-2.5 py-1.5 bg-brand-pink text-white text-xs font-semibold rounded-lg hover:bg-brand-purple transition-colors inline-flex items-center">

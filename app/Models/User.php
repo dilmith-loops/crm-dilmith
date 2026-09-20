@@ -175,6 +175,28 @@ class User extends Authenticatable
                $this->hasRole('management');
     }
 
+    /**
+     * Check if user is a Finance Admin (or legacy Super Admin).
+     *
+     * @return bool
+     */
+    public function isFinanceAdmin(): bool
+    {
+        return in_array($this->role, ['Finance Admin', 'Super Admin']) ||
+               $this->hasRole('finance_admin') ||
+               $this->hasRole('super_admin');
+    }
+
+    /**
+     * Check if user is in Management.
+     *
+     * @return bool
+     */
+    public function isManagement(): bool
+    {
+        return $this->role === 'Management' || $this->hasRole('management');
+    }
+
     public function deals()
     {
         return $this->belongsToMany(Deal::class, 'deal_user');

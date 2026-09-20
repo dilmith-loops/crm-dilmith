@@ -83,4 +83,19 @@ class HodResolutionTest extends TestCase
         $this->assertNotNull($request->associated_hod);
         $this->assertEquals('Any Assigned HOD', $request->associated_hod->name);
     }
+
+    public function test_user_role_helpers_for_finance_and_management(): void
+    {
+        $mgmt = new User(['name' => 'Samantha', 'role' => 'Management']);
+        $this->assertTrue($mgmt->isManagement());
+        $this->assertFalse($mgmt->isFinanceAdmin());
+
+        $finance = new User(['name' => 'Finance Person', 'role' => 'Finance Admin']);
+        $this->assertFalse($finance->isManagement());
+        $this->assertTrue($finance->isFinanceAdmin());
+
+        $superAdmin = new User(['name' => 'Super Admin', 'role' => 'Super Admin']);
+        $this->assertFalse($superAdmin->isManagement());
+        $this->assertTrue($superAdmin->isFinanceAdmin());
+    }
 }
