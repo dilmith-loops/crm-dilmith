@@ -355,7 +355,12 @@ Route::get('system-diagnose', function (\Illuminate\Http\Request $request) {
             view()->share('errors', new \Illuminate\Support\ViewErrorBag());
             $response = $controller->index($req);
             $html = $response->render();
-            $results['test_renders'][$u->name . ' (role: ' . $u->role . ', id: ' . $u->id . ')'] = 'SUCCESS (' . strlen($html) . ' bytes)';
+            $info = 'SUCCESS (' . strlen($html) . ' bytes)';
+            if ($u->role === 'Management') {
+                $info .= ' | hasAdminApprove: ' . (str_contains($html, 'openAdminApproveModal') ? 'YES' : 'NO') .
+                         ' | hasToManagement: ' . (str_contains($html, 'openSendToManagementModal') ? 'YES' : 'NO');
+            }
+            $results['test_renders'][$u->name . ' (role: ' . $u->role . ', id: ' . $u->id . ')'] = $info;
         } catch (\Throwable $e) {
             $results['test_renders'][$u->name . ' (role: ' . $u->role . ', id: ' . $u->id . ')'] = [
                 'ERROR' => $e->getMessage(),
@@ -364,6 +369,23 @@ Route::get('system-diagnose', function (\Illuminate\Http\Request $request) {
                 'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 10),
             ];
         }
+    }
+
+    // Git commit info
+    try {
+        $headFile = base_path('.git/HEAD');
+        if (file_exists($headFile)) {
+            $ref = trim(file_get_contents($headFile));
+            if (str_starts_with($ref, 'ref: ')) {
+                $refPath = base_path('.git/' . substr($ref, 5));
+                $commit = file_exists($refPath) ? trim(file_get_contents($refPath)) : $ref;
+            } else {
+                $commit = $ref;
+            }
+            $results['git_commit'] = $commit;
+        }
+    } catch (\Throwable $e) {
+        $results['git_commit'] = 'unknown';
     }
 
     // 4. Retrieve recent logs from storage/logs/laravel.log
