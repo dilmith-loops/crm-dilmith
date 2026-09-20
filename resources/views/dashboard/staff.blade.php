@@ -443,15 +443,25 @@
                         </div>
                     @else
                         @php
-                            $defaultHodId = old('hod_id', $user->associated_hod ? $user->associated_hod->id : $user->supervisor_id);
+                            $assignedHodUser = $user->associated_hod;
+                            $hodDisplayName = $assignedHodUser 
+                                ? ($assignedHodUser->name . ' (' . $assignedHodUser->role . ($assignedHodUser->department ? ' - ' . $assignedHodUser->department : '') . ')')
+                                : 'Not Assigned';
                         @endphp
-                        <select name="hod_id" required class="w-full rounded-lg border-gray-300 text-base sm:text-sm focus:border-brand-blue focus:ring-brand-blue">
-                            @foreach($hods as $h)
-                                <option value="{{ $h->id }}" {{ $defaultHodId == $h->id ? 'selected' : '' }}>
-                                    {{ $h->name }} ({{ $h->role }}{{ $h->department ? ' - ' . $h->department : '' }})
-                                </option>
-                            @endforeach
-                        </select>
+                        <input type="hidden" name="hod_id" value="{{ $assignedHodUser ? $assignedHodUser->id : '' }}">
+                        <div class="relative">
+                            <input type="text" readonly value="{{ $hodDisplayName }}" 
+                                class="w-full rounded-lg border-gray-300 bg-gray-50 text-gray-700 font-medium text-base sm:text-sm cursor-not-allowed focus:ring-0 focus:border-gray-300 pl-9 py-2.5" 
+                                title="HOD is read-only and assigned by Administrator">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <i class="fas fa-user-shield text-sm"></i>
+                            </div>
+                        </div>
+                        @if(!$assignedHodUser)
+                            <p class="mt-1 text-xs text-amber-600 flex items-center gap-1">
+                                <i class="fas fa-exclamation-triangle"></i> No HOD assigned to your account. Please contact an admin.
+                            </p>
+                        @endif
                     @endif
                 </div>
                 <div>
@@ -626,11 +636,15 @@
                             </div>
                         </div>
                     @else
-                        <select name="hod_id" id="reappeal_hod_id" required class="w-full rounded-lg border-gray-300 text-base sm:text-sm focus:border-brand-blue focus:ring-brand-blue">
-                            @foreach($hods as $h)
-                                <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->role }}{{ $h->department ? ' - ' . $h->department : '' }})</option>
-                            @endforeach
-                        </select>
+                        <input type="hidden" name="hod_id" id="reappeal_hod_id" value="">
+                        <div class="relative">
+                            <input type="text" id="reappeal_hod_display" readonly value="" 
+                                class="w-full rounded-lg border-gray-300 bg-gray-50 text-gray-700 font-medium text-base sm:text-sm cursor-not-allowed focus:ring-0 focus:border-gray-300 pl-9 py-2.5" 
+                                title="HOD is read-only">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <i class="fas fa-user-shield text-sm"></i>
+                            </div>
+                        </div>
                     @endif
                 </div>
                 <div>
@@ -1210,7 +1224,16 @@
                 if (data.success) {
                     const pc = data.pettyCash;
                     document.getElementById('reappealForm').action = `{{ route('petty-cash.index') }}/${id}/reappeal`;
-                    if (pc.hod_id) document.getElementById('reappeal_hod_id').value = pc.hod_id;
+                    const hodObj = pc.hod || pc.associated_hod;
+                    const hodIdVal = pc.hod_id || (hodObj ? hodObj.id : '');
+                    const hodInput = document.getElementById('reappeal_hod_id');
+                    if (hodInput) hodInput.value = hodIdVal;
+                    const displayEl = document.getElementById('reappeal_hod_display');
+                    if (displayEl) {
+                        displayEl.value = hodObj 
+                            ? `${hodObj.name} (${hodObj.role}${hodObj.department ? ' - ' + hodObj.department : ''})` 
+                            : 'Not Assigned';
+                    }
                     if (pc.job_number) {
                         const jobList = pc.job_number.split(',').map(s => s.trim()).filter(Boolean);
                         if (typeof reappealJobTs !== 'undefined' && reappealJobTs) {
