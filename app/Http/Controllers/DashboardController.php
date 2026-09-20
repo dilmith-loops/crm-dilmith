@@ -47,15 +47,9 @@ class DashboardController extends Controller
                 ->get();
             $expenseCategories = \App\Models\ExpenseCategory::where('status', 'active')->where('name', '!=', 'IOU')->orderBy('name')->get();
             
-            $hods = \App\Models\User::where('role', 'HOD');
-            if ($userDept) {
-                $hods->where('department', $userDept);
-            }
-            $hods = $hods->get();
-            if ($hods->isEmpty()) {
-                $hods = \App\Models\User::where('role', 'HOD')->get();
-            }
-            if ($user->associated_hod && !$hods->contains('id', $user->associated_hod->id)) {
+            $hods = \App\Models\User::orderBy('name')->get();
+            if ($user->associated_hod && $hods->contains('id', $user->associated_hod->id)) {
+                $hods = $hods->reject(fn($h) => $h->id === $user->associated_hod->id);
                 $hods->prepend($user->associated_hod);
             }
 

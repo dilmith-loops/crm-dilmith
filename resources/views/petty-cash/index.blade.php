@@ -127,7 +127,7 @@
            class="flex-1 text-center py-2.5 px-4 rounded-lg font-bold text-sm transition-all {{ $scope === 'my_requests' ? 'bg-brand-pink text-white shadow-md' : 'text-gray-600 hover:bg-gray-50' }}">
             <i class="fas fa-user-circle mr-1.5"></i> My Requests ({{ $myRequestsCount }})
         </a>
-        @if(auth()->user()->hasAdminPrivileges() || auth()->user()->role === 'HOD')
+        @if(auth()->user()->hasAdminPrivileges() || auth()->user()->role === 'HOD' || $pendingApprovalsCount > 0)
             <a href="{{ route('petty-cash.index', ['scope' => 'approvals']) }}"
                class="flex-1 text-center py-2.5 px-4 rounded-lg font-bold text-sm transition-all relative {{ $scope === 'approvals' ? 'bg-brand-purple text-white shadow-md' : 'text-gray-600 hover:bg-gray-50' }}">
                 <i class="fas fa-check-double mr-1.5"></i> Pending Approvals
@@ -137,6 +137,8 @@
                     </span>
                 @endif
             </a>
+        @endif
+        @if(auth()->user()->hasAdminPrivileges() || auth()->user()->role === 'HOD')
             <a href="{{ route('petty-cash.index', ['scope' => 'all_team']) }}"
                class="flex-1 text-center py-2.5 px-4 rounded-lg font-bold text-sm transition-all {{ $scope === 'all_team' ? 'bg-brand-blue text-white shadow-md' : 'text-gray-600 hover:bg-gray-50' }}">
                 <i class="fas fa-users-cog mr-1.5"></i> All Team Requests
@@ -606,7 +608,7 @@
                         <select name="hod_id" required class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
                             @foreach($hods as $h)
                                 <option value="{{ $h->id }}" {{ $defaultHodId == $h->id ? 'selected' : '' }}>
-                                    {{ $h->name }} ({{ $h->department ?: 'HOD' }})
+                                    {{ $h->name }} ({{ $h->role }}{{ $h->department ? ' - ' . $h->department : '' }})
                                 </option>
                             @endforeach
                         </select>
@@ -1105,7 +1107,7 @@
                     @else
                         <select name="hod_id" id="reappeal_hod_id" required class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-blue focus:ring-brand-blue">
                             @foreach($hods as $h)
-                                <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->department ?: 'HOD' }})</option>
+                                <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->role }}{{ $h->department ? ' - ' . $h->department : '' }})</option>
                             @endforeach
                         </select>
                     @endif
@@ -1409,7 +1411,7 @@
                     <label class="block text-xs font-bold text-gray-700 mb-1">HOD Associated With *</label>
                     <select name="hod_id" id="editHodId" required class="w-full rounded-lg border-gray-300 text-xs focus:border-amber-500 focus:ring-amber-500">
                         @foreach($hods as $h)
-                            <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->department ?: 'HOD' }})</option>
+                            <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->role }}{{ $h->department ? ' - ' . $h->department : '' }})</option>
                         @endforeach
                     </select>
                 </div>

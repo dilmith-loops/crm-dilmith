@@ -76,6 +76,11 @@ class User extends Authenticatable
         return $this->belongsTo(User::class, 'supervisor_id');
     }
 
+    public function assignedHod()
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
     public function subordinates()
     {
         return $this->hasMany(User::class, 'supervisor_id');
@@ -83,25 +88,12 @@ class User extends Authenticatable
 
     /**
      * Resolve the Associated HOD User instance for this user.
+     * Related HOD can be any user. The user's assigned HOD is their assigned supervisor/HOD.
      * 
      * @return \App\Models\User|null
      */
     public function getAssociatedHodAttribute()
     {
-        // 1. Direct supervisor check if supervisor is an HOD
-        if ($this->supervisor && $this->supervisor->hasRole('HOD')) {
-            return $this->supervisor;
-        }
-
-        // 2. Department HOD lookup
-        if ($this->department) {
-            $hod = User::where('department', $this->department)->where('role', 'HOD')->first();
-            if ($hod) {
-                return $hod;
-            }
-        }
-
-        // 3. Fallback to supervisor if supervisor has role HOD or Manager
         if ($this->supervisor) {
             return $this->supervisor;
         }

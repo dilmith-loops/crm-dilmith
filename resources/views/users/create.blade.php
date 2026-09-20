@@ -86,11 +86,11 @@
 
                         <div>
                             <label for="supervisor_id" class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-sitemap text-brand-purple mr-2"></i>Assigned Supervisor
+                                <i class="fas fa-sitemap text-brand-purple mr-2"></i>Assigned HOD / Supervisor
                             </label>
                             <select name="supervisor_id" id="supervisor_id"
                                 class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20 transition-all">
-                                <option value="">-- No Supervisor --</option>
+                                <option value="">-- No HOD / Supervisor --</option>
                                 @foreach($users as $user)
                                     <option value="{{ $user->id }}" {{ old('supervisor_id') == $user->id ? 'selected' : '' }}>
                                         {{ $user->name }} ({{ $user->role }})

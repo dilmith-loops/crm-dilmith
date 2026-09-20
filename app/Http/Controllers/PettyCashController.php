@@ -26,10 +26,8 @@ class PettyCashController extends Controller
         } elseif ($scope === 'approvals') {
             if ($user->hasAdminPrivileges()) {
                 $query->whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management', 'pending_settlement', 'pending_settlement_hod']);
-            } elseif ($user->role === 'HOD') {
-                $query->where('hod_id', $user->id)->whereIn('status', ['pending_hod', 'pending_settlement_hod']);
             } else {
-                $query->where('user_id', $user->id);
+                $query->where('hod_id', $user->id)->whereIn('status', ['pending_hod', 'pending_settlement_hod']);
             }
         } elseif ($scope === 'all_team') {
             if ($user->role === 'Staff') {
@@ -56,21 +54,15 @@ class PettyCashController extends Controller
         $pendingApprovalsCount = 0;
         if ($user->hasAdminPrivileges()) {
             $pendingApprovalsCount = PettyCashRequest::whereIn('status', ['pending_hod', 'pending_super_admin', 'pending_management', 'pending_settlement', 'pending_settlement_hod'])->count();
-        } elseif ($user->role === 'HOD') {
+        } else {
             $pendingApprovalsCount = PettyCashRequest::where('hod_id', $user->id)->whereIn('status', ['pending_hod', 'pending_settlement_hod'])->count();
         }
 
         // Data for modals / dropdowns
         $expenseCategories = ExpenseCategory::where('status', 'active')->where('name', '!=', 'IOU')->orderBy('name')->get();
-        $hods = User::where('role', 'HOD');
-        if ($user->department) {
-            $hods->where('department', $user->department);
-        }
-        $hods = $hods->get();
-        if ($hods->isEmpty()) {
-            $hods = User::where('role', 'HOD')->get();
-        }
-        if ($user->associated_hod && !$hods->contains('id', $user->associated_hod->id)) {
+        $hods = User::orderBy('name')->get();
+        if ($user->associated_hod && $hods->contains('id', $user->associated_hod->id)) {
+            $hods = $hods->reject(fn($h) => $h->id === $user->associated_hod->id);
             $hods->prepend($user->associated_hod);
         }
 
@@ -136,9 +128,6 @@ class PettyCashController extends Controller
             }
             if (!$resolvedHod && $user->associated_hod) {
                 $resolvedHod = $user->associated_hod;
-            }
-            if (!$resolvedHod) {
-                $resolvedHod = User::where('role', 'HOD')->first();
             }
         }
 

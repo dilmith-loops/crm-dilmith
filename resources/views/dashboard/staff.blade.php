@@ -194,7 +194,7 @@
                     @forelse($pettyCashes as $pc)
                         <tr class="hover:bg-gray-50/50 transition-colors whitespace-nowrap">
                             <td class="py-3.5 px-6 font-mono font-bold text-gray-900">{{ $pc->reference_number }}</td>
-                            <td class="py-3.5 px-6 font-medium text-gray-800">{{ $pc->hod->name ?? 'Not Assigned' }}</td>
+                            <td class="py-3.5 px-6 font-medium text-gray-800">{{ $pc->associated_hod->name ?? ($pc->hod->name ?? 'Not Assigned') }}</td>
                             <td class="py-3.5 px-6">
                                 @if(count($pc->job_numbers))
                                     <div class="flex flex-wrap gap-1 max-w-[200px]">
@@ -369,8 +369,8 @@
                         <div class="grid grid-cols-2 gap-2 text-xs bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                             <div>
                                 <span class="text-gray-400 font-medium block text-[10px] uppercase">HOD Name</span>
-                                <span class="font-semibold text-gray-800 truncate block mt-0.5" title="{{ $pc->hod->name ?? 'Not Assigned' }}">
-                                    {{ $pc->hod->name ?? 'Not Assigned' }}
+                                <span class="font-semibold text-gray-800 truncate block mt-0.5" title="{{ $pc->associated_hod->name ?? ($pc->hod->name ?? 'Not Assigned') }}">
+                                    {{ $pc->associated_hod->name ?? ($pc->hod->name ?? 'Not Assigned') }}
                                 </span>
                             </div>
                             <div>
@@ -448,7 +448,7 @@
                         <select name="hod_id" required class="w-full rounded-lg border-gray-300 text-base sm:text-sm focus:border-brand-blue focus:ring-brand-blue">
                             @foreach($hods as $h)
                                 <option value="{{ $h->id }}" {{ $defaultHodId == $h->id ? 'selected' : '' }}>
-                                    {{ $h->name }} ({{ $h->department ?: 'HOD' }})
+                                    {{ $h->name }} ({{ $h->role }}{{ $h->department ? ' - ' . $h->department : '' }})
                                 </option>
                             @endforeach
                         </select>
@@ -628,7 +628,7 @@
                     @else
                         <select name="hod_id" id="reappeal_hod_id" required class="w-full rounded-lg border-gray-300 text-base sm:text-sm focus:border-brand-blue focus:ring-brand-blue">
                             @foreach($hods as $h)
-                                <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->department ?: 'HOD' }})</option>
+                                <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->role }}{{ $h->department ? ' - ' . $h->department : '' }})</option>
                             @endforeach
                         </select>
                     @endif
