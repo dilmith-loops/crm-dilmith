@@ -81,7 +81,17 @@
 
     @if($unsettledIou)
         @php
-            $startDate = $unsettledIou->issued_at ?? $unsettledIou->updated_at ?? $unsettledIou->created_at;
+            $rawDate = $unsettledIou->issued_at ?? $unsettledIou->updated_at ?? $unsettledIou->created_at;
+            $startDate = null;
+            if ($rawDate instanceof \Carbon\CarbonInterface) {
+                $startDate = $rawDate;
+            } elseif (!empty($rawDate)) {
+                try {
+                    $startDate = \Carbon\Carbon::parse($rawDate);
+                } catch (\Throwable $e) {
+                    $startDate = null;
+                }
+            }
             $deadline = $startDate ? $startDate->copy()->addHours(72) : now()->addHours(72);
             $isOverdue = now()->greaterThan($deadline);
         @endphp
@@ -105,9 +115,9 @@
                             You have an active approved IOU for <strong>LKR {{ number_format($unsettledIou->total_amount, 2) }}</strong> approved on {{ $startDate ? $startDate->format('d M Y, h:i A') : 'N/A' }}.
                             <br>
                             @if($isOverdue)
-                                <span class="font-bold text-rose-700">Settlement deadline was {{ $deadline->format('d M Y, h:i A') }} (Passed 72 hours). Please submit expenditure bills immediately!</span>
+                                <span class="font-bold text-rose-700">Settlement deadline was {{ $deadline ? $deadline->format('d M Y, h:i A') : 'N/A' }} (Passed 72 hours). Please submit expenditure bills immediately!</span>
                             @else
-                                <span>Settlement Deadline: <strong class="font-semibold">{{ $deadline->format('d M Y, h:i A') }}</strong>.</span>
+                                <span>Settlement Deadline: <strong class="font-semibold">{{ $deadline ? $deadline->format('d M Y, h:i A') : 'N/A' }}</strong>.</span>
                             @endif
                         </p>
                     </div>

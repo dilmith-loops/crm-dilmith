@@ -298,3 +298,82 @@ Route::get('uploads/{path}', function ($path) {
     }
     abort(404);
 })->where('path', '.*');
+
+// Secure diagnostic & maintenance endpoint for Hostinger deployment troubleshooting
+Route::get('system-diagnose', function (\Illuminate\Http\Request $request) {
+    if ($request->query('key') !== 'loops-pc-fix') {
+        abort(403, 'Unauthorized');
+    }
+
+    $results = [];
+
+    // 1. Run migrations
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $results['migrate'] = trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Throwable $e) {
+        $results['migrate_error'] = $e->getMessage();
+    }
+
+    // 2. Clear view cache, config cache, route cache, app cache
+    try {
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        $results['view_clear'] = trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Throwable $e) {
+        $results['view_clear_error'] = $e->getMessage();
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('route:clear');
+        $results['route_clear'] = trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Throwable $e) {
+        $results['route_clear_error'] = $e->getMessage();
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        $results['config_clear'] = trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Throwable $e) {
+        $results['config_clear_error'] = $e->getMessage();
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        $results['cache_clear'] = trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Throwable $e) {
+        $results['cache_clear_error'] = $e->getMessage();
+    }
+
+    // 3. Test render petty-cash index for each user
+    $results['test_renders'] = [];
+    $users = \App\Models\User::all();
+    foreach ($users as $u) {
+        try {
+            auth()->login($u);
+            $req = \Illuminate\Http\Request::create('/petty-cash', 'GET');
+            $controller = app(\App\Http\Controllers\PettyCashController::class);
+            view()->share('errors', new \Illuminate\Support\ViewErrorBag());
+            $response = $controller->index($req);
+            $html = $response->render();
+            $results['test_renders'][$u->name . ' (role: ' . $u->role . ', id: ' . $u->id . ')'] = 'SUCCESS (' . strlen($html) . ' bytes)';
+        } catch (\Throwable $e) {
+            $results['test_renders'][$u->name . ' (role: ' . $u->role . ', id: ' . $u->id . ')'] = [
+                'ERROR' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 10),
+            ];
+        }
+    }
+
+    // 4. Retrieve recent logs from storage/logs/laravel.log
+    $logPath = storage_path('logs/laravel.log');
+    if (file_exists($logPath)) {
+        $lines = file($logPath);
+        $results['recent_logs'] = array_slice($lines, -80);
+    } else {
+        $results['recent_logs'] = 'No log file found at ' . $logPath;
+    }
+
+    return response()->json($results, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
